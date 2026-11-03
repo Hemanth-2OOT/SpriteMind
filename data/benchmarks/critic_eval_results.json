@@ -1,0 +1,275 @@
+{
+  "summary": {
+    "total_cases": 10,
+    "detection_precision": 100.0,
+    "detection_recall": 100.0,
+    "detection_f1": 1.0,
+    "repair_success_rate": 80.0,
+    "avg_silhouette_iou_gain": 0.0112,
+    "avg_unintended_modification_rate": 6.49,
+    "edge_case_preservation_rate": 100.0,
+    "timestamp": "2026-11-03 14:37:17"
+  },
+  "case_results": [
+    {
+      "id": "eval_001_stray_pixel",
+      "name": "Knight with floating stray pixel",
+      "category": "knight",
+      "is_edge_case": false,
+      "expected_defect": "stray_pixel",
+      "detected_defects": [
+        "stray_pixel"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.992,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.008,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 100.0,
+      "unintended_modification_rate": 0.0,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 78,
+      "final_quality": 87,
+      "iterations_used": 1,
+      "actions_applied": [
+        "ERASE 2 2 1 1"
+      ]
+    },
+    {
+      "id": "eval_002_disconnected_arm",
+      "name": "Zombie with disconnected arm",
+      "category": "zombie",
+      "is_edge_case": false,
+      "expected_defect": "disconnected_part",
+      "detected_defects": [
+        "disconnected_part",
+        "disconnected_part"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.824,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.176,
+      "corrupted_pixel_accuracy": 97.66,
+      "repaired_pixel_accuracy": 98.83,
+      "unintended_modification_rate": 9.68,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 58,
+      "final_quality": 93,
+      "iterations_used": 2,
+      "actions_applied": [
+        "ERASE 26 15 3 4",
+        "PART arm_right torso 19 15\nRECT 19 15 3 4 10 1"
+      ]
+    },
+    {
+      "id": "eval_003_interior_hole",
+      "name": "Robot chassis with unexpected interior void",
+      "category": "robot",
+      "is_edge_case": false,
+      "expected_defect": "unexpected_hole",
+      "detected_defects": [
+        "unexpected_hole",
+        "palette_leak"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.992,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.008,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 99.8,
+      "unintended_modification_rate": 1.56,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 77,
+      "final_quality": 82,
+      "iterations_used": 3,
+      "actions_applied": [
+        "PIXEL 15 15 7",
+        "PIXEL 12 6 1",
+        "PIXEL 13 6 1"
+      ]
+    },
+    {
+      "id": "eval_004_palette_leak",
+      "name": "Rogue with out-of-palette RGB leak",
+      "category": "rogue",
+      "is_edge_case": false,
+      "expected_defect": "palette_leak",
+      "detected_defects": [
+        "stray_pixel",
+        "palette_leak"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.99,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.01,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 100.0,
+      "unintended_modification_rate": 0.0,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 76,
+      "final_quality": 90,
+      "iterations_used": 1,
+      "actions_applied": [
+        "ERASE 2 2 1 1"
+      ]
+    },
+    {
+      "id": "eval_005_missing_limb",
+      "name": "Skeleton missing right arm without shield",
+      "category": "skeleton",
+      "is_edge_case": false,
+      "expected_defect": "missing_limb",
+      "detected_defects": [
+        "missing_limb"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.904,
+      "repaired_iou": 0.908,
+      "iou_gain": 0.004,
+      "corrupted_pixel_accuracy": 99.02,
+      "repaired_pixel_accuracy": 98.54,
+      "unintended_modification_rate": 9.62,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 79,
+      "final_quality": 89,
+      "iterations_used": 1,
+      "actions_applied": [
+        "PART arm_right torso 18 14\nRECT 18 14 2 5 10 1"
+      ]
+    },
+    {
+      "id": "eval_006_wizard_magic_orb",
+      "name": "Wizard with intentional floating spell orb (Edge Case)",
+      "category": "wizard",
+      "is_edge_case": true,
+      "expected_defect": "stray_pixel",
+      "detected_defects": [
+        "stray_pixel"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.991,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.009,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 100.0,
+      "unintended_modification_rate": 0.0,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 85,
+      "final_quality": 94,
+      "iterations_used": 1,
+      "actions_applied": [
+        "ERASE 1 1 1 1"
+      ]
+    },
+    {
+      "id": "eval_007_slime_satellite",
+      "name": "Slime with intentional detached droplet (Edge Case)",
+      "category": "slime",
+      "is_edge_case": true,
+      "expected_defect": "unexpected_hole",
+      "detected_defects": [
+        "unexpected_hole"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.989,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.011,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 100.0,
+      "unintended_modification_rate": 0.0,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 84,
+      "final_quality": 89,
+      "iterations_used": 1,
+      "actions_applied": [
+        "PIXEL 16 18 12"
+      ]
+    },
+    {
+      "id": "eval_008_animal_quadruped",
+      "name": "Wolf with quadruped leg balance",
+      "category": "animal",
+      "is_edge_case": false,
+      "expected_defect": "stray_pixel",
+      "detected_defects": [
+        "stray_pixel"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.99,
+      "repaired_iou": 1.0,
+      "iou_gain": 0.01,
+      "corrupted_pixel_accuracy": 99.9,
+      "repaired_pixel_accuracy": 100.0,
+      "unintended_modification_rate": 0.0,
+      "identity_preserved": true,
+      "repair_success": true,
+      "initial_quality": 81,
+      "final_quality": 90,
+      "iterations_used": 1,
+      "actions_applied": [
+        "ERASE 2 2 1 1"
+      ]
+    },
+    {
+      "id": "eval_009_fantasy_wings",
+      "name": "Dragon with floating wingtips",
+      "category": "fantasy_creature",
+      "is_edge_case": false,
+      "expected_defect": "disconnected_part",
+      "detected_defects": [
+        "disconnected_part"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.737,
+      "repaired_iou": 0.63,
+      "iou_gain": -0.107,
+      "corrupted_pixel_accuracy": 96.09,
+      "repaired_pixel_accuracy": 94.14,
+      "unintended_modification_rate": 22.73,
+      "identity_preserved": false,
+      "repair_success": false,
+      "initial_quality": 73,
+      "final_quality": 73,
+      "iterations_used": 1,
+      "actions_applied": [
+        "TRANSFORM wings -6 0 0",
+        "TRANSFORM wings 6 0 0"
+      ]
+    },
+    {
+      "id": "eval_010_goblin_asymmetry",
+      "name": "Goblin with severe detached ear",
+      "category": "goblin",
+      "is_edge_case": false,
+      "expected_defect": "disconnected_part",
+      "detected_defects": [
+        "disconnected_part",
+        "disconnected_part",
+        "disconnected_part"
+      ],
+      "detection_successful": true,
+      "corrupted_iou": 0.862,
+      "repaired_iou": 0.844,
+      "iou_gain": -0.018,
+      "corrupted_pixel_accuracy": 98.44,
+      "repaired_pixel_accuracy": 97.66,
+      "unintended_modification_rate": 21.3,
+      "identity_preserved": false,
+      "repair_success": false,
+      "initial_quality": 45,
+      "final_quality": 89,
+      "iterations_used": 2,
+      "actions_applied": [
+        "ERASE 28 9 2 4",
+        "TRANSFORM ear_left 2 3 0"
+      ]
+    }
+  ]
+}

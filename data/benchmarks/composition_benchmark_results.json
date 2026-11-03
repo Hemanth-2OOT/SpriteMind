@@ -1,0 +1,79 @@
+{
+  "title": "SpriteMind Stage 5 Asset Composition Comparative Benchmark",
+  "num_test_cases": 100,
+  "timestamp": "2026-11-03 15:58:25",
+  "summary": {
+    "procedural_baseline": {
+      "engine": "procedural_baseline",
+      "cases_evaluated": 100,
+      "mean_attachment_accuracy_pct": 92.0,
+      "defect_rate_pct": 100.0,
+      "identity_preservation_score": 0.6037,
+      "alpha_mask_correctness_pct": 100.0,
+      "mean_latency_ms": 13.59,
+      "sample_case": {
+        "case_id": "comp_case_000",
+        "attachment_accuracy": 92.0,
+        "defects_count": 6,
+        "has_defect": true,
+        "composed_pixels": 245,
+        "alpha_mask_correctness": 100.0,
+        "identity_score": 0.5317
+      }
+    },
+    "untrained_model": {
+      "engine": "untrained_model",
+      "cases_evaluated": 100,
+      "mean_attachment_accuracy_pct": 85.0,
+      "defect_rate_pct": 91.0,
+      "identity_preservation_score": 0.5506,
+      "alpha_mask_correctness_pct": 100.0,
+      "mean_latency_ms": 50.68,
+      "sample_case": {
+        "case_id": "comp_case_000",
+        "attachment_accuracy": 85.0,
+        "defects_count": 4,
+        "has_defect": true,
+        "composed_pixels": 239,
+        "alpha_mask_correctness": 100.0,
+        "identity_score": 0.5187
+      }
+    },
+    "trained_model": {
+      "engine": "trained_model",
+      "cases_evaluated": 100,
+      "mean_attachment_accuracy_pct": 100.0,
+      "defect_rate_pct": 100.0,
+      "identity_preservation_score": 0.6029,
+      "alpha_mask_correctness_pct": 100.0,
+      "mean_latency_ms": 45.15,
+      "sample_case": {
+        "case_id": "comp_case_000",
+        "attachment_accuracy": 100.0,
+        "defects_count": 4,
+        "has_defect": true,
+        "composed_pixels": 245,
+        "alpha_mask_correctness": 100.0,
+        "identity_score": 0.5317
+      }
+    },
+    "hybrid": {
+      "engine": "hybrid",
+      "cases_evaluated": 100,
+      "mean_attachment_accuracy_pct": 100.0,
+      "defect_rate_pct": 100.0,
+      "identity_preservation_score": 0.6029,
+      "alpha_mask_correctness_pct": 100.0,
+      "mean_latency_ms": 45.34,
+      "sample_case": {
+        "case_id": "comp_case_000",
+        "attachment_accuracy": 100.0,
+        "defects_count": 4,
+        "has_defect": true,
+        "composed_pixels": 245,
+        "alpha_mask_correctness": 100.0,
+        "identity_score": 0.5317
+      }
+    }
+  }
+}

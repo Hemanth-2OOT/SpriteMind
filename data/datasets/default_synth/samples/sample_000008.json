@@ -1,0 +1,116 @@
+{
+  "id": "sample_000008",
+  "split": "train",
+  "category": "slime",
+  "style": "flat",
+  "pose": "death",
+  "has_defect": false,
+  "defect_info": null,
+  "pixel_count": 140,
+  "script_text": "# META: category=slime style=flat pose=death palette=pico8 width=32 height=32 frame_idx=0 total_frames=1 seed=146\nLAYER 0 base 1.00\nPART torso none 16 16\nRECT 10 13 12 10 12 1\nRECT 11 11 10 2 11 1\nEND PART\nPART eyes torso 16 16\nPIXEL 13 16 1\nPIXEL 18 16 1\nEND PART\nEND PROGRAM",
+  "actions": [
+    {
+      "type": "LAYER",
+      "params": {
+        "id": 0,
+        "name": "base",
+        "opacity": 1.0
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "torso",
+        "parent": null,
+        "anchor_x": 16,
+        "anchor_y": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 10,
+        "y": 13,
+        "w": 12,
+        "h": 10,
+        "color": 12,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 11,
+        "y": 11,
+        "w": 10,
+        "h": 2,
+        "color": 11,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "eyes",
+        "parent": "torso",
+        "anchor_x": 16,
+        "anchor_y": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 13,
+        "y": 16,
+        "color": 1
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 18,
+        "y": 16,
+        "color": 1
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PROGRAM"
+      },
+      "raw_text": null,
+      "line_number": null
+    }
+  ],
+  "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAA90lEQVR4nO3XsQ3CMBRAQYMYgZKeDbJ/zQb0KdkBamhokGLy7ro0kWU9fdtjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFs6jD/zfFyfY2KH8/2v9vS49QLYlgDiBBAngDgBxAkgTgBx879Z12Xqd/9Xl9vUe2wCxAkgTgBxAogTQJwA4gQQJ4A4AcQJIE4AcaexN5fb+/e6zPW/yZgAcQKIE0Dc/u4Avz6j132d+Z9MgDgBxAkgTgBxAogTQJwA4gQQJ4A4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHECiBNAnAAAAAAAAAAAAAAAAAAAAAAAAAAm9AKHfQ2XFZgrNQAAAABJRU5ErkJggg=="
+}

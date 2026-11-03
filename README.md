@@ -1,0 +1,82 @@
+# SpriteMind — Local AI Pixel Art Generator & Research Platform
+
+SpriteMind is an experimental, custom-trained machine learning research platform designed specifically to understand, construct, inspect, animate, and compose pixel-art game assets.
+
+SpriteMind is **NOT** a wrapper around conventional diffusion models or external cloud APIs. Instead, it features an original, locally trainable neural architecture — **SVAN (SpriteMind Visual-Action Network)** — that creates pixel art through discrete drawing actions in a specialized domain-specific language (**PixelScript**), observes its own rendered canvas, detects anatomical defects with an autonomous critic, and articulates characters across animation sequences and equipment compositions.
+
+---
+
+## Key Capabilities (Stages 1–5.5)
+
+- **Discrete Drawing Action Generation:** Generates 2D game characters via autoregressive token prediction over a virtual raster canvas.
+- **Topological Visual Intelligence & Critic:** Detects stray pixels, interior voids, dislocated limbs, and palette leaks with autonomous closed-loop self-correction.
+- **Recurrent Temporal Intelligence:** Predicts continuous kinematic trajectories $(\Delta x, \Delta y, \Delta \text{rot})$ across 18 animation categories (Basic, Combat, Creature gaits).
+- **Multi-Layer Asset Composition:** Trainable `SocketPredictor` network (619K params) predicts sub-pixel equipment attachment sockets (`hand_r`, `head`, `back`) with dynamic multi-frame animation synchronization.
+- **Game-Ready Packaging:** 2D bin-packing texture atlas builder with UV coordinates, spritesheets, and complete ZIP game packs (verified with top-down shooter *Dead Zone*).
+- **Auditable SQLite Data Management:** Relational catalog (`data/spritemind.db`) with strict data classification, trash lifecycle, zero-loss deletion gates, and verifiable backups.
+
+---
+
+## Machine Learning Architecture
+
+```
++-----------------------------------------------------------------------------------------+
+|                               SpriteMind Model Ecosystem                                |
++-----------------------------------------------------------------------------------------+
+  1. SVAN Action Transformer (1.74M parameters)    --> models/checkpoints/svan_checkpoint_best.pt
+  2. Neural Visual Critic    (368K parameters)     --> models/checkpoints/visual_critic_best.pt
+  3. TemporalSVAN Recurrent  (426K parameters)     --> models/checkpoints/temporal_svan_best.pt
+  4. SocketPredictor Regress (619K parameters)     --> models/checkpoints/socket_predictor_best.pt
+```
+
+All models are trained for **CPU-first deterministic execution** on consumer hardware (Intel Core i7-12650HX) with optional CUDA support.
+
+---
+
+## Strict Data Classification & Lifecycle Guarantee
+
+SpriteMind enforces a non-negotiable boundary between protected core assets and disposable user files:
+
+- **Tier A (Protected Training):** `data/datasets/`, `data/temporal_dataset_1k/` (IMMUTABLE).
+- **Tier B (Protected Models):** `models/checkpoints/*.pt` (IMMUTABLE).
+- **Tier C (Protected Research):** `docs/research/`, `data/benchmarks/` (IMMUTABLE).
+- **Tier D (User-Generated Assets):** `data/assets/`, `data/asset_packs/` (DELETABLE via soft trash).
+- **Tier E (Temporary Data):** `data/cache/`, `data/trash/`, caches (CLEANABLE).
+
+> **CRITICAL GUARANTEE:** Deleting user-generated assets or emptying trash **NEVER** touches, corrupts, deletes, or retrains model checkpoints or training datasets.
+
+---
+
+## Quickstart & Local Setup
+
+### 1. Prerequisites
+- Python 3.10 or 3.11
+- PyTorch 2.5.1
+- FastAPI, Uvicorn, Pillow, NumPy
+
+### 2. Launch Local Server & Web Studio
+```powershell
+# Start unified backend & frontend server
+.\start.ps1
+```
+Open your browser to: **`http://127.0.0.1:7860`**
+
+### 3. Run Automated Verification Test Suite
+```bash
+pytest backend/tests -v
+```
+
+---
+
+## Documentation & Research Index
+
+- **Research Overview:** [`docs/research/README.md`](docs/research/README.md)
+- **Chronological Benchmark Index:** [`docs/research/BENCHMARK_INDEX.md`](docs/research/BENCHMARK_INDEX.md)
+- **Data Management & Trash Lifecycle:** [`docs/DATA_MANAGEMENT.md`](docs/DATA_MANAGEMENT.md)
+- **Storage Architecture & DB Schemas:** [`docs/STORAGE_ARCHITECTURE.md`](docs/STORAGE_ARCHITECTURE.md)
+- **GitHub Release Checklist:** [`docs/GIT_RELEASE_CHECKLIST.md`](docs/GIT_RELEASE_CHECKLIST.md)
+- **Stage 2 Learning Validation Report:** [`docs/research/STAGE_2_LEARNING_VALIDATION.md`](docs/research/STAGE_2_LEARNING_VALIDATION.md)
+- **Stage 3 Visual Critic Report:** [`docs/research/STAGE_3_VISUAL_INTELLIGENCE.md`](docs/research/STAGE_3_VISUAL_INTELLIGENCE.md)
+- **Stage 4 Temporal Intelligence Report:** [`docs/research/STAGE_4_TEMPORAL_INTELLIGENCE.md`](docs/research/STAGE_4_TEMPORAL_INTELLIGENCE.md)
+- **Stage 5 Asset Generation Report:** [`docs/research/STAGE_5_GAME_READY_ASSET_GENERATION.md`](docs/research/STAGE_5_GAME_READY_ASSET_GENERATION.md)
+- **Stage 5.5 Data Management & Git Readiness Report:** [`docs/research/STAGE_5_5_DATA_MANAGEMENT_AND_GIT_READINESS.md`](docs/research/STAGE_5_5_DATA_MANAGEMENT_AND_GIT_READINESS.md)

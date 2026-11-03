@@ -1,0 +1,26 @@
+{
+  "name": "default_synth",
+  "total_samples": 20,
+  "splits": {
+    "train": 17,
+    "val": 1,
+    "test": 2
+  },
+  "category_distribution": {
+    "knight": 3,
+    "zombie": 1,
+    "rogue": 1,
+    "wizard": 6,
+    "robot": 2,
+    "slime": 5,
+    "skeleton": 2,
+    "goblin": 0
+  },
+  "defect_distribution": {
+    "clean": 16,
+    "stray_pixel": 1,
+    "silhouette_hole": 2,
+    "missing_feature": 1
+  },
+  "seed": 42
+}

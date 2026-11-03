@@ -1,0 +1,334 @@
+{
+  "id": "sample_000000",
+  "split": "train",
+  "category": "zombie",
+  "style": "retro_8bit",
+  "pose": "run",
+  "has_defect": false,
+  "defect_info": null,
+  "pixel_count": 160,
+  "script_text": "# META: category=zombie style=retro_8bit pose=run palette=pico8 width=32 height=32 frame_idx=0 total_frames=1 seed=42\nLAYER 0 base 1.00\nPART torso none 16 13\nRECT 12 13 8 7 5 1\nLINE 12 19 19 19 6\nEND PART\nPART head torso 16 6\nRECT 12 6 8 7 4 1\nRECT 12 6 8 2 12 1\nEND PART\nPART eyes head 16 9\nPIXEL 13 9 9\nPIXEL 18 9 9\nEND PART\nPART arm_left torso 10 12\nRECT 10 12 2 6 5 1\nPIXEL 10 17 4\nEND PART\nPART arm_right torso 20 16\nRECT 20 16 2 6 5 1\nPIXEL 21 21 4\nEND PART\nPART leg_left torso 15 20\nRECT 15 20 3 6 6 1\nRECT 14 25 4 1 1 1\nEND PART\nPART leg_right torso 14 20\nRECT 14 20 3 6 6 1\nRECT 14 25 4 1 1 1\nEND PART\nEND PROGRAM",
+  "actions": [
+    {
+      "type": "LAYER",
+      "params": {
+        "id": 0,
+        "name": "base",
+        "opacity": 1.0
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "torso",
+        "parent": null,
+        "anchor_x": 16,
+        "anchor_y": 13
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 13,
+        "w": 8,
+        "h": 7,
+        "color": 5,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "LINE",
+      "params": {
+        "x0": 12,
+        "y0": 19,
+        "x1": 19,
+        "y1": 19,
+        "color": 6
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "head",
+        "parent": "torso",
+        "anchor_x": 16,
+        "anchor_y": 6
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 6,
+        "w": 8,
+        "h": 7,
+        "color": 4,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 6,
+        "w": 8,
+        "h": 2,
+        "color": 12,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "eyes",
+        "parent": "head",
+        "anchor_x": 16,
+        "anchor_y": 9
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 13,
+        "y": 9,
+        "color": 9
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 18,
+        "y": 9,
+        "color": 9
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "arm_left",
+        "parent": "torso",
+        "anchor_x": 10,
+        "anchor_y": 12
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 10,
+        "y": 12,
+        "w": 2,
+        "h": 6,
+        "color": 5,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 10,
+        "y": 17,
+        "color": 4
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "arm_right",
+        "parent": "torso",
+        "anchor_x": 20,
+        "anchor_y": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 20,
+        "y": 16,
+        "w": 2,
+        "h": 6,
+        "color": 5,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 21,
+        "y": 21,
+        "color": 4
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "leg_left",
+        "parent": "torso",
+        "anchor_x": 15,
+        "anchor_y": 20
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 15,
+        "y": 20,
+        "w": 3,
+        "h": 6,
+        "color": 6,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 25,
+        "w": 4,
+        "h": 1,
+        "color": 1,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "leg_right",
+        "parent": "torso",
+        "anchor_x": 14,
+        "anchor_y": 20
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 20,
+        "w": 3,
+        "h": 6,
+        "color": 6,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 25,
+        "w": 4,
+        "h": 1,
+        "color": 1,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PROGRAM"
+      },
+      "raw_text": null,
+      "line_number": null
+    }
+  ],
+  "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAABs0lEQVR4nO3cwUnEQBiG4YmsRYi2oVUIghA8WocVWId4koUFwSq0DcUiFNazK7iHoPkn3/Pc9mKCvPyTjOO2BgAAAAAAAAAAAAAA9GpovXs92856/ZPnrn+HB3PfAPMSQDgBhBNAOAGEE0A4AYRbtd7dH899B10zAcIJIJwAwvX/DLBje/P57fNwuyr186oxAcIJIJwAwi1rQfuDNXpY2Jq/ywQIJ4BwAggngHACCCeAcAIIV/4ld335+7n/8f9uZZFMgHACCCeAcOWfAfZZv7zNev2x9c0ECCeAcAIIJ4BwAggngHACCCeAcAIIJ4BwAgg39H4eoLpxU/t7BE2AcAIIJ4Bw5c8DjKfHpf7+vzQmQDgBhBNAuNLvqEvYJxjtA1CZJSCcAMKV3wfY5+nwaNbrn3+8t56ZAOEEEE4A4brfB9jn+upi0j7B3cPjMOn7C+wDUJklIJwAwnW/D1D9/ELbtNJMgHACCCeAcJ4BJvrxnl98zd9lAoQTQDgBhBNAOAGEE0A4AYQTQDgBhBNAOAGEW/yZwNba1P8dHNqCmQDhBBBOAAAAAAAAAAAAAAAAAJ36Av9YK4ofYerzAAAAAElFTkSuQmCC"
+}

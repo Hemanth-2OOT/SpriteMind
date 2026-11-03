@@ -1,0 +1,19 @@
+{
+  "total_epochs": 4,
+  "train_samples": 2000,
+  "val_samples": 500,
+  "best_f1": 0.3902,
+  "precision": 94.12,
+  "recall": 24.62,
+  "accuracy": 89.8,
+  "elapsed_seconds": 35.2,
+  "defect_classes": [
+    "clean",
+    "stray_pixel",
+    "disconnected_part",
+    "palette_leak",
+    "missing_limb",
+    "asymmetry",
+    "unexpected_hole"
+  ]
+}

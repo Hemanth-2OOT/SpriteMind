@@ -1,0 +1,42 @@
+{
+  "dataset_name": "temporal_dataset_1k",
+  "total_sequences": 600,
+  "train_sequences": 487,
+  "val_sequences": 113,
+  "total_characters": 150,
+  "train_characters": 120,
+  "val_characters": 30,
+  "categories": [
+    "knight",
+    "zombie",
+    "rogue",
+    "wizard",
+    "robot",
+    "slime",
+    "skeleton",
+    "goblin",
+    "animal",
+    "fantasy_creature"
+  ],
+  "animation_categories": [
+    "idle",
+    "walk",
+    "run",
+    "jump",
+    "fall",
+    "death",
+    "melee_attack",
+    "ranged_attack",
+    "hit_reaction",
+    "taking_damage",
+    "blocking",
+    "special_ability",
+    "slime_bouncing",
+    "zombie_movement",
+    "skeleton_walking",
+    "robot_movement",
+    "animal_running",
+    "flying_creatures"
+  ],
+  "leakage_free_split": true
+}

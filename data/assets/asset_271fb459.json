@@ -1,0 +1,970 @@
+{
+  "id": "asset_271fb459",
+  "name": "ZOMBIE_4480",
+  "category": "zombie",
+  "tags": [
+    "spritesheet",
+    "4 frames"
+  ],
+  "frames": [
+    {
+      "width": 32,
+      "height": 32,
+      "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAApElEQVR4nGNgGAWjYBQMMGAkWccTs/945WVOkWQmE8MAAxaSdSyWpqoDmMjR9L/yD1FiNHMAYzsLUWI0cwA1ARPDAAMWUjWsPv0Ur3woieYxEm1xEIH8j+6QdcSVB0wMAwyYRh3AMFRyQaipNDgHbGGVxKvO5/dzsFqGdbSqDRkYGOLD/bHmiIUrNzIOuShgGnUAwwADRjL0/KdFwh4Fo4BhoAAA6Ecc7MwrWeIAAAAASUVORK5CYII=",
+      "layers": [
+        {
+          "id": 0,
+          "name": "base",
+          "opacity": 1,
+          "visible": true,
+          "locked": false,
+          "pixel_count": 174
+        }
+      ],
+      "parts": {
+        "torso": {
+          "name": "torso",
+          "parent": null,
+          "anchor_x": 16,
+          "anchor_y": 14,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 14,
+            "max_x": 19,
+            "max_y": 20,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "head": {
+          "name": "head",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 7,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 7,
+            "max_x": 19,
+            "max_y": 13,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "eyes": {
+          "name": "eyes",
+          "parent": "head",
+          "anchor_x": 16,
+          "anchor_y": 10,
+          "pixel_count": 2,
+          "bounding_box": {
+            "min_x": 13,
+            "min_y": 10,
+            "max_x": 18,
+            "max_y": 10,
+            "width": 6,
+            "height": 1
+          }
+        },
+        "arm_left": {
+          "name": "arm_left",
+          "parent": "torso",
+          "anchor_x": 10,
+          "anchor_y": 15,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 10,
+            "min_y": 15,
+            "max_x": 11,
+            "max_y": 20,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "arm_right": {
+          "name": "arm_right",
+          "parent": "torso",
+          "anchor_x": 20,
+          "anchor_y": 15,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 20,
+            "min_y": 15,
+            "max_x": 21,
+            "max_y": 20,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "leg_left": {
+          "name": "leg_left",
+          "parent": "torso",
+          "anchor_x": 13,
+          "anchor_y": 21,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 21,
+            "max_x": 15,
+            "max_y": 26,
+            "width": 4,
+            "height": 6
+          }
+        },
+        "leg_right": {
+          "name": "leg_right",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 21,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 16,
+            "min_y": 21,
+            "max_x": 19,
+            "max_y": 26,
+            "width": 4,
+            "height": 6
+          }
+        }
+      },
+      "palette": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          29,
+          43,
+          83,
+          255
+        ],
+        [
+          126,
+          37,
+          83,
+          255
+        ],
+        [
+          0,
+          135,
+          81,
+          255
+        ],
+        [
+          171,
+          82,
+          54,
+          255
+        ],
+        [
+          95,
+          87,
+          79,
+          255
+        ],
+        [
+          194,
+          195,
+          199,
+          255
+        ],
+        [
+          255,
+          241,
+          232,
+          255
+        ],
+        [
+          255,
+          0,
+          77,
+          255
+        ],
+        [
+          255,
+          163,
+          0,
+          255
+        ],
+        [
+          255,
+          236,
+          39,
+          255
+        ],
+        [
+          0,
+          228,
+          54,
+          255
+        ],
+        [
+          41,
+          173,
+          255,
+          255
+        ],
+        [
+          131,
+          118,
+          156,
+          255
+        ],
+        [
+          255,
+          119,
+          168,
+          255
+        ],
+        [
+          255,
+          204,
+          170,
+          255
+        ]
+      ],
+      "validation": {
+        "is_valid": true,
+        "errors": [],
+        "warnings": [],
+        "total_actions": 30,
+        "invalid_action_count": 0,
+        "invalid_action_rate": 0
+      },
+      "execution_time_ms": 0.42,
+      "pixel_count": 174,
+      "passes": {
+        "silhouette": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAV0lEQVR4nO2VUQrAMAxC1fvf2bIDLJBSyEZ9/waJxAAhhGHYFdh2OZBszRSGUQwgEdweAU/d/24fCMMoBnB7BNwRvV1E9xM+jG9AMYC/ReCikrt1HcInWM98FB5hHpwZAAAAAElFTkSuQmCC",
+        "edge_map": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAeElEQVR4nO2VwQ6AMAhDodn//zJePSxKkYmLvDPQQrpMpGmaYpTuMLPriUrNhBSDvQ2oKnvyPAN6En5oIi+EdwGdMNiGqNBnQ8ht7dncW0djxFCiFlIMqg2Mvf4Cc4ZwOTYRCQpDisHvDYzwBZLChlThV15A00guB1DINgL8XjLbAAAAAElFTkSuQmCC",
+        "segmentation": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAlUlEQVR4nGNgGAWjYBQMMGAkVYNNxf//+OSPdDCSZCYTwwADpqHpgLxA4sSIAIykahhNA9QGLKRqOHzElqpxykKswmcnNCD5vwS/ui1uz8DqfHZJMQ7jbEhFwERNw0YdQJeSEAT+90BzBAMDg2bUFhiT4YaUCsnmMTEMMGAadQDDUIuC/0gJEB1oPLuDt7k2CkbBoAQAlxIdUbtmh3EAAAAASUVORK5CYII="
+      },
+      "frame_index": 0,
+      "script_text": "# META: category=zombie style=classic_16bit pose=idle palette=pico8 width=32 height=32 frame_idx=0 total_frames=4 seed=42\nLAYER 0 base 1.00\nPART torso none 16 14\nRECT 12 14 8 7 5 1\nLINE 12 20 19 20 6\nEND PART\nPART head torso 16 7\nRECT 12 7 8 7 4 1\nRECT 12 7 8 2 12 1\nEND PART\nPART eyes head 16 10\nPIXEL 13 10 9\nPIXEL 18 10 9\nEND PART\nPART arm_left torso 10 15\nRECT 10 15 2 6 5 1\nPIXEL 10 20 4\nEND PART\nPART arm_right torso 20 15\nRECT 20 15 2 6 5 1\nPIXEL 21 20 4\nEND PART\nPART leg_left torso 13 21\nRECT 13 21 3 6 6 1\nRECT 12 26 4 1 1 1\nEND PART\nPART leg_right torso 16 21\nRECT 16 21 3 6 6 1\nRECT 16 26 4 1 1 1\nEND PART\nEND PROGRAM"
+    },
+    {
+      "width": 32,
+      "height": 32,
+      "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAoklEQVR4nGNgGAWjYBSMdMBIso4nZv/xysucIslMJoYBBiwk61gsTVUHMJGj6X/lH6LEaOYAxnYWosRo5gBqAiaGAQYspGpYffopXvlQEs1jJNriIAL5H90h64grD5gYBhgwjTqAYajkglBTaXAO2MIqiVedz+/nYLUM62hVGzIwMMSH+2PNEQtXbmQcclHANOoAhgEGjGTo+U+LhD0KRi4AAFUKHOwlmKAoAAAAAElFTkSuQmCC",
+      "layers": [
+        {
+          "id": 0,
+          "name": "base",
+          "opacity": 1,
+          "visible": true,
+          "locked": false,
+          "pixel_count": 174
+        }
+      ],
+      "parts": {
+        "torso": {
+          "name": "torso",
+          "parent": null,
+          "anchor_x": 16,
+          "anchor_y": 15,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 15,
+            "max_x": 19,
+            "max_y": 21,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "head": {
+          "name": "head",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 8,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 8,
+            "max_x": 19,
+            "max_y": 14,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "eyes": {
+          "name": "eyes",
+          "parent": "head",
+          "anchor_x": 16,
+          "anchor_y": 11,
+          "pixel_count": 2,
+          "bounding_box": {
+            "min_x": 13,
+            "min_y": 11,
+            "max_x": 18,
+            "max_y": 11,
+            "width": 6,
+            "height": 1
+          }
+        },
+        "arm_left": {
+          "name": "arm_left",
+          "parent": "torso",
+          "anchor_x": 10,
+          "anchor_y": 16,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 10,
+            "min_y": 16,
+            "max_x": 11,
+            "max_y": 21,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "arm_right": {
+          "name": "arm_right",
+          "parent": "torso",
+          "anchor_x": 20,
+          "anchor_y": 16,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 20,
+            "min_y": 16,
+            "max_x": 21,
+            "max_y": 21,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "leg_left": {
+          "name": "leg_left",
+          "parent": "torso",
+          "anchor_x": 13,
+          "anchor_y": 22,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 22,
+            "max_x": 15,
+            "max_y": 27,
+            "width": 4,
+            "height": 6
+          }
+        },
+        "leg_right": {
+          "name": "leg_right",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 22,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 16,
+            "min_y": 22,
+            "max_x": 19,
+            "max_y": 27,
+            "width": 4,
+            "height": 6
+          }
+        }
+      },
+      "palette": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          29,
+          43,
+          83,
+          255
+        ],
+        [
+          126,
+          37,
+          83,
+          255
+        ],
+        [
+          0,
+          135,
+          81,
+          255
+        ],
+        [
+          171,
+          82,
+          54,
+          255
+        ],
+        [
+          95,
+          87,
+          79,
+          255
+        ],
+        [
+          194,
+          195,
+          199,
+          255
+        ],
+        [
+          255,
+          241,
+          232,
+          255
+        ],
+        [
+          255,
+          0,
+          77,
+          255
+        ],
+        [
+          255,
+          163,
+          0,
+          255
+        ],
+        [
+          255,
+          236,
+          39,
+          255
+        ],
+        [
+          0,
+          228,
+          54,
+          255
+        ],
+        [
+          41,
+          173,
+          255,
+          255
+        ],
+        [
+          131,
+          118,
+          156,
+          255
+        ],
+        [
+          255,
+          119,
+          168,
+          255
+        ],
+        [
+          255,
+          204,
+          170,
+          255
+        ]
+      ],
+      "validation": {
+        "is_valid": true,
+        "errors": [],
+        "warnings": [],
+        "total_actions": 30,
+        "invalid_action_count": 0,
+        "invalid_action_rate": 0
+      },
+      "execution_time_ms": 0.37,
+      "pixel_count": 174,
+      "frame_index": 1,
+      "script_text": "# META: category=zombie style=classic_16bit pose=idle palette=pico8 width=32 height=32 frame_idx=1 total_frames=4 seed=42\nLAYER 0 base 1.00\nPART torso none 16 15\nRECT 12 15 8 7 5 1\nLINE 12 21 19 21 6\nEND PART\nPART head torso 16 8\nRECT 12 8 8 7 4 1\nRECT 12 8 8 2 12 1\nEND PART\nPART eyes head 16 11\nPIXEL 13 11 9\nPIXEL 18 11 9\nEND PART\nPART arm_left torso 10 16\nRECT 10 16 2 6 5 1\nPIXEL 10 21 4\nEND PART\nPART arm_right torso 20 16\nRECT 20 16 2 6 5 1\nPIXEL 21 21 4\nEND PART\nPART leg_left torso 13 22\nRECT 13 22 3 6 6 1\nRECT 12 27 4 1 1 1\nEND PART\nPART leg_right torso 16 22\nRECT 16 22 3 6 6 1\nRECT 16 27 4 1 1 1\nEND PART\nEND PROGRAM"
+    },
+    {
+      "width": 32,
+      "height": 32,
+      "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAApElEQVR4nGNgGAWjYBQMMGAkWccTs/945WVOkWQmE8MAAxaSdSyWpqoDmMjR9L/yD1FiNHMAYzsLUWI0cwA1ARPDAAMWUjWsPv0Ur3woieYxEm1xEIH8j+6QdcSVB0wMAwyYRh3AMFRyQaipNDgHbGGVxKvO5/dzsFqGdbSqDRkYGOLD/bHmiIUrNzIOuShgGnUAwwADRjL0/KdFwh4Fo4BhoAAA6Ecc7MwrWeIAAAAASUVORK5CYII=",
+      "layers": [
+        {
+          "id": 0,
+          "name": "base",
+          "opacity": 1,
+          "visible": true,
+          "locked": false,
+          "pixel_count": 174
+        }
+      ],
+      "parts": {
+        "torso": {
+          "name": "torso",
+          "parent": null,
+          "anchor_x": 16,
+          "anchor_y": 14,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 14,
+            "max_x": 19,
+            "max_y": 20,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "head": {
+          "name": "head",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 7,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 7,
+            "max_x": 19,
+            "max_y": 13,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "eyes": {
+          "name": "eyes",
+          "parent": "head",
+          "anchor_x": 16,
+          "anchor_y": 10,
+          "pixel_count": 2,
+          "bounding_box": {
+            "min_x": 13,
+            "min_y": 10,
+            "max_x": 18,
+            "max_y": 10,
+            "width": 6,
+            "height": 1
+          }
+        },
+        "arm_left": {
+          "name": "arm_left",
+          "parent": "torso",
+          "anchor_x": 10,
+          "anchor_y": 15,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 10,
+            "min_y": 15,
+            "max_x": 11,
+            "max_y": 20,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "arm_right": {
+          "name": "arm_right",
+          "parent": "torso",
+          "anchor_x": 20,
+          "anchor_y": 15,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 20,
+            "min_y": 15,
+            "max_x": 21,
+            "max_y": 20,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "leg_left": {
+          "name": "leg_left",
+          "parent": "torso",
+          "anchor_x": 13,
+          "anchor_y": 21,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 21,
+            "max_x": 15,
+            "max_y": 26,
+            "width": 4,
+            "height": 6
+          }
+        },
+        "leg_right": {
+          "name": "leg_right",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 21,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 16,
+            "min_y": 21,
+            "max_x": 19,
+            "max_y": 26,
+            "width": 4,
+            "height": 6
+          }
+        }
+      },
+      "palette": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          29,
+          43,
+          83,
+          255
+        ],
+        [
+          126,
+          37,
+          83,
+          255
+        ],
+        [
+          0,
+          135,
+          81,
+          255
+        ],
+        [
+          171,
+          82,
+          54,
+          255
+        ],
+        [
+          95,
+          87,
+          79,
+          255
+        ],
+        [
+          194,
+          195,
+          199,
+          255
+        ],
+        [
+          255,
+          241,
+          232,
+          255
+        ],
+        [
+          255,
+          0,
+          77,
+          255
+        ],
+        [
+          255,
+          163,
+          0,
+          255
+        ],
+        [
+          255,
+          236,
+          39,
+          255
+        ],
+        [
+          0,
+          228,
+          54,
+          255
+        ],
+        [
+          41,
+          173,
+          255,
+          255
+        ],
+        [
+          131,
+          118,
+          156,
+          255
+        ],
+        [
+          255,
+          119,
+          168,
+          255
+        ],
+        [
+          255,
+          204,
+          170,
+          255
+        ]
+      ],
+      "validation": {
+        "is_valid": true,
+        "errors": [],
+        "warnings": [],
+        "total_actions": 30,
+        "invalid_action_count": 0,
+        "invalid_action_rate": 0
+      },
+      "execution_time_ms": 1.04,
+      "pixel_count": 174,
+      "frame_index": 2,
+      "script_text": "# META: category=zombie style=classic_16bit pose=idle palette=pico8 width=32 height=32 frame_idx=2 total_frames=4 seed=42\nLAYER 0 base 1.00\nPART torso none 16 14\nRECT 12 14 8 7 5 1\nLINE 12 20 19 20 6\nEND PART\nPART head torso 16 7\nRECT 12 7 8 7 4 1\nRECT 12 7 8 2 12 1\nEND PART\nPART eyes head 16 10\nPIXEL 13 10 9\nPIXEL 18 10 9\nEND PART\nPART arm_left torso 10 15\nRECT 10 15 2 6 5 1\nPIXEL 10 20 4\nEND PART\nPART arm_right torso 20 15\nRECT 20 15 2 6 5 1\nPIXEL 21 20 4\nEND PART\nPART leg_left torso 13 21\nRECT 13 21 3 6 6 1\nRECT 12 26 4 1 1 1\nEND PART\nPART leg_right torso 16 21\nRECT 16 21 3 6 6 1\nRECT 16 26 4 1 1 1\nEND PART\nEND PROGRAM"
+    },
+    {
+      "width": 32,
+      "height": 32,
+      "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAoklEQVR4nGNgGAWjYBSMdMBIso4nZv/xysucIslMJoYBBiwk61gsTVUHMJGj6X/lH6LEaOYAxnYWosRo5gBqAiaGAQYspGpYffopXvlQEs1jJNriIAL5H90h64grD5gYBhgwjTqAYajkglBTaXAO2MIqiVedz+/nYLUM62hVGzIwMMSH+2PNEQtXbmQcclHANOoAhgEGjGTo+U+LhD0KRi4AAFUKHOwlmKAoAAAAAElFTkSuQmCC",
+      "layers": [
+        {
+          "id": 0,
+          "name": "base",
+          "opacity": 1,
+          "visible": true,
+          "locked": false,
+          "pixel_count": 174
+        }
+      ],
+      "parts": {
+        "torso": {
+          "name": "torso",
+          "parent": null,
+          "anchor_x": 16,
+          "anchor_y": 15,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 15,
+            "max_x": 19,
+            "max_y": 21,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "head": {
+          "name": "head",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 8,
+          "pixel_count": 56,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 8,
+            "max_x": 19,
+            "max_y": 14,
+            "width": 8,
+            "height": 7
+          }
+        },
+        "eyes": {
+          "name": "eyes",
+          "parent": "head",
+          "anchor_x": 16,
+          "anchor_y": 11,
+          "pixel_count": 2,
+          "bounding_box": {
+            "min_x": 13,
+            "min_y": 11,
+            "max_x": 18,
+            "max_y": 11,
+            "width": 6,
+            "height": 1
+          }
+        },
+        "arm_left": {
+          "name": "arm_left",
+          "parent": "torso",
+          "anchor_x": 10,
+          "anchor_y": 16,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 10,
+            "min_y": 16,
+            "max_x": 11,
+            "max_y": 21,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "arm_right": {
+          "name": "arm_right",
+          "parent": "torso",
+          "anchor_x": 20,
+          "anchor_y": 16,
+          "pixel_count": 12,
+          "bounding_box": {
+            "min_x": 20,
+            "min_y": 16,
+            "max_x": 21,
+            "max_y": 21,
+            "width": 2,
+            "height": 6
+          }
+        },
+        "leg_left": {
+          "name": "leg_left",
+          "parent": "torso",
+          "anchor_x": 13,
+          "anchor_y": 22,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 12,
+            "min_y": 22,
+            "max_x": 15,
+            "max_y": 27,
+            "width": 4,
+            "height": 6
+          }
+        },
+        "leg_right": {
+          "name": "leg_right",
+          "parent": "torso",
+          "anchor_x": 16,
+          "anchor_y": 22,
+          "pixel_count": 19,
+          "bounding_box": {
+            "min_x": 16,
+            "min_y": 22,
+            "max_x": 19,
+            "max_y": 27,
+            "width": 4,
+            "height": 6
+          }
+        }
+      },
+      "palette": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          29,
+          43,
+          83,
+          255
+        ],
+        [
+          126,
+          37,
+          83,
+          255
+        ],
+        [
+          0,
+          135,
+          81,
+          255
+        ],
+        [
+          171,
+          82,
+          54,
+          255
+        ],
+        [
+          95,
+          87,
+          79,
+          255
+        ],
+        [
+          194,
+          195,
+          199,
+          255
+        ],
+        [
+          255,
+          241,
+          232,
+          255
+        ],
+        [
+          255,
+          0,
+          77,
+          255
+        ],
+        [
+          255,
+          163,
+          0,
+          255
+        ],
+        [
+          255,
+          236,
+          39,
+          255
+        ],
+        [
+          0,
+          228,
+          54,
+          255
+        ],
+        [
+          41,
+          173,
+          255,
+          255
+        ],
+        [
+          131,
+          118,
+          156,
+          255
+        ],
+        [
+          255,
+          119,
+          168,
+          255
+        ],
+        [
+          255,
+          204,
+          170,
+          255
+        ]
+      ],
+      "validation": {
+        "is_valid": true,
+        "errors": [],
+        "warnings": [],
+        "total_actions": 30,
+        "invalid_action_count": 0,
+        "invalid_action_rate": 0
+      },
+      "execution_time_ms": 0.41,
+      "pixel_count": 174,
+      "frame_index": 3,
+      "script_text": "# META: category=zombie style=classic_16bit pose=idle palette=pico8 width=32 height=32 frame_idx=3 total_frames=4 seed=42\nLAYER 0 base 1.00\nPART torso none 16 15\nRECT 12 15 8 7 5 1\nLINE 12 21 19 21 6\nEND PART\nPART head torso 16 8\nRECT 12 8 8 7 4 1\nRECT 12 8 8 2 12 1\nEND PART\nPART eyes head 16 11\nPIXEL 13 11 9\nPIXEL 18 11 9\nEND PART\nPART arm_left torso 10 16\nRECT 10 16 2 6 5 1\nPIXEL 10 21 4\nEND PART\nPART arm_right torso 20 16\nRECT 20 16 2 6 5 1\nPIXEL 21 21 4\nEND PART\nPART leg_left torso 13 22\nRECT 13 22 3 6 6 1\nRECT 12 27 4 1 1 1\nEND PART\nPART leg_right torso 16 22\nRECT 16 22 3 6 6 1\nRECT 16 27 4 1 1 1\nEND PART\nEND PROGRAM"
+    }
+  ],
+  "metadata": {},
+  "created_at": "2026-11-03 12:28:54"
+}

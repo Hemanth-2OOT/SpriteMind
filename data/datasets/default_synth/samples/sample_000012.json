@@ -1,0 +1,387 @@
+{
+  "id": "sample_000012",
+  "split": "train",
+  "category": "knight",
+  "style": "classic_16bit",
+  "pose": "run",
+  "has_defect": false,
+  "defect_info": null,
+  "pixel_count": 170,
+  "script_text": "# META: category=knight style=classic_16bit pose=run palette=pico8 width=32 height=32 frame_idx=0 total_frames=1 seed=198\nLAYER 0 base 1.00\nPART torso none 16 13\nRECT 12 13 8 7 7 1\nLINE 12 19 19 19 2\nEND PART\nPART head torso 16 6\nRECT 12 6 8 7 16 1\nRECT 12 6 8 2 7 1\nEND PART\nPART eyes head 16 9\nPIXEL 13 9 1\nPIXEL 18 9 1\nEND PART\nPART arm_left torso 10 12\nRECT 10 12 2 6 7 1\nPIXEL 10 17 16\nEND PART\nPART arm_right torso 20 16\nRECT 20 16 2 6 7 1\nPIXEL 21 21 16\nEND PART\nPART leg_left torso 15 20\nRECT 15 20 3 6 2 1\nRECT 14 25 4 1 1 1\nEND PART\nPART leg_right torso 14 20\nRECT 14 20 3 6 2 1\nRECT 14 25 4 1 1 1\nEND PART\nLAYER 1 equipment 1.00\nPART weapon arm_right 22 18\nLINE 22 18 22 10 7\nLINE 21 16 23 16 10\nEND PART\nEND PROGRAM",
+  "actions": [
+    {
+      "type": "LAYER",
+      "params": {
+        "id": 0,
+        "name": "base",
+        "opacity": 1.0
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "torso",
+        "parent": null,
+        "anchor_x": 16,
+        "anchor_y": 13
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 13,
+        "w": 8,
+        "h": 7,
+        "color": 7,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "LINE",
+      "params": {
+        "x0": 12,
+        "y0": 19,
+        "x1": 19,
+        "y1": 19,
+        "color": 2
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "head",
+        "parent": "torso",
+        "anchor_x": 16,
+        "anchor_y": 6
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 6,
+        "w": 8,
+        "h": 7,
+        "color": 16,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 12,
+        "y": 6,
+        "w": 8,
+        "h": 2,
+        "color": 7,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "eyes",
+        "parent": "head",
+        "anchor_x": 16,
+        "anchor_y": 9
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 13,
+        "y": 9,
+        "color": 1
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 18,
+        "y": 9,
+        "color": 1
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "arm_left",
+        "parent": "torso",
+        "anchor_x": 10,
+        "anchor_y": 12
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 10,
+        "y": 12,
+        "w": 2,
+        "h": 6,
+        "color": 7,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 10,
+        "y": 17,
+        "color": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "arm_right",
+        "parent": "torso",
+        "anchor_x": 20,
+        "anchor_y": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 20,
+        "y": 16,
+        "w": 2,
+        "h": 6,
+        "color": 7,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PIXEL",
+      "params": {
+        "x": 21,
+        "y": 21,
+        "color": 16
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "leg_left",
+        "parent": "torso",
+        "anchor_x": 15,
+        "anchor_y": 20
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 15,
+        "y": 20,
+        "w": 3,
+        "h": 6,
+        "color": 2,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 25,
+        "w": 4,
+        "h": 1,
+        "color": 1,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "leg_right",
+        "parent": "torso",
+        "anchor_x": 14,
+        "anchor_y": 20
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 20,
+        "w": 3,
+        "h": 6,
+        "color": 2,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "RECT",
+      "params": {
+        "x": 14,
+        "y": 25,
+        "w": 4,
+        "h": 1,
+        "color": 1,
+        "filled": true
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "LAYER",
+      "params": {
+        "id": 1,
+        "name": "equipment",
+        "opacity": 1.0
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "PART",
+      "params": {
+        "name": "weapon",
+        "parent": "arm_right",
+        "anchor_x": 22,
+        "anchor_y": 18
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "LINE",
+      "params": {
+        "x0": 22,
+        "y0": 18,
+        "x1": 22,
+        "y1": 10,
+        "color": 7
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "LINE",
+      "params": {
+        "x0": 21,
+        "y0": 16,
+        "x1": 23,
+        "y1": 16,
+        "color": 10
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PART"
+      },
+      "raw_text": null,
+      "line_number": null
+    },
+    {
+      "type": "END",
+      "params": {
+        "target": "PROGRAM"
+      },
+      "raw_text": null,
+      "line_number": null
+    }
+  ],
+  "image_base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAABwElEQVR4nO3dMU4CQRiG4VlD4yE4gS0NxXIJEzpvwWG8gA2Jl5DChtbehENYrrU0K1nNzuz3PJ2JWTfy5mcYRiwFAAAAAAAAAAAAAABoVVca93Z6H+b8+bt+2/Tv8G7uG2BeAggngHACCCeAcAIIJ4Bwq9K4/v4y9y00zQQIJ4BwAgjX/BrgWrfZ//h6OB+rul5tTIBwAggngHCLWwP89XP0MPF61+cVajs/YAKEE0A4AYQTQDgBhBNAOAGEW7V/7t95gClMgHACCCeAcNWvAcacvtZz30LTTIBwAggngHACCCeAcAIIJ4BwAggngHACCCeAcFWdUa/xcwBv1X9ub/r+7mnex8AECCeAcAIIV/0aYDgfhyW9/7/zt4HUxFNAOAGEq/5MYLfZd0vaJ6iNCRBOAOEEEK76fYAx64fHWdcAL8+Hpl73XzMBwgkgnADCVb8PMOby8dr95xrhMnL9Ug5N70OYAOEEEE4A4ZpfA9Smb+x/GJkA4QQQTgDhrAEmqn2vf4wJEE4A4QQQTgDhBBBOAOEEEE4A4QQQTgDhBBCu6X3sX5p6Zq8rC2YChBNAOAEAAAAAAAAAAAAAAAA06hsucThUCoXrEAAAAABJRU5ErkJggg=="
+}

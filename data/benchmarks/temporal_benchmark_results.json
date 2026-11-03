@@ -1,0 +1,62 @@
+{
+  "total_sequences_evaluated": 100,
+  "categories_tested": [
+    "knight",
+    "zombie",
+    "rogue",
+    "wizard",
+    "robot",
+    "slime",
+    "skeleton",
+    "goblin",
+    "animal",
+    "fantasy_creature"
+  ],
+  "animation_types_tested": [
+    "idle",
+    "walk",
+    "run",
+    "jump",
+    "fall",
+    "death",
+    "melee_attack",
+    "ranged_attack",
+    "hit_reaction",
+    "taking_damage",
+    "blocking",
+    "special_ability",
+    "slime_bouncing",
+    "zombie_movement",
+    "skeleton_walking",
+    "robot_movement",
+    "animal_running",
+    "flying_creatures"
+  ],
+  "summary": {
+    "procedural_baseline": {
+      "mean_identity_iou": 0.9031,
+      "mean_smoothness": 90.6,
+      "mean_loop_consistency": 0.9694,
+      "mean_flicker_rate_pct": 0.179,
+      "mean_palette_adherence": 100.0,
+      "mean_latency_ms": 2.89
+    },
+    "untrained_model": {
+      "mean_identity_iou": 1.0,
+      "mean_smoothness": 100.0,
+      "mean_loop_consistency": 1.0,
+      "mean_flicker_rate_pct": 0.0,
+      "mean_palette_adherence": 100.0,
+      "mean_latency_ms": 5.52
+    },
+    "trained_model": {
+      "mean_identity_iou": 0.9553,
+      "mean_smoothness": 98.19,
+      "mean_loop_consistency": 0.9958,
+      "mean_flicker_rate_pct": 0.06,
+      "mean_palette_adherence": 100.0,
+      "mean_latency_ms": 6.75
+    }
+  },
+  "timestamp": "2026-11-03 15:25:45"
+}

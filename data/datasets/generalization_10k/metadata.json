@@ -1,0 +1,31 @@
+{
+  "name": "generalization_10k",
+  "total_samples": 10000,
+  "splits": {
+    "train": 8000,
+    "val": 1000,
+    "test": 1000
+  },
+  "category_distribution": {
+    "knight": 1000,
+    "zombie": 1000,
+    "rogue": 1000,
+    "wizard": 1000,
+    "robot": 1000,
+    "slime": 1000,
+    "skeleton": 1000,
+    "goblin": 1000,
+    "animal": 1000,
+    "fantasy_creature": 1000
+  },
+  "defect_distribution": {
+    "clean": 8507,
+    "stray_pixel": 339,
+    "disconnected_part": 241,
+    "palette_clash": 308,
+    "missing_feature": 312,
+    "silhouette_hole": 293
+  },
+  "seed": 42,
+  "leakage_prevention": "Strict character_id template hash partition"
+}
