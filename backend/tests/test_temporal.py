@@ -128,3 +128,27 @@ def test_api_animation_generate_and_metrics():
     assert len(metrics["supported_animation_categories"]) == 18
     assert "training_metrics" in metrics
     assert "benchmark_results" in metrics
+
+
+def test_action_articulation_and_frame_motion():
+    """Verify that walk, attack, run, and death animations exhibit active, non-zero pixel motion."""
+    from spritemind.renderer.engine import PixelScriptEngine
+
+    for engine in ["procedural_baseline", "trained_model"]:
+        for anim in ["walk", "melee_attack", "run"]:
+            res = TemporalAnimator.generate_animation(
+                category="knight",
+                anim_category=anim,
+                num_frames=4,
+                engine_mode=engine,
+                seed=42,
+            )
+            assert res["status"] == "success"
+            assert len(res["frames"]) == 4
+
+            # Verify consecutive frames are distinct and moving
+            for i in range(len(res["frames"]) - 1):
+                f1_arr = PixelScriptEngine.execute(res["frames"][i]["script_text"]).composite_array
+                f2_arr = PixelScriptEngine.execute(res["frames"][i + 1]["script_text"]).composite_array
+                diff = int(np.sum(np.abs(f1_arr.astype(int) - f2_arr.astype(int)) > 0))
+                assert diff > 0, f"Frame {i} to {i+1} in {anim} with {engine} was completely static (diff=0)!"

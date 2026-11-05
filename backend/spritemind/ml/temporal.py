@@ -257,8 +257,11 @@ class TemporalAnimator:
         is_looping = anim_category in CYCLIC_ANIMATIONS
 
         # 1. Obtain or render reference Frame 0 (Base identity)
-        if base_script_or_prompt and "LAYER" in base_script_or_prompt:
+        if base_script_or_prompt and isinstance(base_script_or_prompt, str) and ("LAYER" in base_script_or_prompt or "COLOR" in base_script_or_prompt):
             base_script = base_script_or_prompt
+            base_res = PixelScriptEngine.execute(base_script, width=width, height=height, palette_name=palette_name)
+        elif base_script_or_prompt and isinstance(base_script_or_prompt, PixelScriptProgram):
+            base_script = PixelScriptSerializer.serialize_program(base_script_or_prompt)
             base_res = PixelScriptEngine.execute(base_script, width=width, height=height, palette_name=palette_name)
         else:
             base_prog = CharacterGenerator.generate_character(
@@ -308,13 +311,44 @@ class TemporalAnimator:
                 traj = out["trajectories"][0].cpu().numpy()  # (SeqLen, num_parts, 3)
                 ident_conf = float(out["identity_confidence"].mean().item())
 
-            # Synthesize frames using model-predicted trajectories
+            # Synthesize frames using model-predicted trajectories with kinematic prior calibration
             for f_idx in range(num_frames):
-                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip()]
+                phase = phase_vals[f_idx]
+                prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
+                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
+                
                 for p_idx, part_name in enumerate(PARTS):
-                    dx = int(round(traj[f_idx, p_idx, 0]))
-                    dy = int(round(traj[f_idx, p_idx, 1]))
-                    rot = int(round(traj[f_idx, p_idx, 2]))
+                    pred_dx = float(traj[f_idx, p_idx, 0])
+                    pred_dy = float(traj[f_idx, p_idx, 1])
+                    pred_rot = float(traj[f_idx, p_idx, 2])
+                    
+                    prior_dx, prior_dy, prior_rot = prior_offsets.get(part_name, (0, 0, 0))
+                    
+                    # Adaptively scale sub-pixel neural trajectory to integer grid
+                    prior_mag = math.hypot(prior_dx, prior_dy)
+                    pred_mag = math.hypot(pred_dx, pred_dy)
+                    if pred_mag > 1e-4 and prior_mag > 0:
+                        scale_xy = min(max(1.0, prior_mag / (pred_mag + 1e-3)), 5.0)
+                    else:
+                        scale_xy = 1.0
+
+                    rot_scale = 1.0
+                    if abs(pred_rot) > 1e-4 and abs(prior_rot) > 0:
+                        rot_scale = min(max(1.0, abs(prior_rot) / (abs(pred_rot) + 1e-3)), 6.0)
+
+                    # Dynamic blend: 70% learned neural signal + 30% anatomical prior
+                    dx = int(round(0.7 * (pred_dx * scale_xy) + 0.3 * prior_dx))
+                    dy = int(round(0.7 * (pred_dy * scale_xy) + 0.3 * prior_dy))
+                    rot = int(round(0.7 * (pred_rot * rot_scale) + 0.3 * prior_rot))
+
+                    # If prior has clear intended displacement and rounding flattened to zero, keep minimal motion
+                    if dx == 0 and prior_dx != 0:
+                        dx = 1 if prior_dx > 0 else -1
+                    if dy == 0 and prior_dy != 0:
+                        dy = 1 if prior_dy > 0 else -1
+                    if rot == 0 and abs(prior_rot) >= 5:
+                        rot = int(round(prior_rot * 0.5))
+
                     if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
 
@@ -333,7 +367,7 @@ class TemporalAnimator:
             for f_idx in range(num_frames):
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
-                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip()]
+                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
                 for part_name, (dx, dy, rot) in offsets.items():
                     if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")

@@ -95,99 +95,136 @@ class TemporalDatasetGenerator:
             offsets["arm_right"] = (0, bob, 0)
 
         elif anim_category == "walk":
-            # Alternating leg stride and counter-arm swing
+            # Alternating leg stride, foot lift, and counter-arm swing with rotation
             stride = int(round(math.sin(rad) * 2.0))
             arm_swing = int(round(math.cos(rad) * 2.0))
             bob = -1 if abs(stride) > 1 else 0
             offsets["torso"] = (0, bob, 0)
             offsets["head"] = (0, bob, 0)
-            offsets["leg_left"] = (stride, 0, 0)
-            offsets["leg_right"] = (-stride, 0, 0)
-            offsets["arm_left"] = (0, arm_swing, 0)
-            offsets["arm_right"] = (0, -arm_swing, 0)
-            offsets["weapon"] = (0, -arm_swing, 0)
+            offsets["leg_left"] = (stride, -1 if stride > 0 else 0, stride * 8)
+            offsets["leg_right"] = (-stride, -1 if stride < 0 else 0, -stride * 8)
+            offsets["arm_left"] = (0, arm_swing, arm_swing * 12)
+            offsets["arm_right"] = (0, -arm_swing, -arm_swing * 12)
+            offsets["weapon"] = (0, -arm_swing, -arm_swing * 15)
 
         elif anim_category == "run":
-            # Dynamic leaning stride with exaggerated arm drive
+            # Dynamic leaning stride with exaggerated arm drive and rotation
             stride = int(round(math.sin(rad) * 3.5))
             arm_swing = int(round(math.cos(rad) * 3.0))
             bob = -1 if math.sin(rad * 2.0) > 0 else 1
-            offsets["torso"] = (1, bob, 5)
-            offsets["head"] = (1, bob, 0)
-            offsets["leg_left"] = (stride, 0, 0)
-            offsets["leg_right"] = (-stride, 0, 0)
-            offsets["arm_left"] = (-1, arm_swing, 0)
-            offsets["arm_right"] = (1, -arm_swing, 0)
-            offsets["weapon"] = (1, -arm_swing, 10)
+            offsets["torso"] = (1, bob, 6)
+            offsets["head"] = (1, bob, 3)
+            offsets["leg_left"] = (stride, -1 if stride > 0 else 1, stride * 12)
+            offsets["leg_right"] = (-stride, -1 if stride < 0 else 1, -stride * 12)
+            offsets["arm_left"] = (-1, arm_swing, arm_swing * 20)
+            offsets["arm_right"] = (1, -arm_swing, -arm_swing * 20)
+            offsets["weapon"] = (1, -arm_swing, 10 - arm_swing * 15)
 
         elif anim_category == "jump":
-            # Anticipation -> Apex -> Descent
+            # Anticipation -> Apex flight -> Descent & Landing
             if phase < 0.2:
                 # Squash anticipation
                 offsets["torso"] = (0, 2, 0)
                 offsets["head"] = (0, 2, 0)
+                offsets["leg_left"] = (-1, 1, 5)
+                offsets["leg_right"] = (1, 1, -5)
+                offsets["arm_left"] = (0, 1, 0)
+                offsets["arm_right"] = (0, 1, 0)
             elif phase < 0.7:
-                # Airborne apex
+                # Airborne apex with limb extension
                 apex_y = -int(round(math.sin((phase - 0.2) / 0.5 * math.pi) * 6.0))
                 offsets["torso"] = (0, apex_y, 0)
                 offsets["head"] = (0, apex_y - 1, 0)
-                offsets["leg_left"] = (-1, apex_y + 1, 0)
-                offsets["leg_right"] = (1, apex_y + 1, 0)
-                offsets["arm_left"] = (0, apex_y - 2, 0)
-                offsets["arm_right"] = (0, apex_y - 2, 0)
+                offsets["leg_left"] = (-1, apex_y + 2, -10)
+                offsets["leg_right"] = (1, apex_y + 2, 10)
+                offsets["arm_left"] = (-1, apex_y - 2, 20)
+                offsets["arm_right"] = (1, apex_y - 2, -20)
+                offsets["weapon"] = (2, apex_y - 3, -15)
             else:
                 # Landing compression
                 offsets["torso"] = (0, 1, 0)
                 offsets["head"] = (0, 1, 0)
+                offsets["leg_left"] = (0, 0, 0)
+                offsets["leg_right"] = (0, 0, 0)
 
         elif anim_category == "fall":
             drop_y = int(round(phase * 6.0))
             offsets["torso"] = (0, drop_y, 0)
             offsets["head"] = (0, drop_y - 1, 0)
-            offsets["arm_left"] = (0, drop_y - 2, 0)
-            offsets["arm_right"] = (0, drop_y - 2, 0)
-            offsets["leg_left"] = (-1, drop_y, 0)
-            offsets["leg_right"] = (1, drop_y, 0)
+            offsets["arm_left"] = (-1, drop_y - 2, 15)
+            offsets["arm_right"] = (1, drop_y - 2, -15)
+            offsets["leg_left"] = (-1, drop_y, -5)
+            offsets["leg_right"] = (1, drop_y, 5)
 
         elif anim_category == "death":
-            # Collapse to ground
+            # Collapse to ground with rotation
             fall_prog = min(1.0, phase * 1.3)
             dy = int(round(fall_prog * 8.0))
             rot = int(round(fall_prog * 75.0))
             offsets["torso"] = (-int(fall_prog * 3), dy, -rot)
             offsets["head"] = (-int(fall_prog * 5), dy + 2, -rot)
-            offsets["arm_left"] = (-2, dy + 2, 0)
-            offsets["arm_right"] = (1, dy + 3, 0)
+            offsets["arm_left"] = (-2, dy + 2, -rot // 2)
+            offsets["arm_right"] = (1, dy + 3, rot // 2)
             offsets["leg_left"] = (2, dy, 0)
             offsets["leg_right"] = (4, dy, 0)
+            offsets["weapon"] = (-int(fall_prog * 6), dy + 4, -rot - 15)
 
         elif anim_category == "melee_attack":
-            # Windup -> Slash Strike -> Follow-through
-            if phase < 0.35:
-                # Windup back
-                offsets["arm_right"] = (-3, -3, -25)
-                offsets["weapon"] = (-4, -4, -35)
+            # 4 distinct progressive keyframe phases: Windup -> Apex -> Slash Strike -> Follow-through
+            if phase < 0.25:
+                # 1. Windup pull-back
+                prog = phase / 0.25
+                offsets["arm_right"] = (-2 - int(round(prog)), -1 - int(round(2 * prog)), -15 - int(round(20 * prog)))
+                offsets["weapon"] = (-3 - int(round(2 * prog)), -2 - int(round(2 * prog)), -25 - int(round(25 * prog)))
                 offsets["torso"] = (-1, 0, -5)
-            elif phase < 0.65:
-                # Forward slash strike
-                offsets["arm_right"] = (4, 1, 45)
-                offsets["weapon"] = (7, 2, 60)
+                offsets["head"] = (-1, 0, -3)
+            elif phase < 0.50:
+                # 2. Coiled apex windup ready to strike
+                prog = (phase - 0.25) / 0.25
+                offsets["arm_right"] = (-3, -3, -35 - int(round(10 * prog)))
+                offsets["weapon"] = (-5, -4, -50 - int(round(15 * prog)))
+                offsets["torso"] = (-1, 0, -8)
+                offsets["head"] = (0, 0, 0)
+            elif phase < 0.75:
+                # 3. Explosive forward slash strike & impact
+                prog = (phase - 0.50) / 0.25
+                offsets["arm_right"] = (4 + int(round(2 * prog)), 1, 40 + int(round(15 * prog)))
+                offsets["weapon"] = (6 + int(round(3 * prog)), 2, 55 + int(round(15 * prog)))
                 offsets["torso"] = (2, 0, 10)
                 offsets["head"] = (1, 0, 5)
+                offsets["leg_left"] = (-1, 0, 0)
+                offsets["leg_right"] = (1, 0, 0)
             else:
-                # Recovery
-                offsets["arm_right"] = (1, 0, 10)
-                offsets["weapon"] = (2, 0, 15)
+                # 4. Recovery & follow-through
+                prog = (phase - 0.75) / 0.25
+                offsets["arm_right"] = (2 - int(round(prog)), 1, 15 - int(round(10 * prog)))
+                offsets["weapon"] = (3 - int(round(prog)), 1, 20 - int(round(15 * prog)))
+                offsets["torso"] = (1, 0, 2)
+                offsets["head"] = (0, 0, 0)
 
         elif anim_category == "ranged_attack":
-            # Draw bow/wand -> Release -> Recoil
-            if phase < 0.6:
-                offsets["arm_left"] = (3, 0, 0)
-                offsets["arm_right"] = (-2, 0, 0)
-                offsets["weapon"] = (4, 0, 0)
-            else:
-                offsets["arm_right"] = (-4, -1, 0)
+            # Draw bow/wand -> Aim -> Release -> Recoil
+            if phase < 0.35:
+                prog = phase / 0.35
+                offsets["arm_left"] = (2 + int(round(prog)), 0, 0)
+                offsets["arm_right"] = (-1 - int(round(2 * prog)), 0, -10)
+                offsets["weapon"] = (3 + int(round(prog)), 0, 5)
+                offsets["torso"] = (-1, 0, -3)
+            elif phase < 0.65:
+                offsets["arm_left"] = (4, 0, 0)
+                offsets["arm_right"] = (-4, 0, -20)
+                offsets["weapon"] = (5, 0, 10)
                 offsets["torso"] = (-1, 0, -5)
+            elif phase < 0.85:
+                offsets["arm_left"] = (4, 0, 0)
+                offsets["arm_right"] = (-2, -1, 10)
+                offsets["weapon"] = (6, 0, -10)
+                offsets["torso"] = (1, 0, 5)
+            else:
+                offsets["arm_left"] = (1, 0, 0)
+                offsets["arm_right"] = (0, 0, 0)
+                offsets["weapon"] = (1, 0, 0)
+                offsets["torso"] = (0, 0, 0)
 
         elif anim_category in ("hit_reaction", "taking_damage"):
             # Recoil jerk back with flash
@@ -298,11 +335,12 @@ class TemporalDatasetGenerator:
             phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
             offsets = cls.compute_motion_offsets(anim_category, phase, category=category)
 
-            # Apply kinematic part transforms to base program
+            # Apply kinematic part transforms to base program (stripping any prior TRANSFORM actions)
             frame_lines = []
             for ln in base_script.splitlines():
-                if ln.strip():
-                    frame_lines.append(ln.strip())
+                stripped = ln.strip()
+                if stripped and not stripped.startswith("TRANSFORM"):
+                    frame_lines.append(stripped)
 
             # Append dynamic kinematic TRANSFORM actions before rendering
             for part_name, (dx, dy, rot) in offsets.items():

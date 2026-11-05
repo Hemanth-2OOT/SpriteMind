@@ -1,4 +1,5 @@
 """Deterministic Pixel Art Canvas."""
+import math
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -209,10 +210,18 @@ class PixelCanvas:
         if not bbox:
             return
 
-        # Read pixels from all layers or active layer
+        # Read pixels from layers where they actually live
         pixel_data = []
         for px, py in src_part.pixels:
-            rgba = self.active_layer.get_pixel(px, py)
+            rgba = (0, 0, 0, 0)
+            if self.active_layer.get_pixel(px, py)[3] > 0:
+                rgba = self.active_layer.get_pixel(px, py)
+            else:
+                for layer in self.layers.values():
+                    c = layer.get_pixel(px, py)
+                    if c[3] > 0:
+                        rgba = c
+                        break
             pixel_data.append((px, py, rgba))
 
         ref_x = src_part.anchor_x if src_part.anchor_x != 0 else bbox["min_x"]
@@ -237,24 +246,54 @@ class PixelCanvas:
                 self._track_pixel(nx, ny)
 
     def transform_part(self, part_name: str, dx: int, dy: int, rot_deg: int = 0):
-        """Translates existing part pixels by (dx, dy)."""
+        """Translates and rotates existing part pixels around its anchor across whichever layer they reside."""
         if part_name not in self.parts or not self.parts[part_name].pixels:
             return
         part = self.parts[part_name]
+        bbox = part.bounding_box
+        anchor_x = part.anchor_x if part.anchor_x != 0 else (bbox["min_x"] if bbox else 0)
+        anchor_y = part.anchor_y if part.anchor_y != 0 else (bbox["min_y"] if bbox else 0)
 
-        # Gather pixels and colors
+        # Gather pixels, locating their actual layer
         pixels_to_move = []
         for px, py in list(part.pixels):
-            rgba = self.active_layer.get_pixel(px, py)
-            pixels_to_move.append((px, py, rgba))
-            self.active_layer.set_pixel(px, py, (0, 0, 0, 0))
+            found_layer = None
+            rgba = (0, 0, 0, 0)
+            if self.active_layer.get_pixel(px, py)[3] > 0:
+                found_layer = self.active_layer
+                rgba = self.active_layer.get_pixel(px, py)
+            else:
+                for lid, layer in sorted(self.layers.items(), key=lambda kv: kv[0], reverse=True):
+                    candidate_rgba = layer.get_pixel(px, py)
+                    if candidate_rgba[3] > 0:
+                        found_layer = layer
+                        rgba = candidate_rgba
+                        break
+
+            if found_layer is not None:
+                pixels_to_move.append((found_layer, px, py, rgba))
+                found_layer.set_pixel(px, py, (0, 0, 0, 0))
+
+        # Rotate around anchor point
+        rad = math.radians(rot_deg) if rot_deg != 0 else 0.0
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
 
         part.pixels.clear()
-        for px, py, rgba in pixels_to_move:
-            nx = px + dx
-            ny = py + dy
+        for layer, px, py, rgba in pixels_to_move:
+            if rot_deg != 0:
+                rel_x = px - anchor_x
+                rel_y = py - anchor_y
+                rot_x = rel_x * cos_a - rel_y * sin_a
+                rot_y = rel_x * sin_a + rel_y * cos_a
+                nx = int(round(anchor_x + rot_x + dx))
+                ny = int(round(anchor_y + rot_y + dy))
+            else:
+                nx = px + dx
+                ny = py + dy
+
             if 0 <= nx < self.width and 0 <= ny < self.height:
-                self.active_layer.set_pixel(nx, ny, rgba)
+                layer.set_pixel(nx, ny, rgba)
                 part.pixels.add((nx, ny))
 
     def composite(self) -> np.ndarray:
