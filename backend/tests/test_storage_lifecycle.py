@@ -59,6 +59,23 @@ class TestStorageClassification:
         assert StorageClassifier.classify_path("backend/spritemind/__pycache__/app.cpython-311.pyc") == DataClassification.TEMPORARY_REGENERABLE
         assert StorageClassifier.classify_path(".pytest_cache/v/cache/lastfailed") == DataClassification.TEMPORARY_REGENERABLE
 
+    def test_traversal_cannot_disguise_protected_paths(self):
+        traversal_paths = [
+            "data/assets/../benchmarks/benchmark_results.json",
+            "data/assets/../../docs/research/README.md",
+            "data/assets/../../data/spritemind.db",
+            "data/assets/../datasets/default_synth/sample_000000.json",
+            "data/assets/../../../etc/passwd",
+        ]
+        for path in traversal_paths:
+            assert not StorageClassifier.is_deletable(path), path
+            with pytest.raises(ProtectedResourceException):
+                StorageClassifier.assert_deletable(path)
+
+    def test_absolute_paths_outside_project_are_not_deletable(self):
+        assert not StorageClassifier.is_deletable("/tmp/evil.tmp")
+        assert not StorageClassifier.is_deletable(str(Path.home() / "notes.tmp"))
+
     def test_protection_barrier_raises_exception_on_checkpoints(self):
         with pytest.raises(ProtectedResourceException):
             StorageClassifier.assert_deletable("models/checkpoints/svan_checkpoint_best.pt")

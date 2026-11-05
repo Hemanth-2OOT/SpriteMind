@@ -39,9 +39,27 @@ class StorageClassifier:
     """Evaluates filesystem paths and metadata to determine strict classification."""
 
     @classmethod
+    def _normalize(cls, path_str: str) -> Optional[str]:
+        """Returns a repo-relative normalized posix path, or None if it escapes the repo."""
+        root = Path.cwd().resolve()
+        raw = Path(path_str)
+        try:
+            resolved = (raw if raw.is_absolute() else root / raw).resolve(strict=False)
+        except OSError:
+            return None
+        try:
+            return resolved.relative_to(root).as_posix()
+        except ValueError:
+            return None
+
+    @classmethod
     def classify_path(cls, path_str: str) -> DataClassification:
         """Classifies a path based on canonical directory structures and rules."""
-        p = Path(path_str).as_posix()
+        normalized = cls._normalize(path_str)
+        if normalized is None:
+            # Anything outside the project root is never deletable.
+            return DataClassification.PROTECTED_RESEARCH
+        p = normalized
 
         # 1. Protected Model Data
         if p.startswith("models/checkpoints") or p.startswith("models/") or p.endswith(".pt"):
@@ -88,11 +106,12 @@ class StorageClassifier:
             or p.startswith("data/asset_packs")
             or p.startswith("data/exports")
             or p.startswith("data/atlases")
+            or p.startswith("data/renders")
         ):
             return DataClassification.USER_GENERATED
 
-        # Default fallback for unknown items
-        return DataClassification.USER_GENERATED
+        # Fail closed: unknown paths are never deletable.
+        return DataClassification.PROTECTED_RESEARCH
 
     @classmethod
     def is_deletable(cls, path_str: str) -> bool:

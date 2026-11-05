@@ -153,66 +153,6 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
     )
     return result
 
-
-@app.post("/api/critic/inspect")
-def inspect_sprite_endpoint(req: InspectRequest) -> Dict[str, Any]:
-    res = PixelScriptEngine.execute(req.script_text, width=req.width, height=req.height, palette_name=req.palette)
-    prog = PixelScriptParser.parse_text(req.script_text)
-    report = repair_engine.inspect(res, category=req.category, palette_name=req.palette, prog=prog)
-    frame_dict = res.to_dict(include_passes=True)
-    frame_dict["script_text"] = req.script_text
-    return {
-        "frame": frame_dict,
-        "critic": report,
-    }
-
-
-@app.post("/api/critic/repair")
-def repair_sprite_endpoint(req: CriticRepairRequest) -> Dict[str, Any]:
-    if req.auto_refine:
-        res = repair_engine.refine_closed_loop(
-            req.script_text,
-            category=req.category,
-            palette_name=req.palette,
-            width=req.width,
-            height=req.height,
-            max_iterations=req.max_iterations,
-        )
-        return res
-    else:
-        patch = req.action_patch or ""
-        new_script = repair_engine.apply_patch_to_script(req.script_text, patch) if patch else req.script_text
-        res = PixelScriptEngine.execute(new_script, width=req.width, height=req.height, palette_name=req.palette)
-        prog = PixelScriptParser.parse_text(new_script)
-        critic = repair_engine.inspect(res, category=req.category, palette_name=req.palette, prog=prog)
-        frame_dict = res.to_dict(include_passes=True)
-        frame_dict["script_text"] = new_script
-        return {
-            "status": "applied",
-            "action_applied": patch,
-            "frame": frame_dict,
-            "critic": critic,
-        }
-
-
-@app.get("/api/critic/metrics")
-def get_critic_metrics() -> Dict[str, Any]:
-    metrics_file = Path("data/critic_metrics.json")
-    if metrics_file.exists():
-        try:
-            with open(metrics_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
-        "precision": 94.12,
-        "recall": 24.62,
-        "f1": 0.3902,
-        "accuracy": 89.8,
-        "defect_classes": DEFECT_CLASSES,
-    }
-
-
 @app.post("/api/refine")
 def refine(req: RefineRequest) -> Dict[str, Any]:
     """Applies suggested fix or appends action, then re-renders."""
@@ -295,9 +235,15 @@ def export_assets(req: ExportRequest):
 def get_dataset_stats(name: str = "default_synth") -> Dict[str, Any]:
     stats = dataset_mgr.get_dataset_stats(name)
     if stats is None:
-        # Auto-generate starter dataset if none exists yet!
-        stats = dataset_mgr.generate_dataset(name=name, total_samples=20, defect_rate=0.2)
-    return stats
+        return {
+            "exists": False,
+            "name": name,
+            "total_samples": 0,
+            "splits": {"train": 0, "val": 0, "test": 0},
+            "category_distribution": {},
+            "defect_distribution": {},
+        }
+    return {**stats, "exists": True}
 
 
 @app.get("/api/dataset/samples")

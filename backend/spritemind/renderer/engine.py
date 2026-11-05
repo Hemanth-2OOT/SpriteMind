@@ -96,7 +96,9 @@ class PixelScriptEngine:
         p = action.params
 
         if t == ActionType.PALETTE:
-            canvas.set_palette_color(int(p["index"]), p["color"])
+            color = p.get("color")
+            if color is not None:
+                canvas.set_palette_color(int(p["index"]), color)
 
         elif t == ActionType.LAYER:
             lid = int(p["id"])
