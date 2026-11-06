@@ -148,6 +148,7 @@ def get_health() -> Dict[str, Any]:
         "device": device_name,
         "device_memory": device_memory,
         "training_active": trainer.is_training,
+        "result_cache": pipeline.cache_stats(),
     }
 
 

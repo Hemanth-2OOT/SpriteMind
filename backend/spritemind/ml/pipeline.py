@@ -1,7 +1,9 @@
 """Generation Pipeline coordinating Neural SVAN and Procedural Engines."""
+import copy
 import os
 import time
 import re
+from collections import OrderedDict
 import torch
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -31,6 +33,22 @@ class SpriteMindPipeline:
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
         self.active_checkpoint_name: Optional[str] = None
         self.trained_model: Optional[SVANModel] = None
+
+        self._result_cache: "OrderedDict[Tuple[Any, ...], Dict[str, Any]]" = OrderedDict()
+        self._result_cache_size = int(os.environ.get("SPRITEMIND_RESULT_CACHE", "64"))
+        self.cache_hits = 0
+        self.cache_misses = 0
+
+    def cache_stats(self) -> Dict[str, int]:
+        return {
+            "size": len(self._result_cache),
+            "capacity": self._result_cache_size,
+            "hits": self.cache_hits,
+            "misses": self.cache_misses,
+        }
+
+    def clear_cache(self) -> None:
+        self._result_cache.clear()
 
     def get_loaded_model_info(self) -> Dict[str, Any]:
         has_trained = self.trained_model is not None
@@ -120,6 +138,86 @@ class SpriteMindPipeline:
         }
 
     def generate(
+        self,
+        prompt: str = "",
+        category: Optional[str] = None,
+        style: Optional[str] = None,
+        pose: Optional[str] = None,
+        palette_name: Optional[str] = None,
+        width: int = 32,
+        height: int = 32,
+        num_frames: int = 1,
+        engine_mode: str = "procedural_baseline",  # "trained_model" | "untrained_model" | "procedural_baseline"
+        seed: int = 42,
+        max_actions: int = 64,
+        best_of: int = 4,
+    ) -> Dict[str, Any]:
+        """Generates a sprite, replaying a previous identical request from cache."""
+        key = (
+            prompt.strip(),
+            category,
+            style,
+            pose,
+            palette_name,
+            width,
+            height,
+            num_frames,
+            engine_mode,
+            seed,
+            max_actions,
+            best_of,
+        )
+        if self._result_cache_size <= 0:
+            result = self._generate_uncached(
+                prompt=prompt,
+                category=category,
+                style=style,
+                pose=pose,
+                palette_name=palette_name,
+                width=width,
+                height=height,
+                num_frames=num_frames,
+                engine_mode=engine_mode,
+                seed=seed,
+                max_actions=max_actions,
+                best_of=best_of,
+            )
+            result["cache_hit"] = False
+            return result
+
+        start_time = time.perf_counter()
+        cached = self._result_cache.get(key)
+        if cached is not None:
+            self.cache_hits += 1
+            self._result_cache.move_to_end(key)
+            result = copy.deepcopy(cached)
+            result["cache_hit"] = True
+            result["inference_time_ms"] = round((time.perf_counter() - start_time) * 1000.0, 2)
+            return result
+
+        self.cache_misses += 1
+        result = self._generate_uncached(
+            prompt=prompt,
+            category=category,
+            style=style,
+            pose=pose,
+            palette_name=palette_name,
+            width=width,
+            height=height,
+            num_frames=num_frames,
+            engine_mode=engine_mode,
+            seed=seed,
+            max_actions=max_actions,
+            best_of=best_of,
+        )
+        result["cache_hit"] = False
+        self._result_cache[key] = copy.deepcopy(result)
+        self._result_cache.move_to_end(key)
+        while len(self._result_cache) > self._result_cache_size:
+            self._result_cache.popitem(last=False)
+        return result
+
+    def _generate_uncached(
         self,
         prompt: str = "",
         category: Optional[str] = None,
@@ -336,6 +434,7 @@ class SpriteMindPipeline:
             memory = torch.stack([sem_cond, struct_cond, vis_cond], dim=1)
 
             curr_tokens = [self.tokenizer.sos_id]
+            grammar_state = self.tokenizer.grammar_start_state()
             transformer = model.action_transformer
             max_tokens = min(transformer.max_seq_len - 1, max_actions * 8)
             use_cache = hasattr(transformer, "forward_step")
@@ -351,7 +450,7 @@ class SpriteMindPipeline:
                 next_token_logits = logits[0, -1, :]
 
                 # Grammar mask: only tokens legal for the current action position.
-                allowed = self.tokenizer.allowed_token_ids(curr_tokens)
+                allowed = self.tokenizer.allowed_from_state(grammar_state)
                 if allowed is not None:
                     masked = torch.full_like(next_token_logits, float("-inf"))
                     masked[allowed] = 0.0
@@ -361,6 +460,7 @@ class SpriteMindPipeline:
                 probs = torch.softmax(next_token_logits / max(1e-5, temperature), dim=-1)
                 next_tok = int(torch.multinomial(probs, num_samples=1).item())
                 curr_tokens.append(next_tok)
+                grammar_state = self.tokenizer.advance_grammar(grammar_state, next_tok)
 
                 if next_tok == self.tokenizer.eos_id:
                     break
@@ -404,6 +504,7 @@ class SpriteMindPipeline:
 
             tokens: List[List[int]] = [[sos] for _ in range(num_candidates)]
             finished = [False] * num_candidates
+            states = [self.tokenizer.grammar_start_state() for _ in range(num_candidates)]
 
             for step in range(max_tokens):
                 if all(finished):
@@ -414,10 +515,10 @@ class SpriteMindPipeline:
                 logits = transformer.forward_step(last, memory, cache, step)[:, -1, :]
 
                 mask = torch.zeros_like(logits)
-                for i, seq in enumerate(tokens):
+                for i, _seq in enumerate(tokens):
                     if finished[i]:
                         continue
-                    allowed = self.tokenizer.allowed_token_ids(seq)
+                    allowed = self.tokenizer.allowed_from_state(states[i])
                     if allowed is not None:
                         row = torch.full((vocab_size,), float("-inf"), device=self.device)
                         row[torch.tensor(allowed, device=self.device)] = 0.0
@@ -430,6 +531,7 @@ class SpriteMindPipeline:
                         tokens[i].append(pad)
                         continue
                     tokens[i].append(tok)
+                    states[i] = self.tokenizer.advance_grammar(states[i], tok)
                     if tok == eos:
                         finished[i] = True
 
