@@ -12,6 +12,7 @@ from spritemind.server.app import (
     list_trash,
     storage_cleanup_scan,
     list_backups_endpoint,
+    sync_storage_registry,
 )
 from spritemind.server.schemas import GenerateRequest, RenderRequest
 
@@ -74,9 +75,12 @@ def test_api_assets_endpoint():
 
 
 def test_api_storage_endpoints():
+    # The registry is built by scanning the data directory, so index it first
+    # instead of depending on whatever a previous local run left behind.
+    sync_storage_registry()
     dash = get_storage_dashboard()
     assert dash["status"] == "healthy"
-    assert dash["total_files_indexed"] > 50
+    assert dash["total_files_indexed"] > 0
 
     recs = get_storage_records(table="storage_registry", limit=10)
     assert recs["table"] == "storage_registry"
