@@ -1,4 +1,4 @@
-# Tested on Python 3.11 with CPU-only torch.
+# Runtime dependencies. Tested on Python 3.11 with CPU-only torch.
 fastapi>=0.109.0,<0.200.0
 uvicorn>=0.27.0,<0.60.0
 pydantic>=2.5.0,<3.0.0
@@ -6,5 +6,3 @@ torch>=2.5.0,<3.0.0
 numpy>=1.24.0,<3.0.0
 pillow>=10.0.0,<14.0.0
 requests>=2.31.0,<3.0.0
-httpx>=0.27.0,<0.30.0
-pytest>=7.4.0,<10.0.0

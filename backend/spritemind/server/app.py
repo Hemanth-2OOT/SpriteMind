@@ -12,7 +12,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from spritemind.server.schemas import (
     GenerateRequest,
@@ -70,9 +70,20 @@ app = FastAPI(
     version="0.1.0",
 )
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:7860,http://127.0.0.1:7860,"
+    "http://localhost:7861,http://127.0.0.1:7861"
+)
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("SPRITEMIND_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -795,3 +806,13 @@ for dist_path in possible_dist_paths:
     if dist_path.exists():
         app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
         break
+else:
+    @app.get("/", include_in_schema=False)
+    def frontend_not_built() -> HTMLResponse:
+        return HTMLResponse(
+            "<h1>SpriteMind API is running</h1>"
+            "<p>The web studio has not been built yet. Run:</p>"
+            "<pre>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</pre>"
+            "<p>API docs: <a href='/docs'>/docs</a></p>",
+            status_code=200,
+        )

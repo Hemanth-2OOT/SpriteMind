@@ -69,32 +69,43 @@ SpriteMind enforces a non-negotiable boundary between protected core assets and 
 
 ### 1. Prerequisites
 - Python 3.10 or 3.11
-- PyTorch 2.5.1
-- FastAPI, Uvicorn, Pillow, NumPy
+- Node 18+ (only to build the web studio)
 
-### 2. Launch Local Server & Web Studio
-```powershell
-# Start unified backend & frontend server
-.\start.ps1
-```
-Open your browser to: **`http://127.0.0.1:7860`**
-
-### 3. Run Automated Verification Test Suite
+### 2. Install
 ```bash
-PYTHONPATH=backend pytest backend/tests -q
+python -m venv .venv && . .venv/bin/activate    # Windows: .venv\Scripts\activate
+pip install -r backend/requirements.txt
+cd frontend && npm ci && npm run build && cd ..
 ```
 
-### 4. Frontend Development
+### 3. Launch
+```bash
+python backend/run_server.py        # Windows shortcut: .\start.ps1
+```
+Open **`http://127.0.0.1:7860`**. The same server exposes OpenAPI docs at `/docs`.
+The API boots without the web bundle; `/` then prints the build command instead of
+serving a blank page.
+
+Configuration is environment-driven (see `.env.example`): `HOST`, `PORT`,
+`SPRITEMIND_THREADS`, `SPRITEMIND_CORS_ORIGINS`.
+
+### 4. Verify
+```bash
+pip install -r backend/requirements-dev.txt
+pytest                      # configured in pyproject.toml, runs from any directory
+ruff check backend          # lint (or: uvx ruff check backend)
+```
+
+### 5. Frontend Development
 ```bash
 cd frontend
-npm install
 npm run dev     # hot-reload dev server on :5173, proxies /api to :7860
 npm run build   # production bundle in frontend/dist, served by the backend
 ```
 
-The web studio ships tabs for generation, animation, **composition** (equipment sockets and layered assets), dataset management, model lab and evaluation. CI (`.github/workflows/ci.yml`) builds this bundle and runs the backend suite on every pull request.
+The web studio ships tabs for generation, animation, **composition** (equipment sockets and layered assets), dataset management, model lab and evaluation. `frontend/dist/` is build output and is not committed — build it before launching the studio.
 
-### 5. Regenerating the Metrics Table
+### 6. Regenerating the Metrics Table
 ```bash
 python scripts/update_readme_metrics.py           # rewrite the table below
 python scripts/update_readme_metrics.py --check   # fail if it is stale

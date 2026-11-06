@@ -196,7 +196,6 @@ class TemporalModelTrainer:
         self.model.eval()
         total_loss = 0.0
         total_traj_mse = 0.0
-        total_smooth = 0.0
         total_samples = 0
 
         with torch.no_grad():

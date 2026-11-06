@@ -224,7 +224,7 @@ class TemporalAnimator:
                 has_trained = True
                 cls._cached_model = model
                 cls._cached_checkpoint = checkpoint_name
-            except Exception as e:
+            except Exception:
                 has_trained = False
         else:
             has_trained = False

@@ -17,6 +17,8 @@ from spritemind.assets.library import AssetLibrary
 from spritemind.assets.composer import AssetComposer
 from spritemind.critic.visual_understanding import VisualUnderstandingPipeline
 from spritemind.renderer.engine import PixelScriptEngine
+from spritemind.pixelscript.ast import ActionType
+from spritemind.pixelscript.parser import PixelScriptParser
 
 
 class CompositionBenchmarkSuite:
@@ -63,7 +65,7 @@ class CompositionBenchmarkSuite:
                 "fx": rng.choice(fx_ids) if rng.random() > 0.5 else None,
             })
 
-        print(f"[Composition Benchmark] Running 100 test scenarios across 4 engines...")
+        print("[Composition Benchmark] Running 100 test scenarios across 4 engines...")
         results_by_engine: Dict[str, Any] = {}
 
         for engine in cls.ENGINES:
@@ -83,14 +85,14 @@ class CompositionBenchmarkSuite:
                 script = res["script_text"]
                 sockets = res["sockets"]
 
-                # 1. Attachment Accuracy (distance to hand socket)
-                hand = sockets.get("hand_r", (21, 20))
-                # Check weapon bounds
-                wep_asset = AssetLibrary.get(sc["weapon"])
-                if wep_asset:
-                    expected_grip = hand
-                    actual_grip = hand  # aligned
-                    grip_error = 0.0 if engine in ("trained_model", "hybrid") else (1.5 if engine == "untrained_model" else 0.8)
+                # 1. Attachment accuracy: distance from the hand socket to the weapon anchor
+                hand = sockets.get("hand_r")
+                weapon_anchor = None
+                for action in PixelScriptParser.parse_text(script).actions:
+                    if action.action_type == ActionType.PART and action.args[:1] == ["weapon"]:
+                        weapon_anchor = (float(action.args[2]), float(action.args[3]))
+                if hand and weapon_anchor:
+                    grip_error = ((weapon_anchor[0] - hand[0]) ** 2 + (weapon_anchor[1] - hand[1]) ** 2) ** 0.5
                 else:
                     grip_error = 0.0
 
