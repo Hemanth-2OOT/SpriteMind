@@ -18,7 +18,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -r backend/requirements-dev.txt --extra-index-url https://download.pytorch.org/whl/cpu
+      - name: Lint
+        run: ruff check backend scripts
       - name: README metrics are current
         run: python scripts/update_readme_metrics.py --check
       - name: Run tests
