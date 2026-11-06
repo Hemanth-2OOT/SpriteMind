@@ -18,6 +18,20 @@ class GenerateRequest(BaseModel):
     max_actions: int = Field(default=64, ge=8, le=256)
 
 
+class ActionSetRequest(BaseModel):
+    prompt: str = ""
+    category: Optional[str] = None
+    style: Optional[str] = None
+    palette: Optional[str] = None
+    width: int = Field(default=32, ge=16, le=64)
+    height: int = Field(default=32, ge=16, le=64)
+    engine: str = Field(default="procedural_baseline")
+    seed: int = 42
+    actions: Optional[List[str]] = None
+    max_actions: int = Field(default=12, ge=1, le=18)
+    include_gif: bool = True
+
+
 class RefineRequest(BaseModel):
     script_text: str
     suggested_fix: Optional[str] = None

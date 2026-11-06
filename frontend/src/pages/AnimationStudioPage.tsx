@@ -53,6 +53,8 @@ const ANIMATION_CATEGORIES_GROUPED = [
       { id: 'taking_damage', name: 'Taking Damage' },
       { id: 'blocking', name: 'Shield Blocking' },
       { id: 'special_ability', name: 'Special Ability' },
+      { id: 'cast', name: 'Spell Cast' },
+      { id: 'dash', name: 'Dash Burst' },
     ],
   },
   {

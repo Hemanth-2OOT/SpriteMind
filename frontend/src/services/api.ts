@@ -304,3 +304,48 @@ export async function fetchAnimationMetrics(): Promise<any> {
   return res.json();
 }
 
+
+
+export async function planActionSetApi(params: {
+  prompt: string;
+  category?: string;
+  style?: string;
+  palette?: string;
+  actions?: string[];
+}): Promise<any> {
+  const res = await fetch(`${BASE_URL}/api/action_set/plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Action planning failed');
+  }
+  return res.json();
+}
+
+export async function generateActionSetApi(params: {
+  prompt: string;
+  category?: string;
+  style?: string;
+  palette?: string;
+  width?: number;
+  height?: number;
+  engine?: string;
+  seed?: number;
+  actions?: string[];
+  max_actions?: number;
+  include_gif?: boolean;
+}): Promise<any> {
+  const res = await fetch(`${BASE_URL}/api/action_set`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Action set generation failed');
+  }
+  return res.json();
+}

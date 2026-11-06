@@ -209,6 +209,23 @@ class TemporalAnimator:
     _cached_model: Optional[TemporalSVAN] = None
     _cached_checkpoint: Optional[str] = None
 
+    @staticmethod
+    def _widen_embeddings(model: TemporalSVAN, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Grows category embeddings when the animation taxonomy gained entries after training."""
+        state = dict(state)
+        for name, param in model.named_parameters():
+            saved = state.get(name)
+            if saved is None or saved.shape == param.shape:
+                continue
+            if saved.dim() == 2 and param.dim() == 2 and saved.shape[1] == param.shape[1]:
+                grown = param.detach().clone()
+                rows = min(saved.shape[0], grown.shape[0])
+                grown[:rows] = saved[:rows]
+                if grown.shape[0] > rows:
+                    grown[rows:] = saved.mean(dim=0, keepdim=True)
+                state[name] = grown
+        return state
+
     @classmethod
     def get_or_load_model(cls, checkpoint_name: str = "temporal_svan_best.pt", device: str = "cpu") -> Tuple[TemporalSVAN, bool]:
         """Loads trained checkpoint or returns initialized model."""
@@ -220,7 +237,7 @@ class TemporalAnimator:
             try:
                 ckpt = torch.load(ckpt_path, map_location=device)
                 state = ckpt.get("model_state_dict", ckpt)
-                model.load_state_dict(state)
+                model.load_state_dict(cls._widen_embeddings(model, state))
                 has_trained = True
                 cls._cached_model = model
                 cls._cached_checkpoint = checkpoint_name

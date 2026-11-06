@@ -12,6 +12,7 @@ SpriteMind is **NOT** a wrapper around conventional diffusion models or external
 - **Topological Visual Intelligence & Critic:** Detects stray pixels, interior voids, dislocated limbs, and palette leaks with autonomous closed-loop self-correction.
 - **Recurrent Temporal Intelligence:** Predicts continuous kinematic trajectories $(\Delta x, \Delta y, \Delta \text{rot})$ across 18 animation categories (Basic, Combat, Creature gaits).
 - **Multi-Layer Asset Composition:** Trainable `SocketPredictor` network (619K params) predicts sub-pixel equipment attachment sockets (`hand_r`, `head`, `back`) with dynamic multi-frame animation synchronization.
+- **Prompt-Driven Action Sets:** One prompt becomes a coherent animation package — archetype, element and weapon are inferred from the text, then idle, movement, attacks, cast, dash, defense and death are rendered from a single shared character program with element FX (`POST /api/action_set`, new **Action Sets** tab).
 - **Game-Ready Packaging:** 2D bin-packing texture atlas builder with UV coordinates, spritesheets, and complete ZIP game packs (verified with top-down shooter *Dead Zone*).
 - **Auditable SQLite Data Management:** Relational catalog (`data/spritemind.db`) with strict data classification, trash lifecycle, zero-loss deletion gates, and verifiable backups.
 
@@ -115,6 +116,7 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 
 ## Documentation & Research Index
 
+- **Action Sets (prompt → animation package):** [`docs/ACTION_SETS.md`](docs/ACTION_SETS.md)
 - **Research Overview:** [`docs/research/README.md`](docs/research/README.md)
 - **Chronological Benchmark Index:** [`docs/research/BENCHMARK_INDEX.md`](docs/research/BENCHMARK_INDEX.md)
 - **Data Management & Trash Lifecycle:** [`docs/DATA_MANAGEMENT.md`](docs/DATA_MANAGEMENT.md)

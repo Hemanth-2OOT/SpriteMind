@@ -125,7 +125,7 @@ def test_api_animation_generate_and_metrics():
     metrics = get_animation_metrics()
     assert metrics["status"] == "ready"
     assert metrics["parameter_count"] == 426395
-    assert len(metrics["supported_animation_categories"]) == 18
+    assert len(metrics["supported_animation_categories"]) == len(ANIMATION_CATEGORIES)
     assert "training_metrics" in metrics
     assert "benchmark_results" in metrics
 

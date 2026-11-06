@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from spritemind.server.schemas import (
     GenerateRequest,
+    ActionSetRequest,
     RefineRequest,
     RenderRequest,
     ExportRequest,
@@ -41,6 +42,7 @@ from spritemind.critic.repair_engine import AutonomousRepairEngine
 from spritemind.critic.model import DEFECT_CLASSES
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.ml.temporal import TemporalAnimator, ANIMATION_CATEGORIES, CATEGORIES
+from spritemind.actions import ActionSetBuilder, ActionSetPlanner
 from spritemind.assets.library import AssetLibrary, ASSET_CATEGORIES
 from spritemind.assets.composer import AssetComposer
 from spritemind.assets.pack import AssetPack
@@ -163,6 +165,43 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
         max_actions=req.max_actions,
     )
     return result
+
+@app.post("/api/action_set/plan")
+def action_set_plan(req: ActionSetRequest) -> Dict[str, Any]:
+    """Cheap prompt interpretation: which animations the prompt implies."""
+    plan = ActionSetPlanner.plan(
+        prompt=req.prompt,
+        category=req.category,
+        style=req.style,
+        palette=req.palette,
+        width=req.width,
+        height=req.height,
+        requested_actions=req.actions,
+        max_actions=req.max_actions,
+    )
+    return {"status": "success", "plan": plan.to_dict()}
+
+
+@app.post("/api/action_set")
+def action_set(req: ActionSetRequest) -> Dict[str, Any]:
+    """Builds a coherent, game-ready animation set from a single prompt."""
+    try:
+        return ActionSetBuilder.build(
+            prompt=req.prompt,
+            category=req.category,
+            style=req.style,
+            palette=req.palette,
+            width=req.width,
+            height=req.height,
+            engine=req.engine,
+            seed=req.seed,
+            actions=req.actions,
+            max_actions=req.max_actions,
+            include_gif=req.include_gif,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 @app.post("/api/refine")
 def refine(req: RefineRequest) -> Dict[str, Any]:

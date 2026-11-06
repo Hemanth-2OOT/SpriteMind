@@ -39,6 +39,8 @@ ANIMATION_CATEGORIES = [
     "taking_damage",
     "blocking",
     "special_ability",
+    "cast",
+    "dash",
     # Creature Animations
     "slime_bouncing",
     "zombie_movement",
@@ -168,6 +170,63 @@ class TemporalDatasetGenerator:
             offsets["leg_left"] = (2, dy, 0)
             offsets["leg_right"] = (4, dy, 0)
             offsets["weapon"] = (-int(fall_prog * 6), dy + 4, -rot - 15)
+
+        elif anim_category == "dash":
+            # Crouch -> explosive forward burst -> settle, with lean and trailing limbs
+            if phase < 0.2:
+                prog = phase / 0.2
+                offsets["torso"] = (-1, 1 + int(round(prog)), -6)
+                offsets["head"] = (-1, 1 + int(round(prog)), -4)
+                offsets["leg_left"] = (-1, 1, 8)
+                offsets["leg_right"] = (1, 1, -8)
+                offsets["arm_left"] = (-2, 0, -10)
+                offsets["arm_right"] = (-2, 0, 10)
+            elif phase < 0.65:
+                prog = (phase - 0.2) / 0.45
+                burst = math.sin(prog * math.pi)
+                lean = int(round(burst * 4.0))
+                offsets["torso"] = (lean, -1, 14 + int(round(burst * 8)))
+                offsets["head"] = (lean, -1, 8)
+                offsets["leg_left"] = (-lean - 2, 0, -12)
+                offsets["leg_right"] = (-lean - 1, -1, 6)
+                offsets["arm_left"] = (-3, 1, -25)
+                offsets["arm_right"] = (-2, 0, 20)
+                offsets["weapon"] = (-1, 1, 10)
+                offsets["accessory"] = (-2, 0, 18)
+            else:
+                prog = (phase - 0.65) / 0.35
+                settle = int(round((1 - prog) * 2))
+                offsets["torso"] = (settle, 0, 4)
+                offsets["head"] = (settle, 0, 2)
+                offsets["leg_left"] = (-1, 0, -4)
+                offsets["leg_right"] = (1, 0, 2)
+
+        elif anim_category == "cast":
+            # Gather -> raise arm with orb -> release -> recover
+            if phase < 0.35:
+                prog = phase / 0.35
+                offsets["arm_right"] = (-1, -int(round(prog * 2)), -12 - int(round(prog * 10)))
+                offsets["weapon"] = (-1, -int(round(prog * 3)), 10 - int(round(prog * 18)))
+                offsets["torso"] = (-1, 0, -3)
+                offsets["head"] = (0, 0, -2)
+            elif phase < 0.6:
+                offsets["arm_right"] = (0, -3, -26)
+                offsets["weapon"] = (1, -5, -30)
+                offsets["torso"] = (0, -1, 4)
+                offsets["head"] = (0, -1, 3)
+                offsets["arm_left"] = (-2, -1, -12)
+            elif phase < 0.8:
+                prog = (phase - 0.6) / 0.2
+                offsets["arm_right"] = (2 + int(round(prog)), 1, 18 + int(round(prog * 10)))
+                offsets["weapon"] = (3 + int(round(prog * 2)), 1, 24)
+                offsets["torso"] = (1, 0, 6)
+                offsets["head"] = (1, 0, 4)
+                offsets["leg_left"] = (-1, 0, 0)
+                offsets["leg_right"] = (1, 0, 0)
+            else:
+                offsets["arm_right"] = (1, 0, 6)
+                offsets["weapon"] = (1, 0, 8)
+                offsets["torso"] = (0, 0, 1)
 
         elif anim_category == "melee_attack":
             # 4 distinct progressive keyframe phases: Windup -> Apex -> Slash Strike -> Follow-through
