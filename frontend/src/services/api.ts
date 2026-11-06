@@ -347,6 +347,7 @@ export async function generateActionSetApi(params: {
   actions?: string[];
   max_actions?: number;
   include_gif?: boolean;
+  facing?: 'left' | 'right';
 }): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/action_set`, {
     method: 'POST',

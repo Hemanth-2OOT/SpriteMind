@@ -137,6 +137,7 @@ export const ActionSetPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [facing, setFacing] = useState<'right' | 'left'>('right');
 
   const refreshPlan = async () => {
     setPlanning(true);
@@ -160,7 +161,7 @@ export const ActionSetPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await generateActionSetApi({ prompt, actions: selected });
+      const res = await generateActionSetApi({ prompt, actions: selected, facing });
       setPlan(res.plan);
       setActions(res.actions);
     } catch (e: any) {
@@ -214,6 +215,20 @@ export const ActionSetPage: React.FC = () => {
               placeholder="e.g. ice paladin with shield who blocks and smashes"
               className="flex-1 bg-dark-950 border border-dark-800 rounded-md px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-purple-500"
             />
+            <div className="flex rounded-md overflow-hidden border border-dark-800">
+              {(['right', 'left'] as const).map((dir) => (
+                <button
+                  key={dir}
+                  onClick={() => setFacing(dir)}
+                  className={`px-2 py-1.5 text-[10px] uppercase tracking-wide ${
+                    facing === dir ? 'bg-purple-600 text-white' : 'bg-dark-950 text-slate-400 hover:bg-dark-800'
+                  }`}
+                  title={`Generate ${dir}-facing sprites`}
+                >
+                  {dir === 'right' ? 'RT' : 'LT'}
+                </button>
+              ))}
+            </div>
             <button
               onClick={refreshPlan}
               disabled={planning}

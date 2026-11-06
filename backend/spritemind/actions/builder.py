@@ -14,6 +14,7 @@ from spritemind.actions.catalog import ActionPlan, ActionSpec
 from spritemind.dataset.generator import CharacterGenerator
 from spritemind.ml.temporal import TemporalAnimator
 from spritemind.pixelscript.serializer import PixelScriptSerializer
+from spritemind.pixelscript.transform import mirror_script
 from spritemind.renderer.engine import PixelScriptEngine
 from spritemind.renderer.export import export_gif
 
@@ -35,6 +36,7 @@ class ActionSetBuilder:
         actions: Optional[List[str]] = None,
         max_actions: int = 12,
         include_gif: bool = True,
+        facing: str = "right",
     ) -> Dict[str, Any]:
         plan = ActionSetPlanner.plan(
             prompt=prompt,
@@ -46,7 +48,9 @@ class ActionSetBuilder:
             requested_actions=actions,
             max_actions=max_actions,
         )
-        return cls.build_from_plan(plan, engine=engine, seed=seed, include_gif=include_gif)
+        return cls.build_from_plan(
+            plan, engine=engine, seed=seed, include_gif=include_gif, facing=facing
+        )
 
     @classmethod
     def build_from_plan(
@@ -55,6 +59,7 @@ class ActionSetBuilder:
         engine: str = "procedural_baseline",
         seed: int = 42,
         include_gif: bool = True,
+        facing: str = "right",
     ) -> Dict[str, Any]:
         base_program = CharacterGenerator.generate_character(
             category=plan.category,
@@ -67,18 +72,32 @@ class ActionSetBuilder:
             weapon=None if plan.weapon == "none" else plan.weapon,
         )
         base_script = PixelScriptSerializer.serialize_program(base_program)
+        # Mirror only after animation: the animator is direction-agnostic, so
+        # flipping its input and its output would cancel out.
+        shown_base_script = (
+            mirror_script(base_script, plan.width) if facing == "left" else base_script
+        )
 
         results: List[Dict[str, Any]] = []
         for spec in plan.actions:
             results.append(
-                cls._build_action(spec, plan, base_script, engine=engine, seed=seed, include_gif=include_gif)
+                cls._build_action(
+                    spec,
+                    plan,
+                    base_script,
+                    engine=engine,
+                    seed=seed,
+                    include_gif=include_gif,
+                    facing=facing,
+                )
             )
 
         return {
             "status": "success",
             "prompt": plan.prompt,
             "plan": plan.to_dict(),
-            "base_script": base_script,
+            "base_script": shown_base_script,
+            "facing": "left" if facing == "left" else "right",
             "num_actions": len(results),
             "actions": results,
         }
@@ -92,6 +111,7 @@ class ActionSetBuilder:
         engine: str,
         seed: int,
         include_gif: bool,
+        facing: str = "right",
     ) -> Dict[str, Any]:
         anim = TemporalAnimator.generate_animation(
             base_script_or_prompt=base_script,
@@ -123,6 +143,8 @@ class ActionSetBuilder:
                 )
                 if fx:
                     script = f"{script}\n{fx}"
+            if facing == "left":
+                script = mirror_script(script, plan.width)
 
             result = PixelScriptEngine.execute(script, width=plan.width, height=plan.height, palette_name=plan.palette)
             data = result.to_dict(include_passes=True)

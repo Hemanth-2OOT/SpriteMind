@@ -30,6 +30,7 @@ class ActionSetRequest(BaseModel):
     actions: Optional[List[str]] = None
     max_actions: int = Field(default=12, ge=1, le=18)
     include_gif: bool = True
+    facing: str = Field(default="right", pattern="^(right|left)$")
 
 
 class RefineRequest(BaseModel):

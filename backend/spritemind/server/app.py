@@ -239,6 +239,7 @@ def action_set(req: ActionSetRequest) -> Dict[str, Any]:
             actions=req.actions,
             max_actions=req.max_actions,
             include_gif=req.include_gif,
+            facing=req.facing,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
