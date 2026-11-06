@@ -113,7 +113,7 @@ The web studio ships tabs for generation, animation, **composition** (equipment 
 SKIP_QUALITY_GATE=1 ./scripts/check.sh  # same, minus the generation sample
 python scripts/quality_gate.py --limit 12 --engine trained_model   # generation only
 ```
-The quality gate samples held-out prompts and fails when validity, palette adherence, engine honesty, silhouette fill or critic-clean rate regress, so renderer and training changes cannot slip in silently. `.github/workflows/ci.yml` runs the same checks; pushing it needs a GitHub token with the `workflow` scope (`gh auth refresh -s workflow`), or you can add it through the GitHub web editor once.
+The quality gate samples held-out prompts and fails when validity, palette adherence, engine honesty, silhouette fill or critic-clean rate regress, so renderer and training changes cannot slip in silently. `.github/workflows/ci.yml` runs the backend tests, the README metrics check and the frontend build on every push to `main` and every pull request.
 
 ### 7. Regenerating the Metrics Table
 ```bash
