@@ -197,8 +197,21 @@ class DrawingActionTransformer(nn.Module):
     # ------------------------------------------------------------------
     # Incremental (cached) decoding: same weights, one token at a time.
     # ------------------------------------------------------------------
-    def new_cache(self) -> List[Dict[str, torch.Tensor]]:
-        return [{} for _ in self.transformer_decoder.layers]
+    def new_cache(self, max_len: int = 0, batch_size: int = 1) -> List[Dict[str, torch.Tensor]]:
+        """Per-layer caches. With max_len > 0 the self-attention KV is a preallocated
+        ring-free buffer written in place, which avoids re-copying a growing tensor
+        at every decode step."""
+        heads = self.transformer_decoder.layers[0].self_attn.num_heads
+        head_dim = self.d_model // heads
+        caches: List[Dict[str, torch.Tensor]] = []
+        for _ in self.transformer_decoder.layers:
+            entry: Dict[str, torch.Tensor] = {}
+            if max_len > 0:
+                entry["k"] = torch.zeros(batch_size, heads, max_len, head_dim)
+                entry["v"] = torch.zeros(batch_size, heads, max_len, head_dim)
+                entry["len"] = 0
+            caches.append(entry)
+        return caches
 
     @staticmethod
     def _split(t: torch.Tensor, nhead: int) -> torch.Tensor:
@@ -238,9 +251,17 @@ class DrawingActionTransformer(nn.Module):
         for layer, layer_cache in zip(self.transformer_decoder.layers, cache):
             attn = layer.self_attn
             q, k, v = self._project(x, attn)
-            layer_cache["k"] = k if "k" not in layer_cache else torch.cat([layer_cache["k"], k], dim=2)
-            layer_cache["v"] = v if "v" not in layer_cache else torch.cat([layer_cache["v"], v], dim=2)
-            sa = self._attend(q, layer_cache["k"], layer_cache["v"])
+            if "len" in layer_cache:
+                n = layer_cache["len"]
+                layer_cache["k"][:, :, n : n + 1, :] = k
+                layer_cache["v"][:, :, n : n + 1, :] = v
+                layer_cache["len"] = n + 1
+                keys, values = layer_cache["k"][:, :, : n + 1, :], layer_cache["v"][:, :, : n + 1, :]
+            else:
+                layer_cache["k"] = k if "k" not in layer_cache else torch.cat([layer_cache["k"], k], dim=2)
+                layer_cache["v"] = v if "v" not in layer_cache else torch.cat([layer_cache["v"], v], dim=2)
+                keys, values = layer_cache["k"], layer_cache["v"]
+            sa = self._attend(q, keys, values)
             sa = attn.out_proj(self._merge(sa))
             x = layer.norm1(x + sa)
 
@@ -300,14 +321,46 @@ class VisualCritic(nn.Module):
 class SVANModel(nn.Module):
     """Integrated SpriteMind Visual-Action Network."""
 
-    def __init__(self, vocab_size: int = 256, d_model: int = 128):
+    def __init__(
+        self,
+        vocab_size: int = 256,
+        d_model: int = 128,
+        nhead: int = 4,
+        num_layers: int = 4,
+        dim_feedforward: int = 512,
+        max_seq_len: int = 384,
+        dropout: float = 0.1,
+    ):
         super().__init__()
         self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.model_config = {
+            "vocab_size": vocab_size,
+            "d_model": d_model,
+            "nhead": nhead,
+            "num_layers": num_layers,
+            "dim_feedforward": dim_feedforward,
+            "max_seq_len": max_seq_len,
+            "dropout": dropout,
+        }
         self.semantic_encoder = SemanticEncoder(d_model=d_model)
         self.visual_encoder = VisualEncoder(in_channels=4, d_model=d_model)
         self.structure_graph = StructureGraph(d_model=d_model)
-        self.action_transformer = DrawingActionTransformer(vocab_size=vocab_size, d_model=d_model)
+        self.action_transformer = DrawingActionTransformer(
+            vocab_size=vocab_size,
+            d_model=d_model,
+            nhead=nhead,
+            num_layers=num_layers,
+            dim_feedforward=dim_feedforward,
+            max_seq_len=max_seq_len,
+            dropout=dropout,
+        )
         self.critic = VisualCritic(in_channels=4)
+
+    @classmethod
+    def from_config(cls, config: Dict[str, Any]) -> "SVANModel":
+        keys = ("vocab_size", "d_model", "nhead", "num_layers", "dim_feedforward", "max_seq_len", "dropout")
+        return cls(**{k: config[k] for k in keys if k in config})
 
     def count_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)

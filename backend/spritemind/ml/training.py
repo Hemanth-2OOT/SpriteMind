@@ -201,6 +201,14 @@ class ModelTrainer:
         resume_from: Optional[str] = None,
         patience: int = 4,
         seed: int = 42,
+        max_seq_len: int = 384,
+        d_model: int = 128,
+        nhead: int = 4,
+        num_layers: int = 4,
+        dim_feedforward: int = 512,
+        dropout: float = 0.1,
+        label_smoothing: float = 0.0,
+        threads: int = 0,
     ) -> Dict[str, Any]:
         if self.is_training:
             return {"status": "error", "message": "Training already in progress"}
@@ -209,7 +217,8 @@ class ModelTrainer:
         self.is_training = True
         self._thread = threading.Thread(
             target=self._run_training_loop,
-            args=(dataset_name, epochs, batch_size, learning_rate, optimizer_name, save_checkpoint_name, resume, resume_from, patience, seed),
+            args=(dataset_name, epochs, batch_size, learning_rate, optimizer_name, save_checkpoint_name, resume, resume_from, patience, seed,
+                  max_seq_len, d_model, nhead, num_layers, dim_feedforward, dropout, label_smoothing, threads),
             daemon=True,
         )
         self._thread.start()
@@ -240,8 +249,18 @@ class ModelTrainer:
         resume_from: Optional[str] = None,
         patience: int = 4,
         seed: int = 42,
+        max_seq_len: int = 384,
+        d_model: int = 128,
+        nhead: int = 4,
+        num_layers: int = 4,
+        dim_feedforward: int = 512,
+        dropout: float = 0.1,
+        label_smoothing: float = 0.0,
+        threads: int = 0,
     ):
         start_time = time.time()
+        if threads > 0:
+            torch.set_num_threads(threads)
         # Set seeds for reproducibility
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -251,8 +270,8 @@ class ModelTrainer:
 
         try:
             dataset_dir = Path("data/datasets") / dataset_name
-            train_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, split="train")
-            val_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, split="val")
+            train_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="train")
+            val_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="val")
 
             if len(train_dataset) == 0:
                 self.current_run_status["state"] = "error"
@@ -263,7 +282,15 @@ class ModelTrainer:
             train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False) if len(val_dataset) > 0 else None
 
-            model = SVANModel(vocab_size=self.tokenizer.vocab_size, d_model=128).to(self.device)
+            model = SVANModel(
+                vocab_size=self.tokenizer.vocab_size,
+                d_model=d_model,
+                nhead=nhead,
+                num_layers=num_layers,
+                dim_feedforward=dim_feedforward,
+                max_seq_len=max_seq_len,
+                dropout=dropout,
+            ).to(self.device)
 
             # Optional resume from previous checkpoint
             start_epoch = 1
@@ -283,7 +310,7 @@ class ModelTrainer:
                 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
 
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
-            criterion = nn.CrossEntropyLoss(ignore_index=self.tokenizer.pad_id)
+            criterion = nn.CrossEntropyLoss(ignore_index=self.tokenizer.pad_id, label_smoothing=label_smoothing)
 
             total_steps = epochs * len(train_loader)
             loss_history: List[Dict[str, Any]] = []
@@ -325,6 +352,9 @@ class ModelTrainer:
 
                     inp = batch["input_ids"].to(self.device)
                     tgt = batch["target_ids"].to(self.device)
+                    # Trim padded tail per batch to the longest real sequence
+                    real_len = int((tgt != self.tokenizer.pad_id).sum(dim=1).max().item())
+                    inp, tgt = inp[:, :real_len].contiguous(), tgt[:, :real_len].contiguous()
                     c_idx = batch["category_idx"].to(self.device)
                     s_idx = batch["style_idx"].to(self.device)
                     p_idx = batch["pose_idx"].to(self.device)
@@ -343,7 +373,7 @@ class ModelTrainer:
                         tgt_key_padding_mask=padding_mask,
                     )
 
-                    loss = criterion(logits.view(-1, logits.size(-1)), tgt.view(-1))
+                    loss = criterion(logits.reshape(-1, logits.size(-1)), tgt.view(-1))
                     loss.backward()
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     optimizer.step()
@@ -376,6 +406,8 @@ class ModelTrainer:
                         for val_batch in val_loader:
                             v_inp = val_batch["input_ids"].to(self.device)
                             v_tgt = val_batch["target_ids"].to(self.device)
+                            v_real_len = int((v_tgt != self.tokenizer.pad_id).sum(dim=1).max().item())
+                            v_inp, v_tgt = v_inp[:, :v_real_len].contiguous(), v_tgt[:, :v_real_len].contiguous()
                             v_mask = (v_inp == self.tokenizer.pad_id)
                             v_logits = model(
                                 tgt_tokens=v_inp,
@@ -385,7 +417,7 @@ class ModelTrainer:
                                 palette_idx=val_batch["palette_idx"].to(self.device),
                                 tgt_key_padding_mask=v_mask,
                             )
-                            v_loss = criterion(v_logits.view(-1, v_logits.size(-1)), v_tgt.view(-1))
+                            v_loss = criterion(v_logits.reshape(-1, v_logits.size(-1)), v_tgt.view(-1))
                             val_running_loss += v_loss.item()
 
                             v_preds = torch.argmax(v_logits, dim=-1)
@@ -424,6 +456,7 @@ class ModelTrainer:
                             "token_accuracy": round(val_acc, 2),
                             "best_val_loss": round(best_val_loss, 4),
                             "vocab_size": self.tokenizer.vocab_size,
+                            "model_config": model.model_config,
                             "parameters": model.count_parameters(),
                             "dataset_name": dataset_name,
                             "device": str(self.device),

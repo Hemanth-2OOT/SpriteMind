@@ -29,7 +29,9 @@ def build_table() -> str:
     composition = load("data/composition_metrics.json") or {}
     temporal = load("data/temporal_metrics.json") or {}
     # Newest benchmark run wins; the Tier-C baseline file stays untouched.
-    runs = sorted((ROOT / "data/benchmarks").glob("benchmark_results*.json"))
+    runs = sorted(
+        (ROOT / "data/benchmarks").glob("benchmark_results*.json"), key=lambda f: f.stat().st_mtime
+    )
     benchmark = load(str(runs[-1].relative_to(ROOT))) if runs else {}
     summary = benchmark.get("summary", benchmark)
 

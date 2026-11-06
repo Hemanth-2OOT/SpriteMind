@@ -77,3 +77,8 @@ data/backups/
 # Large datasets that should be tracked via Git LFS or reproduced via scripts:
 # (Note: Use 'git lfs track "*.jsonl"' or generate with 'python -m spritemind.dataset.storage')
 data/datasets/generalization_10k/records.jsonl
+
+# Regenerable training corpora (see scripts/train_detail.py, scripts/train_temporal.py)
+data/datasets/generalization_detail_12k/
+data/temporal_dataset_4k/
+/backend/data/

@@ -48,11 +48,14 @@ class SpriteMindPipeline:
         if not ckpt_path.exists():
             return False
 
-        model = SVANModel(vocab_size=self.tokenizer.vocab_size, d_model=128)
         ckpt_data = torch.load(ckpt_path, map_location=self.device)
+        metadata = ckpt_data.get("metadata", {}) if isinstance(ckpt_data, dict) else {}
+        model_config = dict(metadata.get("model_config") or {})
+        model_config.setdefault("vocab_size", self.tokenizer.vocab_size)
+        model = SVANModel.from_config(model_config)
         if isinstance(ckpt_data, dict) and "model_state_dict" in ckpt_data:
             model.load_state_dict(ckpt_data["model_state_dict"])
-            self.checkpoint_metadata = ckpt_data.get("metadata", {})
+            self.checkpoint_metadata = metadata
         else:
             model.load_state_dict(ckpt_data)
             self.checkpoint_metadata = {}
@@ -129,6 +132,7 @@ class SpriteMindPipeline:
         engine_mode: str = "procedural_baseline",  # "trained_model" | "untrained_model" | "procedural_baseline"
         seed: int = 42,
         max_actions: int = 64,
+        best_of: int = 4,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
         start_time = time.perf_counter()
@@ -199,6 +203,9 @@ class SpriteMindPipeline:
                     palette=final_palette,
                     max_actions=max_actions,
                     seed=seed,
+                    width=final_dim,
+                    height=final_dim,
+                    best_of=best_of,
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -241,8 +248,81 @@ class SpriteMindPipeline:
         palette: str,
         max_actions: int,
         seed: int,
+        width: int = 32,
+        height: int = 32,
+        best_of: int = 1,
+        temperature: float = 0.9,
     ) -> PixelScriptProgram:
-        """Runs autoregressive token generation with SVAN transformer."""
+        """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked."""
+        n = max(1, best_of)
+        candidates = (
+            self._sample_batch(model, category, style, pose, max_actions, seed, temperature, n)
+            if n > 1
+            else [self._sample_tokens(model, category, style, pose, max_actions, seed, temperature)]
+        )
+
+        best_tokens: Optional[List[int]] = None
+        best_score = float("-inf")
+        for tokens in candidates:
+            actions_cand = self.tokenizer.decode_tokens(tokens)
+            prog_cand = PixelScriptProgram(actions=actions_cand)
+            score = self._score_candidate(prog_cand, palette, width, height)
+            if score > best_score:
+                best_score, best_tokens = score, tokens
+
+        actions = self.tokenizer.decode_tokens(best_tokens or [self.tokenizer.sos_id])
+        meta = {"category": category, "style": style, "pose": pose, "palette": palette, "generator": "neural_svan"}
+        return PixelScriptProgram(actions=actions, metadata=meta)
+
+    def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32) -> float:
+        """Heuristic quality score used to rerank sampled candidates before rendering."""
+        from spritemind.pixelscript.validator import PixelScriptValidator
+
+        if not prog.actions:
+            return -100.0
+        report = PixelScriptValidator.validate(prog, canvas_width=width, canvas_height=height)
+        score = 0.0 if report.is_valid else -20.0
+
+        try:
+            res = PixelScriptEngine.execute(prog, width=width, height=height, palette_name=palette)
+            alpha = res.composite_array[..., 3] > 0
+        except Exception:
+            return -100.0
+
+        coverage = float(alpha.mean())
+        if coverage < 0.06:
+            score -= 30.0
+        elif coverage > 0.60:
+            score -= 10.0
+        else:
+            score += 20.0 * (1.0 - abs(coverage - 0.22) / 0.22)
+
+        col_mass = alpha.sum(axis=0).astype(float)
+        total = col_mass.sum()
+        if total > 0:
+            center = (col_mass * np.arange(len(col_mass))).sum() / total
+            score -= abs(center - (width - 1) / 2.0) * 0.4
+            mirrored = col_mass[::-1]
+            symmetry = 1.0 - np.abs(col_mass - mirrored).sum() / (2.0 * total)
+            score += 8.0 * symmetry
+
+        parts = {a.params.get("name") for a in prog.actions if a.action_type.value == "PART"}
+        score += min(len(parts), 8) * 1.5
+        if not any(a.action_type.value == "END" for a in prog.actions):
+            score -= 10.0
+        return score
+
+    def _sample_tokens(
+        self,
+        model: SVANModel,
+        category: str,
+        style: str,
+        pose: str,
+        max_actions: int,
+        seed: int,
+        temperature: float = 0.9,
+    ) -> List[int]:
+        """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
         cat_idx = torch.tensor([CATEGORIES.index(category) if category in CATEGORIES else 0], device=self.device)
         style_idx = torch.tensor([STYLES.index(style) if style in STYLES else 0], device=self.device)
@@ -256,10 +336,10 @@ class SpriteMindPipeline:
             memory = torch.stack([sem_cond, struct_cond, vis_cond], dim=1)
 
             curr_tokens = [self.tokenizer.sos_id]
-            max_tokens = min(128, max_actions * 4)
             transformer = model.action_transformer
+            max_tokens = min(transformer.max_seq_len - 1, max_actions * 8)
             use_cache = hasattr(transformer, "forward_step")
-            cache = transformer.new_cache() if use_cache else None
+            cache = transformer.new_cache(max_len=max_tokens + 1) if use_cache else None
 
             for step in range(max_tokens):
                 if use_cache:
@@ -278,16 +358,82 @@ class SpriteMindPipeline:
                     next_token_logits = next_token_logits + masked
 
                 # Sample next token
-                probs = torch.softmax(next_token_logits, dim=-1)
+                probs = torch.softmax(next_token_logits / max(1e-5, temperature), dim=-1)
                 next_tok = int(torch.multinomial(probs, num_samples=1).item())
                 curr_tokens.append(next_tok)
 
                 if next_tok == self.tokenizer.eos_id:
                     break
 
-        actions = self.tokenizer.decode_tokens(curr_tokens)
-        meta = {"category": category, "style": style, "pose": pose, "palette": palette, "generator": "neural_svan"}
-        return PixelScriptProgram(actions=actions, metadata=meta)
+        return curr_tokens
+
+    def _sample_batch(
+        self,
+        model: SVANModel,
+        category: str,
+        style: str,
+        pose: str,
+        max_actions: int,
+        seed: int,
+        temperature: float,
+        num_candidates: int,
+    ) -> List[List[int]]:
+        """Samples several candidate programs in one batched decode pass.
+
+        All candidates share the same conditioning memory, so running them as a
+        batch costs barely more than a single pass and replaces N sequential
+        sampling loops.
+        """
+        torch.manual_seed(seed)
+        cat_idx = torch.tensor([CATEGORIES.index(category) if category in CATEGORIES else 0], device=self.device)
+        style_idx = torch.tensor([STYLES.index(style) if style in STYLES else 0], device=self.device)
+        pose_idx = torch.tensor([POSES.index(pose) if pose in POSES else 0], device=self.device)
+        pal_idx = torch.tensor([0], device=self.device)
+
+        transformer = model.action_transformer
+        max_tokens = min(transformer.max_seq_len - 1, max_actions * 8)
+        vocab_size = transformer.head.out_features
+        sos, eos, pad = self.tokenizer.sos_id, self.tokenizer.eos_id, self.tokenizer.pad_id
+
+        with torch.inference_mode():
+            sem_cond = model.semantic_encoder(cat_idx, style_idx, pose_idx, pal_idx)
+            memory = torch.stack(
+                [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)], dim=1
+            ).expand(num_candidates, -1, -1)
+            cache = transformer.new_cache(max_len=max_tokens + 1, batch_size=num_candidates)
+
+            tokens: List[List[int]] = [[sos] for _ in range(num_candidates)]
+            finished = [False] * num_candidates
+
+            for step in range(max_tokens):
+                if all(finished):
+                    break
+                last = torch.tensor(
+                    [[seq[-1]] for seq in tokens], dtype=torch.long, device=self.device
+                )
+                logits = transformer.forward_step(last, memory, cache, step)[:, -1, :]
+
+                mask = torch.zeros_like(logits)
+                for i, seq in enumerate(tokens):
+                    if finished[i]:
+                        continue
+                    allowed = self.tokenizer.allowed_token_ids(seq)
+                    if allowed is not None:
+                        row = torch.full((vocab_size,), float("-inf"), device=self.device)
+                        row[torch.tensor(allowed, device=self.device)] = 0.0
+                        mask[i] = row
+                probs = torch.softmax((logits + mask) / max(1e-5, temperature), dim=-1)
+                next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1).tolist()
+
+                for i, tok in enumerate(next_tokens):
+                    if finished[i]:
+                        tokens[i].append(pad)
+                        continue
+                    tokens[i].append(tok)
+                    if tok == eos:
+                        finished[i] = True
+
+        return [seq for seq in tokens]
 
     def _run_critic(
         self,

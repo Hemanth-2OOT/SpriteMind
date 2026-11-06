@@ -15,6 +15,15 @@ class ActionTokenizer:
         self.token_to_id: Dict[str, int] = {}
         self.id_to_token: Dict[int, str] = {}
         self._build_vocab()
+        self._prefix_cache: Dict[str, List[int]] = {}
+
+    def _prefix_ids(self, prefix: str) -> List[int]:
+        """Token ids starting with `prefix`, computed once per prefix."""
+        cached = self._prefix_cache.get(prefix)
+        if cached is None:
+            cached = [tid for tok, tid in self.token_to_id.items() if tok.startswith(prefix)]
+            self._prefix_cache[prefix] = cached
+        return cached
 
     def _add_token(self, token: str):
         if token not in self.token_to_id:
@@ -171,10 +180,11 @@ class ActionTokenizer:
     }
 
     def _ids_with_prefix(self, *prefixes: str) -> List[int]:
-        ids = []
-        for tok, tid in self.token_to_id.items():
-            if any(tok == p or tok.startswith(p) for p in prefixes):
-                ids.append(tid)
+        if len(prefixes) == 1:
+            return self._prefix_ids(prefixes[0])
+        ids: List[int] = []
+        for p in prefixes:
+            ids.extend(self._prefix_ids(p))
         return ids
 
     def _grammar_state(self, tokens: List[int]) -> Tuple[Optional[str], int]:

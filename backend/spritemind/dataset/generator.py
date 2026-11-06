@@ -184,6 +184,9 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.PART, {"name": "torso", "parent": None, "anchor_x": cx, "anchor_y": by}))
             actions.append(PixelAction(ActionType.RECT, {"x": bx, "y": by, "w": body_w, "h": body_h, "color": c_skin, "filled": True}))
             actions.append(PixelAction(ActionType.LINE, {"x0": bx + 1, "y0": by, "x1": bx + body_w - 2, "y1": by, "color": c_skin_hi}))
+            # Detail pass: spine ridge and fur shadow
+            actions.append(PixelAction(ActionType.LINE, {"x0": bx + 2, "y0": by + 2, "x1": bx + body_w - 3, "y1": by + 2, "color": c_skin_hi}))
+            actions.append(PixelAction(ActionType.RECT, {"x": bx + 1, "y": by + body_h - 1, "w": body_w - 2, "h": 1, "color": c_cloth, "filled": True}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
             # Head with snout & ears (front-facing right)
@@ -205,6 +208,7 @@ class CharacterGenerator:
             # Tail
             actions.append(PixelAction(ActionType.PART, {"name": "tail", "parent": "torso", "anchor_x": bx, "anchor_y": by}))
             actions.append(PixelAction(ActionType.LINE, {"x0": bx, "y0": by + 1, "x1": bx - 3, "y1": by - 2, "color": c_skin}))
+            actions.append(PixelAction(ActionType.PIXEL, {"x": bx - 3, "y": by - 3, "color": c_skin_hi}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
             # 4 Legs: Front-left, Front-right, Hind-left, Hind-right
@@ -228,6 +232,9 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.PART, {"name": "torso", "parent": None, "anchor_x": cx, "anchor_y": cy}))
             actions.append(PixelAction(ActionType.RECT, {"x": cx - r, "y": cy - r + 3 + bob_y, "w": r * 2, "h": r * 2 - 2, "color": c_skin, "filled": True}))
             actions.append(PixelAction(ActionType.RECT, {"x": cx - r + 1, "y": cy - r + 1 + bob_y, "w": r * 2 - 2, "h": 2, "color": c_skin_hi, "filled": True}))
+            # Detail pass: glossy highlight and drip
+            actions.append(PixelAction(ActionType.PIXEL, {"x": cx - r + 2, "y": cy - r + 2 + bob_y, "color": 8}))
+            actions.append(PixelAction(ActionType.PIXEL, {"x": cx + r - 3, "y": cy + r - 3 + bob_y, "color": c_skin_hi}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
             # Eyes
@@ -250,7 +257,7 @@ class CharacterGenerator:
         # Proportion tuning
         if prop == "stocky":
             torso_w, torso_h = 10, 6
-            head_w, head_h = 8, 6
+            head_w, head_h = 7, 6
             leg_w, leg_h = 4, 5
             arm_w, arm_h = 3, 5
         elif prop == "slender":
@@ -260,12 +267,12 @@ class CharacterGenerator:
             arm_w, arm_h = 2, 7
         elif prop == "chibi":
             torso_w, torso_h = 6, 5
-            head_w, head_h = 10, 8
+            head_w, head_h = 8, 7
             leg_w, leg_h = 2, 4
             arm_w, arm_h = 2, 4
         else: # standard
             torso_w, torso_h = 8, 7
-            head_w, head_h = 8, 7
+            head_w, head_h = 6, 6
             leg_w, leg_h = 3, 6
             arm_w, arm_h = 2, 6
 
@@ -277,11 +284,23 @@ class CharacterGenerator:
         actions.append(PixelAction(ActionType.RECT, {"x": tx, "y": ty, "w": torso_w, "h": torso_h, "color": c_cloth, "filled": True}))
         # Belt line
         actions.append(PixelAction(ActionType.LINE, {"x0": tx, "y0": ty + torso_h - 1, "x1": tx + torso_w - 1, "y1": ty + torso_h - 1, "color": c_pants}))
+        # Detail pass: shoulder trim, chest highlight, strap and belt buckle
+        actions.append(PixelAction(ActionType.RECT, {"x": tx, "y": ty, "w": torso_w, "h": 1, "color": c_skin_hi, "filled": True}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": tx + 1, "y0": ty + 2, "x1": tx + 1, "y1": ty + torso_h - 2, "color": 8}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": tx + 2, "y0": ty + 1, "x1": tx + torso_w - 2, "y1": ty + torso_h - 2, "color": c_pants}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": cx, "y": ty + torso_h - 1, "color": 10}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
+
+        # Neck and shoulder shelf separate head from torso in silhouette
+        neck_w = max(2, head_w // 3)
+        actions.append(PixelAction(ActionType.RECT, {"x": cx - neck_w // 2, "y": ty - 1, "w": neck_w, "h": 1, "color": c_skin, "filled": True}))
+        actions.append(PixelAction(ActionType.RECT, {"x": tx - 1, "y": ty, "w": torso_w + 2, "h": 1, "color": c_cloth, "filled": True}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": tx - 1, "y": ty, "color": c_skin_hi}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": tx + torso_w, "y": ty, "color": c_skin_hi}))
 
         # Head
         hx = cx - (head_w // 2)
-        hy = ty - head_h
+        hy = ty - head_h - 1
         actions.append(PixelAction(ActionType.PART, {"name": "head", "parent": "torso", "anchor_x": cx, "anchor_y": hy}))
         actions.append(PixelAction(ActionType.RECT, {"x": hx, "y": hy, "w": head_w, "h": head_h, "color": c_skin, "filled": True}))
 
@@ -297,6 +316,9 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.PIXEL, {"x": cx, "y": hy - 4, "color": 11}))
         else: # general hair
             actions.append(PixelAction(ActionType.RECT, {"x": hx, "y": hy, "w": head_w, "h": 2, "color": c_skin_hi, "filled": True}))
+        # Detail pass: jaw shadow and mouth
+        actions.append(PixelAction(ActionType.LINE, {"x0": hx + 1, "y0": hy + head_h - 1, "x1": hx + head_w - 2, "y1": hy + head_h - 1, "color": c_skin_hi}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": cx, "y": hy + head_h - 2, "color": c_outline}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Horns (for fantasy_creature or demon)
@@ -312,6 +334,7 @@ class CharacterGenerator:
         eye_spacing = 3 if head_w >= 8 else 2
         actions.append(PixelAction(ActionType.PIXEL, {"x": cx - eye_spacing, "y": eye_y, "color": c_eyes}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": cx + eye_spacing - 1, "y": eye_y, "color": c_eyes}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": cx - eye_spacing, "y": eye_y - 1, "color": 8}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Wings (if fantasy_creature or accessory)
@@ -332,6 +355,9 @@ class CharacterGenerator:
         actions.append(PixelAction(ActionType.PART, {"name": "arm_left", "parent": "torso", "anchor_x": al_x, "anchor_y": al_y}))
         actions.append(PixelAction(ActionType.RECT, {"x": al_x, "y": al_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": al_x, "y": al_y + arm_h - 1, "color": c_skin}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": al_x, "y": al_y, "color": c_skin_hi}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": al_x, "y0": al_y + arm_h - 2, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 2, "color": 8}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": al_x + arm_w - 1, "y0": al_y + 1, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 1, "color": c_pants}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         ar_x = tx + torso_w
@@ -339,21 +365,28 @@ class CharacterGenerator:
         actions.append(PixelAction(ActionType.PART, {"name": "arm_right", "parent": "torso", "anchor_x": ar_x, "anchor_y": ar_y}))
         actions.append(PixelAction(ActionType.RECT, {"x": ar_x, "y": ar_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y + arm_h - 1, "color": c_skin}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y, "color": c_skin_hi}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": ar_x, "y0": ar_y + 1, "x1": ar_x, "y1": ar_y + arm_h - 1, "color": c_pants}))
+        actions.append(PixelAction(ActionType.LINE, {"x0": ar_x, "y0": ar_y + arm_h - 2, "x1": ar_x + arm_w - 1, "y1": ar_y + arm_h - 2, "color": 8}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Legs
-        ll_x = tx + 1 + leg_l_dx
+        ll_x = tx + leg_l_dx
         ll_y = ty + torso_h
         actions.append(PixelAction(ActionType.PART, {"name": "leg_left", "parent": "torso", "anchor_x": ll_x, "anchor_y": ll_y}))
         actions.append(PixelAction(ActionType.RECT, {"x": ll_x, "y": ll_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}))
         actions.append(PixelAction(ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": ll_x, "y": ll_y + 1, "color": 8}))
+        actions.append(PixelAction(ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
-        lr_x = tx + torso_w - 1 - leg_w + leg_r_dx
+        lr_x = tx + torso_w - leg_w + leg_r_dx
         lr_y = ty + torso_h
         actions.append(PixelAction(ActionType.PART, {"name": "leg_right", "parent": "torso", "anchor_x": lr_x, "anchor_y": lr_y}))
         actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}))
         actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
+        actions.append(PixelAction(ActionType.PIXEL, {"x": lr_x + leg_w - 1, "y": lr_y + 1, "color": 8}))
+        actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
         actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Weapon
@@ -380,6 +413,9 @@ class CharacterGenerator:
                 actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w + 2, "y0": ar_y, "x1": ar_x + arm_w, "y1": ar_y + 4, "color": 5}))
                 actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y - 4, "x1": ar_x + arm_w, "y1": ar_y + 4, "color": 7}))
 
+            # Detail pass: weapon glint and grip wrap
+            actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w, "y": ar_y - 5, "color": 8}))
+            actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y + 1, "x1": ar_x + arm_w, "y1": ar_y + 2, "color": c_outline}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
