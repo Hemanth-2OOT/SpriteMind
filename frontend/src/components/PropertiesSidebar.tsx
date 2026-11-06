@@ -328,6 +328,28 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
               </div>
             </div>
 
+            {/* Neural critic verdict (calibrated at p=0.72) */}
+            {criticReport?.neural_critic?.defect_probability !== undefined && (
+              <div className="bg-dark-950 p-3 rounded-lg border border-dark-750 space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-wider">
+                  <span>Neural Critic</span>
+                  <span className={criticReport.neural_critic.has_defect ? 'text-amber-400' : 'text-emerald-400'}>
+                    {criticReport.neural_critic.has_defect ? 'Flagged' : 'Clean'}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded bg-dark-800 overflow-hidden">
+                  <div
+                    className={`h-full ${criticReport.neural_critic.has_defect ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${Math.round(Math.min(1, criticReport.neural_critic.defect_probability) * 100)}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                  <span>p(defect) {criticReport.neural_critic.defect_probability.toFixed(2)} · thr 0.72</span>
+                  <span className="text-slate-500">{criticReport.neural_critic.predicted_class}</span>
+                </div>
+              </div>
+            )}
+
             {/* Defects Inspection */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
