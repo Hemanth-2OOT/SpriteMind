@@ -35,6 +35,8 @@ backend/models/
 # Regenerable training corpora (scripts/train_detail.py, scripts/train_temporal.py)
 data/datasets/generalization_10k/records.jsonl
 data/datasets/generalization_detail_12k/
+data/datasets/expanded_synthetic_25k/
+data/expanded_synthetic_dataset.json
 data/temporal_dataset_4k/
 
 # Local secrets and editor/OS noise
