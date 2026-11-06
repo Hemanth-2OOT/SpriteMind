@@ -15,6 +15,16 @@ START = "<!-- METRICS:START -->"
 END = "<!-- METRICS:END -->"
 
 
+def _run_order(path: Path):
+    """Sort key: the run's own timestamp, with mtime only as a tie-break."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        data = {}
+    stamp = data.get("timestamp") or data.get("summary", {}).get("timestamp") or ""
+    return (str(stamp), path.stat().st_mtime)
+
+
 def load(rel: str):
     path = ROOT / rel
     if not path.exists():
@@ -28,9 +38,11 @@ def build_table() -> str:
     critic = load("data/critic_metrics.json") or {}
     composition = load("data/composition_metrics.json") or {}
     temporal = load("data/temporal_metrics.json") or {}
-    # Newest benchmark run wins; the Tier-C baseline file stays untouched.
+    # Newest benchmark run wins; the Tier-C baseline file stays untouched. The
+    # timestamp inside the file decides, because checkout order decides mtimes
+    # and a fresh clone would otherwise publish an older run than a dev machine.
     runs = sorted(
-        (ROOT / "data/benchmarks").glob("benchmark_results*.json"), key=lambda f: f.stat().st_mtime
+        (ROOT / "data/benchmarks").glob("benchmark_results*.json"), key=_run_order
     )
     benchmark = load(str(runs[-1].relative_to(ROOT))) if runs else {}
     summary = benchmark.get("summary", benchmark)
