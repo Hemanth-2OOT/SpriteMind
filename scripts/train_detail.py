@@ -16,7 +16,7 @@ CONFIG = {
     "epochs": 3,
     "batch_size": 16,
     "learning_rate": 0.0012,
-    "max_seq_len": 320,
+    "max_seq_len": 448,
     "d_model": 128,
     "nhead": 4,
     "num_layers": 6,

@@ -33,6 +33,7 @@ class SpriteMindPipeline:
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
         self.active_checkpoint_name: Optional[str] = None
         self.trained_model: Optional[SVANModel] = None
+        self.checkpoint_error: Optional[str] = None
 
         self._result_cache: "OrderedDict[Tuple[Any, ...], Dict[str, Any]]" = OrderedDict()
         self._result_cache_size = int(os.environ.get("SPRITEMIND_RESULT_CACHE", "64"))
@@ -70,6 +71,15 @@ class SpriteMindPipeline:
         metadata = ckpt_data.get("metadata", {}) if isinstance(ckpt_data, dict) else {}
         model_config = dict(metadata.get("model_config") or {})
         model_config.setdefault("vocab_size", self.tokenizer.vocab_size)
+        saved_vocab = int(model_config["vocab_size"])
+        if saved_vocab != self.tokenizer.vocab_size:
+            # A stale checkpoint would emit token ids the current vocabulary does
+            # not cover, so refuse it loudly and let the caller fall back.
+            self.checkpoint_error = (
+                f"{checkpoint_name} was trained with vocab {saved_vocab}, "
+                f"the tokenizer has {self.tokenizer.vocab_size}; retrain it"
+            )
+            return False
         model = SVANModel.from_config(model_config)
         if isinstance(ckpt_data, dict) and "model_state_dict" in ckpt_data:
             model.load_state_dict(ckpt_data["model_state_dict"])
@@ -231,6 +241,7 @@ class SpriteMindPipeline:
         seed: int = 42,
         max_actions: int = 64,
         best_of: int = 4,
+        procedural_guard: bool = True,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
         start_time = time.perf_counter()
@@ -244,6 +255,7 @@ class SpriteMindPipeline:
         final_dim = parsed.get("dimension", width)
 
         frames_data: List[Dict[str, Any]] = []
+        candidate_source = "procedural_baseline"
         actual_engine = engine_mode
 
         # If user requested trained_model but none is loaded, fall back or handle honestly
@@ -258,6 +270,9 @@ class SpriteMindPipeline:
                 else:
                     # Do NOT silently substitute procedural; switch to untrained model or raise
                     actual_engine = "untrained_model"
+            if self.trained_model is None and actual_engine == "trained_model":
+                # The checkpoint exists but cannot run with this tokenizer's vocabulary.
+                actual_engine = "procedural_baseline"
 
         # Generate frames
         if num_frames > 1:
@@ -293,7 +308,7 @@ class SpriteMindPipeline:
             else:
                 model = self.trained_model if actual_engine == "trained_model" else SVANModel(self.tokenizer.vocab_size).to(self.device)
                 model.eval()
-                prog = self._neural_generate(
+                prog, candidate_source = self._neural_generate(
                     model=model,
                     category=final_cat,
                     style=final_style,
@@ -304,6 +319,7 @@ class SpriteMindPipeline:
                     width=final_dim,
                     height=final_dim,
                     best_of=best_of,
+                    procedural_guard=procedural_guard and actual_engine == "trained_model",
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -333,6 +349,8 @@ class SpriteMindPipeline:
             "num_frames": len(frames_data),
             "frames": frames_data,
             "critic": critic_analysis,
+            "candidate_source": candidate_source,
+            "checkpoint_error": self.checkpoint_error,
             "inference_time_ms": round(total_time_ms, 2),
             "seed": seed,
         }
@@ -350,8 +368,14 @@ class SpriteMindPipeline:
         height: int = 32,
         best_of: int = 1,
         temperature: float = 0.9,
-    ) -> PixelScriptProgram:
-        """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked."""
+        procedural_guard: bool = False,
+    ) -> Tuple[PixelScriptProgram, str]:
+        """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
+
+        With `procedural_guard` the procedural baseline enters the same rerank as
+        one more candidate: it wins only when its score beats every sampled
+        program, and the caller reports that through `candidate_source`.
+        """
         n = max(1, best_of)
         candidates = (
             self._sample_batch(model, category, style, pose, max_actions, seed, temperature, n)
@@ -370,7 +394,23 @@ class SpriteMindPipeline:
 
         actions = self.tokenizer.decode_tokens(best_tokens or [self.tokenizer.sos_id])
         meta = {"category": category, "style": style, "pose": pose, "palette": palette, "generator": "neural_svan"}
-        return PixelScriptProgram(actions=actions, metadata=meta)
+        best_program = PixelScriptProgram(actions=actions, metadata=meta)
+
+        if not procedural_guard:
+            return best_program, "neural"
+
+        guard_program = ProceduralBaseline.generate(
+            category=category,
+            style=style,
+            pose=pose,
+            palette_name=palette,
+            width=width,
+            height=height,
+            seed=seed,
+        )
+        if self._score_candidate(guard_program, palette, width, height) > best_score:
+            return guard_program, "procedural_guard"
+        return best_program, "neural"
 
     def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32) -> float:
         """Heuristic quality score used to rerank sampled candidates before rendering."""
@@ -452,8 +492,9 @@ class SpriteMindPipeline:
                 # Grammar mask: only tokens legal for the current action position.
                 allowed = self.tokenizer.allowed_from_state(grammar_state)
                 if allowed is not None:
+                    legal = [t for t in allowed if t < next_token_logits.numel()]
                     masked = torch.full_like(next_token_logits, float("-inf"))
-                    masked[allowed] = 0.0
+                    masked[legal] = 0.0
                     next_token_logits = next_token_logits + masked
 
                 # Sample next token
@@ -520,8 +561,9 @@ class SpriteMindPipeline:
                         continue
                     allowed = self.tokenizer.allowed_from_state(states[i])
                     if allowed is not None:
+                        legal = [t for t in allowed if t < vocab_size]
                         row = torch.full((vocab_size,), float("-inf"), device=self.device)
-                        row[torch.tensor(allowed, device=self.device)] = 0.0
+                        row[torch.tensor(legal, device=self.device)] = 0.0
                         mask[i] = row
                 probs = torch.softmax((logits + mask) / max(1e-5, temperature), dim=-1)
                 next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1).tolist()

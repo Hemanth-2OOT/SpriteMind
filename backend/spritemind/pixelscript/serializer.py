@@ -40,6 +40,13 @@ class PixelScriptSerializer:
             return f"REUSE {p.get('part_name', '')} {p.get('dest_x', 0)} {p.get('dest_y', 0)} {fx} {fy}"
         elif t == ActionType.TRANSFORM:
             return f"TRANSFORM {p.get('part_name', '')} {p.get('dx', 0)} {p.get('dy', 0)} {p.get('rot_deg', 0)}"
+        elif t == ActionType.OUTLINE:
+            return f"OUTLINE {p.get('x', 0)} {p.get('y', 0)} {p.get('w', 1)} {p.get('h', 1)} {p.get('color', 1)}"
+        elif t == ActionType.SHADE:
+            return (
+                f"SHADE {p.get('x', 0)} {p.get('y', 0)} {p.get('w', 1)} {p.get('h', 1)} "
+                f"{p.get('color', 1)} {p.get('direction', 1)}"
+            )
         elif t == ActionType.END:
             return f"END {p.get('target', 'PROGRAM')}"
         return f"# UNKNOWN {t}"

@@ -78,4 +78,6 @@ def test_idle_frames_keep_a_stable_silhouette():
             frame["script_text"], width=32, height=32, palette_name="pico8"
         ).composite_array
         counts.append(int((arr[..., 3] > 0).sum()))
-    assert max(counts) - min(counts) <= 2
+    # A 1px limb bob can tuck an arm inside the torso, which drops the outline
+    # pixels it owned; allow 2% of the sprite rather than a fixed pixel count.
+    assert max(counts) - min(counts) <= max(2, round(max(counts) * 0.02))

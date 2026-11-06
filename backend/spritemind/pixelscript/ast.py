@@ -1,7 +1,7 @@
 """PixelScript Abstract Syntax Tree and action definitions.
 
 Defines the core vocabulary for SpriteMind drawing actions:
-PIXEL, RECT, LINE, FILL, PALETTE, LAYER, PART, REUSE, TRANSFORM, ERASE, END.
+PIXEL, RECT, LINE, FILL, PALETTE, LAYER, PART, REUSE, TRANSFORM, ERASE, OUTLINE, SHADE, END.
 """
 from dataclasses import dataclass, field
 from enum import Enum
@@ -19,6 +19,8 @@ class ActionType(str, Enum):
     ERASE = "ERASE"
     REUSE = "REUSE"
     TRANSFORM = "TRANSFORM"
+    OUTLINE = "OUTLINE"
+    SHADE = "SHADE"
     END = "END"
 
 
@@ -36,6 +38,8 @@ class PixelAction:
     # ERASE: x (int), y (int), w (int, default 1), h (int, default 1)
     # REUSE: part_name (str), dest_x (int), dest_y (int), flip_x (bool), flip_y (bool)
     # TRANSFORM: part_name (str), dx (int), dy (int), rot_deg (int)
+    # OUTLINE: x, y, w, h (int region), color (int) -- 1px border around opaque pixels
+    # SHADE: x, y, w, h (int region), color (int), direction (0 up, 1 down, 2 left, 3 right)
     # END: marker (optional, e.g. 'PART' or 'PROGRAM')
     params: Dict[str, Any] = field(default_factory=dict)
     raw_text: Optional[str] = None

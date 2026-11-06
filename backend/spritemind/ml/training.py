@@ -211,7 +211,7 @@ class ModelTrainer:
         resume_from: Optional[str] = None,
         patience: int = 4,
         seed: int = 42,
-        max_seq_len: int = 384,
+        max_seq_len: int = 448,
         d_model: int = 128,
         nhead: int = 4,
         num_layers: int = 4,
@@ -259,7 +259,7 @@ class ModelTrainer:
         resume_from: Optional[str] = None,
         patience: int = 4,
         seed: int = 42,
-        max_seq_len: int = 384,
+        max_seq_len: int = 448,
         d_model: int = 128,
         nhead: int = 4,
         num_layers: int = 4,
@@ -390,6 +390,12 @@ class ModelTrainer:
 
                     running_loss += loss.item()
                     global_step += 1
+
+                    if global_step % 200 == 0:
+                        print(
+                            f"epoch {epoch} step {global_step}: loss {running_loss / global_step:.4f}",
+                            flush=True,
+                        )
 
                     # Training Token Accuracy
                     with torch.no_grad():

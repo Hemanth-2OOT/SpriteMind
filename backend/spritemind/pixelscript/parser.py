@@ -136,6 +136,25 @@ class PixelScriptParser:
             rot_deg = int(args[3]) if len(args) > 3 else 0
             return PixelAction(ActionType.TRANSFORM, {"part_name": part_name, "dx": dx, "dy": dy, "rot_deg": rot_deg}, raw_text, line_no)
 
+        elif cmd == ActionType.OUTLINE.value:
+            # OUTLINE <x> <y> <w> <h> <color>
+            if len(args) < 5:
+                raise ValueError("OUTLINE requires <x> <y> <w> <h> <color>")
+            x, y = int(args[0]), int(args[1])
+            w, h = int(args[2]), int(args[3])
+            color = int(args[4]) if args[4].isdigit() else args[4]
+            return PixelAction(ActionType.OUTLINE, {"x": x, "y": y, "w": w, "h": h, "color": color}, raw_text, line_no)
+
+        elif cmd == ActionType.SHADE.value:
+            # SHADE <x> <y> <w> <h> <color> <direction 0..3>
+            if len(args) < 6:
+                raise ValueError("SHADE requires <x> <y> <w> <h> <color> <direction>")
+            x, y = int(args[0]), int(args[1])
+            w, h = int(args[2]), int(args[3])
+            color = int(args[4]) if args[4].isdigit() else args[4]
+            direction = int(args[5]) % 4
+            return PixelAction(ActionType.SHADE, {"x": x, "y": y, "w": w, "h": h, "color": color, "direction": direction}, raw_text, line_no)
+
         elif cmd == ActionType.END.value:
             # END [target]
             target = args[0] if len(args) > 0 else "PROGRAM"

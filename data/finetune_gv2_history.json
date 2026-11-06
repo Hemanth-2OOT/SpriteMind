@@ -1,0 +1,29 @@
+{
+  "dataset": "gv2_synthetic_25k_mixed",
+  "replay": [
+    "generalization_detail_12k"
+  ],
+  "from_scratch": true,
+  "epochs": [
+    {
+      "epoch": 1,
+      "checkpoint": "svan_gv2.ep1.pt",
+      "val_loss": 0.3639,
+      "token_accuracy": 87.43,
+      "val_token_accuracy": 98.48,
+      "clean_rate": 93.8,
+      "elapsed_seconds": 3311.0
+    },
+    {
+      "epoch": 2,
+      "checkpoint": "svan_gv2b.ep1.pt",
+      "val_loss": 0.3482,
+      "token_accuracy": 98.27,
+      "val_token_accuracy": 98.68,
+      "clean_rate": 95.8,
+      "elapsed_seconds": 2610.2
+    }
+  ],
+  "best_clean_rate": 95.8,
+  "notes": "epoch 2 resumed from epoch 1 at lr 4e-4, batch 8 (the workspace cgroup caps RSS at 4 GB)"
+}

@@ -131,6 +131,23 @@ class PixelScriptValidator:
                 elif target_part not in defined_parts:
                     warnings.append(f"{line_ref}: TRANSFORM target part '{target_part}' not yet defined")
 
+            elif action.action_type in (ActionType.OUTLINE, ActionType.SHADE):
+                x, y, w, h = p.get("x"), p.get("y"), p.get("w"), p.get("h")
+                if any(v is None for v in (x, y, w, h)):
+                    errors.append(f"{line_ref}: {action.action_type.value} missing region params")
+                    has_error = True
+                elif w <= 0 or h <= 0:
+                    errors.append(f"{line_ref}: {action.action_type.value} width ({w}) and height ({h}) must be > 0")
+                    has_error = True
+                elif x >= canvas_width or y >= canvas_height or (x + w) <= 0 or (y + h) <= 0:
+                    warnings.append(f"{line_ref}: {action.action_type.value} completely out of canvas bounds")
+                if p.get("color") is None:
+                    errors.append(f"{line_ref}: {action.action_type.value} missing color")
+                    has_error = True
+                if action.action_type == ActionType.SHADE and p.get("direction") not in (0, 1, 2, 3):
+                    errors.append(f"{line_ref}: SHADE direction must be 0..3")
+                    has_error = True
+
             if has_error:
                 invalid_count += 1
 

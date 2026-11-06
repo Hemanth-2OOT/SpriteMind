@@ -18,14 +18,21 @@ from spritemind.ml.svan import SVANModel
 from spritemind.pixelscript.validator import PixelScriptValidator
 from spritemind.renderer.engine import PixelScriptEngine
 
-OLD_CONFIG = {"vocab_size": 401, "d_model": 128, "nhead": 4, "num_layers": 4,
-              "dim_feedforward": 512, "max_seq_len": 128, "dropout": 0.1}
+DEFAULT_CONFIG = {"vocab_size": 401, "d_model": 128, "nhead": 4, "num_layers": 4,
+                  "dim_feedforward": 512, "max_seq_len": 448, "dropout": 0.1}
 
 
 def load_legacy(path: Path, device="cpu"):
-    model = SVANModel.from_config(OLD_CONFIG)
-    ckpt = torch.load(path, map_location=device)
-    model.load_state_dict(ckpt["model_state_dict"] if "model_state_dict" in ckpt else ckpt)
+    """Load any SVAN checkpoint by reading the architecture it was trained with."""
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    state = ckpt["model_state_dict"] if "model_state_dict" in ckpt else ckpt
+    config = dict(DEFAULT_CONFIG)
+    config.update((ckpt.get("metadata") or {}).get("model_config") or {})
+    pe = state.get("action_transformer.pos_encoder.pe")
+    if pe is not None:
+        config["max_seq_len"] = int(pe.shape[1])
+    model = SVANModel.from_config(config)
+    model.load_state_dict(state)
     model.to(device).eval()
     return model
 
@@ -34,7 +41,7 @@ def summarize(pipe, model, palettes, seeds, best_of):
     rows, valid, coverage, colors, parts = [], 0, [], [], []
     for cat in CATEGORIES:
         for s in seeds:
-            prog = pipe._neural_generate(
+            prog, _source = pipe._neural_generate(
                 model=model, category=cat, style="classic_16bit", pose="idle",
                 palette="pico8", max_actions=64, seed=s, width=32, height=32, best_of=best_of,
             )

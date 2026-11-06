@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
-from spritemind.pixelscript.coherence import stabilize_offsets
+from spritemind.pixelscript.coherence import build_frame_script
 from spritemind.renderer.engine import PixelScriptEngine
 
 
@@ -360,7 +360,6 @@ class TemporalAnimator:
             for f_idx in range(num_frames):
                 phase = phase_vals[f_idx]
                 prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
-                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
                 
                 frame_offsets: Dict[str, Tuple[int, int, int]] = {}
 
@@ -399,13 +398,9 @@ class TemporalAnimator:
                     if dx != 0 or dy != 0 or rot != 0:
                         frame_offsets[part_name] = (dx, dy, rot)
 
-                for part_name, (dx, dy, rot) in stabilize_offsets(
+                frame_script = build_frame_script(
                     base_script, frame_offsets, width=width, height=height, palette_name=palette_name
-                ).items():
-                    if dx != 0 or dy != 0 or rot != 0:
-                        lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
-
-                frame_script = "\n".join(lines)
+                )
                 f_res = PixelScriptEngine.execute(frame_script, width=width, height=height, palette_name=palette_name)
                 f_dict = f_res.to_dict(include_passes=True)
                 f_dict["script_text"] = frame_script
@@ -420,14 +415,9 @@ class TemporalAnimator:
             for f_idx in range(num_frames):
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
-                lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
-                for part_name, (dx, dy, rot) in stabilize_offsets(
+                frame_script = build_frame_script(
                     base_script, offsets, width=width, height=height, palette_name=palette_name
-                ).items():
-                    if dx != 0 or dy != 0 or rot != 0:
-                        lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
-
-                frame_script = "\n".join(lines)
+                )
                 f_res = PixelScriptEngine.execute(frame_script, width=width, height=height, palette_name=palette_name)
                 f_dict = f_res.to_dict(include_passes=True)
                 f_dict["script_text"] = frame_script

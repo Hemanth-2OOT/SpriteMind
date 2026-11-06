@@ -1,59 +1,46 @@
 {
-  "dataset_name": "generalization_detail_12k",
-  "train_samples": 9600,
-  "val_samples": 1200,
-  "total_epochs": 3,
-  "completed_epochs": 3,
-  "best_epoch": 3,
-  "best_val_loss": 0.5456,
+  "dataset_name": "gv2_synthetic_25k_mixed",
+  "train_samples": 21925,
+  "val_samples": 2735,
+  "total_epochs": 2,
+  "completed_epochs": 2,
+  "best_epoch": 2,
+  "best_val_loss": 0.3482,
   "device": "cpu",
-  "parameters": 2292104,
-  "vocab_size": 401,
-  "learning_rate": 0.0012,
-  "elapsed_seconds": 2680.0,
+  "parameters": 2351639,
+  "vocab_size": 403,
+  "learning_rate": 0.0006,
+  "elapsed_seconds": 5921.2,
   "loss_history": [
     {
       "epoch": 1,
-      "loss": 1.1373
+      "loss": 87.43
     },
     {
       "epoch": 2,
-      "loss": 0.5818
-    },
-    {
-      "epoch": 3,
-      "loss": 0.552
+      "loss": 98.27
     }
   ],
   "val_loss_history": [
     {
       "epoch": 1,
-      "val_loss": 0.5895
+      "val_loss": 0.3639
     },
     {
       "epoch": 2,
-      "val_loss": 0.5514
-    },
-    {
-      "epoch": 3,
-      "val_loss": 0.5456
+      "val_loss": 0.3482
     }
   ],
   "token_accuracy_history": [
     {
       "epoch": 1,
-      "train_accuracy": 80.29,
-      "val_accuracy": 97.54
-    },
-    {
-      "epoch": 2,
-      "train_accuracy": 97.48,
+      "train_accuracy": 87.43,
       "val_accuracy": 98.48
     },
     {
-      "epoch": 3,
-      "train_accuracy": 98.24,
-      "val_accuracy": 98.53
+      "epoch": 2,
+      "train_accuracy": 98.27,
+      "val_accuracy": 98.68
     }
   ]
 }

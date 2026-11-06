@@ -13,6 +13,7 @@ import {
   Zap,
   ShieldCheck,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 import { EvaluationResults } from '../types';
 import { fetchEvaluationResults, fetchBenchmarkGallery, runBenchmark } from '../services/api';

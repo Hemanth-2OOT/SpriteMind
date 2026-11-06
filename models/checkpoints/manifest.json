@@ -7,21 +7,21 @@
       "sha256": "bcd1192b1ad2c8b27077d1b3d028d07febe7588f41737f8670010813e3e836f4"
     },
     "svan_checkpoint_best.pt": {
-      "best_val_loss": 0.5456,
-      "bytes": 9424396,
-      "epoch": 3,
+      "best_val_loss": 0.3482,
+      "bytes": 9490327,
+      "epoch": 2,
       "file": "svan_checkpoint_best.pt",
       "model_config": {
         "d_model": 128,
         "dim_feedforward": 512,
-        "dropout": 0.1,
-        "max_seq_len": 320,
+        "dropout": 0.05,
+        "max_seq_len": 448,
         "nhead": 4,
         "num_layers": 6,
-        "vocab_size": 401
+        "vocab_size": 403
       },
-      "parameter_count": 2334741,
-      "sha256": "f79be0919c0de3586afcabffb51e4951ffebe49f931318b6479b25341a187770"
+      "parameter_count": 2351639,
+      "sha256": "cab0d346d677b458915c957c9bfe52f3b572cb40d5037064e7d6cf6925aacd3f"
     },
     "svan_trained_baseline.pt": {
       "bytes": 6925759,

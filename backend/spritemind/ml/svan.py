@@ -334,7 +334,7 @@ class SVANModel(nn.Module):
         nhead: int = 4,
         num_layers: int = 4,
         dim_feedforward: int = 512,
-        max_seq_len: int = 384,
+        max_seq_len: int = 448,
         dropout: float = 0.1,
     ):
         super().__init__()
