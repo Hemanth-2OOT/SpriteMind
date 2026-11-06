@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Skull,
   Zap,
+  Shuffle,
 } from 'lucide-react';
 import { generateActionSetApi, planActionSetApi } from '../services/api';
 

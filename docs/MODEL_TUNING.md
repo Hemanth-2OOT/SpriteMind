@@ -103,3 +103,60 @@ The changes:
 `SPRITEMIND_THREADS` defaults to 2. The model is small enough that 1–8 torch threads are within
 noise of each other (430–480 ms on the same box); oversubscribing with 40 threads made
 generation about 20x slower.
+
+## Grammar v2 retrain (SHADE / OUTLINE)
+
+Grammar v2 adds two finishing primitives (see [`PIXELSCRIPT_GRAMMAR.md`](PIXELSCRIPT_GRAMMAR.md)),
+which grows the tokenizer vocabulary from 401 to 403. A v1 checkpoint cannot emit the new tokens,
+so `SpriteMindPipeline.load_checkpoint` refuses a vocabulary mismatch, records the reason in
+`checkpoint_error` and callers fall back to the procedural engine instead of sampling garbage.
+
+Training run (`data/finetune_gv2_history.json`):
+
+| Epoch | Data | lr | batch | val loss | token acc | critic clean rate | time |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `gv2_synthetic_25k` + 20% `generalization_detail_12k` replay (21,925 train) | 6e-4 | 16 | 0.3639 | 98.48% | 93.8% | 55 min |
+| 2 | same, resumed from epoch 1 | 4e-4 | 8 | 0.3482 | 98.68% | 95.8% | 44 min |
+
+Both epochs cleared the gate (`--min-clean 90`); epoch 2 was adopted as
+`models/checkpoints/svan_checkpoint_best.pt` (2,351,639 params, vocab 403, `max_seq_len` 448).
+Epoch 2 was resumed with a smaller batch because each epoch allocates close to the workspace's
+4 GB cgroup limit; running a benchmark alongside training trips the OOM killer.
+
+Result on the 100 held-out benchmark prompts:
+
+| Metric | v1 baseline | grammar v2 |
+| --- | --- | --- |
+| Silhouette IoU vs. procedural target | 0.406 | 0.495 |
+| Valid action rate | 100% | 100% |
+| Palette adherence | 100% | 100% |
+| Structural consistency | 99.1% | 99.25% |
+| Mean latency | 351 ms | 465 ms |
+
+Latency rose with the longer programs (v2 scripts average 308 tokens, p95 380). Silhouette
+coherence (`scripts/coherence_metrics.py`, 24 generalization prompts): zero prompts with detached
+alpha islands, mean island pixels 0.0, full dark-rim coverage on the silhouette border.
+
+Quality gate note: the critic clean rate on the 40-prompt gate is seed sensitive — 100% with a
+fixed seed, 72.5% with per-prompt seeds. Always compare checkpoints at the same seeds and read the
+clean rate alongside the defect breakdown rather than a single number.
+
+## Endpoint latency
+
+`scripts/latency_report.py` drives the real FastAPI app through `TestClient` and writes
+`data/benchmarks/latency_report.json`:
+
+| Endpoint | p50 | p95 |
+| --- | --- | --- |
+| `POST /api/generate` | 12.6 ms | 44.5 ms |
+| `POST /api/generate` (cache hit) | 2.6 ms | 3.2 ms |
+| `POST /api/action_set` | 138.8 ms | 152.4 ms |
+| `POST /api/action_set/plan` | 3.3 ms | 4.2 ms |
+| `GET /api/models` | 23.3 ms | 24.5 ms |
+| `GET /api/health` | 1.7 ms | 2.7 ms |
+
+`/api/generate` defaults to the procedural engine, which is why it is two orders of magnitude
+below the 465 ms neural benchmark mean. Pass `engine="trained_model"` to pay the neural cost;
+the LRU cache still collapses repeat requests.
+
+Regenerate with `python scripts/latency_report.py --requests 50`.

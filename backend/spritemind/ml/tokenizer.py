@@ -162,6 +162,25 @@ class ActionTokenizer:
             tokens.append(f"NUM_{p.get('dy', 0)}")
             tokens.append(f"NUM_{p.get('rot_deg', 0)}")
 
+        elif action.action_type == ActionType.OUTLINE:
+            tokens.append(f"NUM_{p.get('x', 0)}")
+            tokens.append(f"NUM_{p.get('y', 0)}")
+            tokens.append(f"NUM_{p.get('w', 1)}")
+            tokens.append(f"NUM_{p.get('h', 1)}")
+            c = p.get("color", 1)
+            c_val = c if isinstance(c, int) else 1
+            tokens.append(f"COL_{c_val % 32}")
+
+        elif action.action_type == ActionType.SHADE:
+            tokens.append(f"NUM_{p.get('x', 0)}")
+            tokens.append(f"NUM_{p.get('y', 0)}")
+            tokens.append(f"NUM_{p.get('w', 1)}")
+            tokens.append(f"NUM_{p.get('h', 1)}")
+            c = p.get("color", 1)
+            c_val = c if isinstance(c, int) else 1
+            tokens.append(f"COL_{c_val % 32}")
+            tokens.append(f"NUM_{int(p.get('direction', 1)) % 4}")
+
         elif action.action_type == ActionType.END:
             tokens.append(f"NAME_{p.get('target', 'PROGRAM')}")
 
@@ -180,6 +199,8 @@ class ActionTokenizer:
         ActionType.ERASE.value: ["NUM", "NUM", "NUM", "NUM"],
         ActionType.REUSE.value: ["NAME", "NUM", "NUM", "NUM", "NUM"],
         ActionType.TRANSFORM.value: ["NAME", "NUM", "NUM", "NUM"],
+        ActionType.OUTLINE.value: ["NUM", "NUM", "NUM", "NUM", "COL"],
+        ActionType.SHADE.value: ["NUM", "NUM", "NUM", "NUM", "COL", "NUM"],
         ActionType.END.value: ["NAME"],
     }
 
@@ -368,6 +389,25 @@ class ActionTokenizer:
                         "part_name": name, "dx": dx, "dy": dy, "rot_deg": rot,
                     }))
                     i += 5
+                elif act_type == ActionType.OUTLINE and i + 5 < n:
+                    x = self._parse_num(tokens[i + 1], 0)
+                    y = self._parse_num(tokens[i + 2], 0)
+                    w = max(1, self._parse_num(tokens[i + 3], 1))
+                    h = max(1, self._parse_num(tokens[i + 4], 1))
+                    col = self._parse_col(tokens[i + 5], 1)
+                    actions.append(PixelAction(act_type, {"x": x, "y": y, "w": w, "h": h, "color": col}))
+                    i += 6
+                elif act_type == ActionType.SHADE and i + 6 < n:
+                    x = self._parse_num(tokens[i + 1], 0)
+                    y = self._parse_num(tokens[i + 2], 0)
+                    w = max(1, self._parse_num(tokens[i + 3], 1))
+                    h = max(1, self._parse_num(tokens[i + 4], 1))
+                    col = self._parse_col(tokens[i + 5], 1)
+                    direction = self._parse_num(tokens[i + 6], 1) % 4
+                    actions.append(PixelAction(act_type, {
+                        "x": x, "y": y, "w": w, "h": h, "color": col, "direction": direction,
+                    }))
+                    i += 7
                 elif act_type == ActionType.PART and i + 4 < n:
                     name = tokens[i + 1].replace("NAME_", "")
                     parent_raw = tokens[i + 2].replace("NAME_", "")

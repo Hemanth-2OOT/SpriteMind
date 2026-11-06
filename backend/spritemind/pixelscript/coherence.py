@@ -30,11 +30,17 @@ def _clean_script(base_script: str) -> List[str]:
 
 
 def _script_with_offsets(base_script: str, offsets: Dict[str, Offset]) -> str:
+    """Injects transforms before the finishing pass so shading and outline follow the moved parts."""
     lines = _clean_script(base_script)
-    for part, (dx, dy, rot) in offsets.items():
-        if dx or dy or rot:
-            lines.append(f"TRANSFORM {part} {dx} {dy} {rot}")
-    return "\n".join(lines)
+    transforms = [f"TRANSFORM {part} {dx} {dy} {rot}" for part, (dx, dy, rot) in offsets.items() if dx or dy or rot]
+    if not transforms:
+        return "\n".join(lines)
+    cut = len(lines)
+    for index, line in enumerate(lines):
+        if line.startswith(("SHADE ", "OUTLINE ")):
+            cut = index
+            break
+    return "\n".join(lines[:cut] + transforms + lines[cut:])
 
 
 def _rasterize(

@@ -177,6 +177,54 @@ class PixelCanvas:
                 err += dx
                 cy += sy
 
+    def _opaque_mask(self) -> np.ndarray:
+        return self.composite()[:, :, 3] > 0
+
+    def _region_window(self, x: int, y: int, w: int, h: int):
+        x0, y0 = max(0, x), max(0, y)
+        x1, y1 = min(self.width, x + w), min(self.height, y + h)
+        if x1 <= x0 or y1 <= y0:
+            return None
+        mask = self._opaque_mask()
+        padded = np.pad(mask, 1)
+        window = padded[y0 : y1 + 2, x0 : x1 + 2]
+        rw, rh = x1 - x0, y1 - y0
+        return x0, y0, rw, rh, mask[y0:y1, x0:x1], window
+
+    def outline_rect(self, x: int, y: int, w: int, h: int, color: Any):
+        """Draws a 1px border in the transparent ring that touches opaque pixels inside the region."""
+        region = self._region_window(x, y, w, h)
+        if region is None:
+            return
+        x0, y0, rw, rh, inside, window = region
+        neighbours = (
+            window[0:rh, 1 : rw + 1]
+            | window[2 : rh + 2, 1 : rw + 1]
+            | window[1 : rh + 1, 0:rw]
+            | window[1 : rh + 1, 2 : rw + 2]
+        )
+        target = (~inside) & neighbours
+        rgba = self.resolve_color(color)
+        for yy, xx in zip(*np.nonzero(target)):
+            self.active_layer.set_pixel(x0 + int(xx), y0 + int(yy), rgba)
+
+    def shade_rect(self, x: int, y: int, w: int, h: int, color: Any, direction: int = 1):
+        """Recolors opaque edge pixels that face `direction` (0 up, 1 down, 2 left, 3 right)."""
+        region = self._region_window(x, y, w, h)
+        if region is None:
+            return
+        x0, y0, rw, rh, inside, window = region
+        facing = {
+            0: window[0:rh, 1 : rw + 1],
+            1: window[2 : rh + 2, 1 : rw + 1],
+            2: window[1 : rh + 1, 0:rw],
+            3: window[1 : rh + 1, 2 : rw + 2],
+        }[int(direction) % 4]
+        target = inside & (~facing)
+        rgba = self.resolve_color(color)
+        for yy, xx in zip(*np.nonzero(target)):
+            self.active_layer.set_pixel(x0 + int(xx), y0 + int(yy), rgba)
+
     def flood_fill(self, start_x: int, start_y: int, color: Any):
         """Deterministic 4-way flood fill."""
         if not (0 <= start_x < self.width and 0 <= start_y < self.height):

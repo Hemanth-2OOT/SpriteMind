@@ -156,6 +156,19 @@ class PixelScriptEngine:
                 rot_deg=int(p.get("rot_deg", 0)),
             )
 
+        elif t == ActionType.OUTLINE:
+            canvas.outline_rect(int(p["x"]), int(p["y"]), int(p["w"]), int(p["h"]), p["color"])
+
+        elif t == ActionType.SHADE:
+            canvas.shade_rect(
+                int(p["x"]),
+                int(p["y"]),
+                int(p["w"]),
+                int(p["h"]),
+                p["color"],
+                direction=int(p.get("direction", 1)),
+            )
+
         elif t == ActionType.END:
             if p.get("target") == "PART":
                 canvas.end_part()

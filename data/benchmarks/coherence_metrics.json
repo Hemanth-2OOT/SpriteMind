@@ -1,0 +1,202 @@
+{
+  "summary": {
+    "samples": 24,
+    "mean_outline_coverage": 1.0,
+    "prompts_with_islands": 0,
+    "mean_island_pixels": 0.0
+  },
+  "rows": [
+    {
+      "prompt": "A purple zombie wearing a knight helmet",
+      "category": "knight",
+      "body_pixels": 243,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A tiny green slime carrying a sword",
+      "category": "slime",
+      "body_pixels": 254,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A skeleton wearing a red cloak and carrying a staff",
+      "category": "skeleton",
+      "body_pixels": 243,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A blue cybernetic wolf ready to pounce",
+      "category": "knight",
+      "body_pixels": 224,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A golden robot rogue wielding dual energy daggers",
+      "category": "rogue",
+      "body_pixels": 257,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A horned goblin knight with a wooden shield",
+      "category": "knight",
+      "body_pixels": 213,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A winged fantasy creature casting ancient lightning",
+      "category": "knight",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A cybernetic bear with glowing emerald armor",
+      "category": "knight",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A slender shadow wizard floating above cursed runes",
+      "category": "wizard",
+      "body_pixels": 236,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A stocky chibi robot guardian with laser visor",
+      "category": "robot",
+      "body_pixels": 224,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A decaying zombie rogue sneaking through poisoned fog",
+      "category": "zombie",
+      "body_pixels": 225,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A glowing radioactive zombie shambling in darkness",
+      "category": "zombie",
+      "body_pixels": 245,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A massive zombie warlord with broken iron shackles",
+      "category": "zombie",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "An undead zombie archer clutching a splintered bow",
+      "category": "zombie",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A fallen frozen zombie trapped in arctic rime",
+      "category": "zombie",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A bloodstained royal zombie wearing a tarnished crown",
+      "category": "zombie",
+      "body_pixels": 243,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A moss-covered swamp zombie rising from murky waters",
+      "category": "zombie",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A cybernetic zombie with exposed wiring and chrome skull",
+      "category": "zombie",
+      "body_pixels": 242,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A tiny fast zombie crawler stalking its prey",
+      "category": "zombie",
+      "body_pixels": 215,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A collapsed ancient mummy zombie disintegrating into sand",
+      "category": "zombie",
+      "body_pixels": 257,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A fallen dark knight wielding an obsidian greatsword",
+      "category": "knight",
+      "body_pixels": 210,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A radiant sun paladin with ornate gold trimmed armor",
+      "category": "knight",
+      "body_pixels": 224,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A cyber knight with glowing holographic crest",
+      "category": "knight",
+      "body_pixels": 233,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    },
+    {
+      "prompt": "A battered mercenary knight resting on an iron shield",
+      "category": "knight",
+      "body_pixels": 197,
+      "islands": 0,
+      "island_pixels": 0,
+      "outline_coverage": 1.0
+    }
+  ]
+}
