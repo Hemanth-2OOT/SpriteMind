@@ -55,8 +55,10 @@ def build_table() -> str:
         ("SVAN Action Transformer", history.get("parameters"),
          f"val loss {history.get('best_val_loss', 'n/a')}, token acc {val_acc or 'n/a'}",
          f"{history.get('train_samples', 'n/a')} train / {history.get('total_epochs', 'n/a')} epochs"),
-        ("Neural Visual Critic", 368044,
-         f"val F1 {critic.get('best_f1', 'n/a')}, precision {critic.get('precision', 'n/a')}",
+        ("Neural Visual Critic", 369077,
+         f"val F1 {critic.get('best_f1', 'n/a')}, recall {critic.get('recall', 'n/a')}% "
+         f"(calibrated p={critic.get('calibrated_threshold', 'n/a')}: "
+         f"{critic.get('calibrated_precision', 'n/a')}% precision @ {critic.get('calibrated_false_positive_rate', 'n/a')}% FP)",
          f"{critic.get('train_samples', 'n/a')} train / {critic.get('total_epochs', 'n/a')} epochs"),
         ("TemporalSVAN", temporal.get("parameter_count"),
          f"best val loss {temporal.get('best_val_loss', 'n/a')}",
