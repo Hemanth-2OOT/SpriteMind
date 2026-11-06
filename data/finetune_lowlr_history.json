@@ -1,0 +1,33 @@
+{
+  "dataset_name": "generalization_detail_12k",
+  "train_samples": 9600,
+  "val_samples": 1200,
+  "total_epochs": 1,
+  "completed_epochs": 4,
+  "best_epoch": 4,
+  "best_val_loss": 0.542,
+  "device": "cpu",
+  "parameters": 2292104,
+  "vocab_size": 401,
+  "learning_rate": 0.00015,
+  "elapsed_seconds": 1116.0,
+  "loss_history": [
+    {
+      "epoch": 4,
+      "loss": 0.5467
+    }
+  ],
+  "val_loss_history": [
+    {
+      "epoch": 4,
+      "val_loss": 0.542
+    }
+  ],
+  "token_accuracy_history": [
+    {
+      "epoch": 4,
+      "train_accuracy": 98.32,
+      "val_accuracy": 98.55
+    }
+  ]
+}
