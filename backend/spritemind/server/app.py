@@ -3,16 +3,17 @@ import os
 import io
 import json
 import base64
+import hmac
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 import torch
 import numpy as np
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Response
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from spritemind.server.schemas import (
     GenerateRequest,
@@ -86,6 +87,26 @@ CORS_ORIGINS = [
     for origin in os.environ.get("SPRITEMIND_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
     if origin.strip()
 ]
+
+API_KEY_ENV = "SPRITEMIND_API_KEY"
+API_KEY_EXEMPT = {"/api/health", "/docs", "/openapi.json", "/redoc"}
+
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    """Optional shared-secret guard for deployments that are not localhost-only."""
+    expected = os.environ.get(API_KEY_ENV, "").strip()
+    path = request.url.path
+    if expected and path.startswith("/api") and path not in API_KEY_EXEMPT:
+        supplied = request.headers.get("x-api-key", "")
+        if not supplied:
+            header = request.headers.get("authorization", "")
+            if header.lower().startswith("bearer "):
+                supplied = header[7:].strip()
+        if not hmac.compare_digest(supplied, expected):
+            return JSONResponse({"detail": "Invalid or missing API key"}, status_code=401)
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
