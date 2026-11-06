@@ -95,3 +95,61 @@ def test_api_critic_endpoints():
     metrics_data = get_critic_metrics()
     assert "status" in metrics_data
     assert "model_architecture" in metrics_data
+
+
+CLEAN_HUMANOID = """LAYER 0 base 1.00
+PART head none 16 10
+RECT 13 8 6 5 8 1
+PART eyes none 16 10
+PIXEL 14 10 1
+PIXEL 17 10 1
+PART torso none 16 16
+RECT 13 14 6 4 8 1
+PART leg_left none 14 22
+RECT 13 18 2 6 8 1
+PART leg_right none 18 22
+RECT 17 18 2 6 8 1"""
+
+
+def _analyze(script: str, category: str = "knight"):
+    res = PixelScriptEngine.execute(script, width=32, height=32, palette_name="pico8")
+    return VisualUnderstandingPipeline().analyze(res, category=category, palette_name="pico8")
+
+
+def test_facial_features_mounted_on_head_are_not_disconnected():
+    report = _analyze(CLEAN_HUMANOID)
+
+    assert report["defects_count"] == 0
+
+
+def test_between_legs_gap_is_not_reported_as_a_hole():
+    report = _analyze(CLEAN_HUMANOID)
+
+    assert [d["type"] for d in report["detected_defects"]] == []
+
+
+def test_between_legs_gap_helper_rejects_off_centre_holes():
+    from spritemind.critic.visual_understanding import _is_between_legs_gap
+
+    class Torso:
+        bounding_box = {"min_x": 12, "min_y": 13, "max_x": 20, "max_y": 18}
+
+    centred = {"bbox": {"min_x": 15, "min_y": 20, "max_x": 16, "max_y": 22}}
+    off_centre = {"bbox": {"min_x": 21, "min_y": 20, "max_x": 22, "max_y": 22}}
+    above_hips = {"bbox": {"min_x": 15, "min_y": 4, "max_x": 16, "max_y": 5}}
+
+    assert _is_between_legs_gap(centred, Torso(), 32) is True
+    assert _is_between_legs_gap(off_centre, Torso(), 32) is False
+    assert _is_between_legs_gap(above_hips, Torso(), 32) is False
+
+
+def test_eyes_far_from_head_are_still_reported():
+    script = CLEAN_HUMANOID.replace("PIXEL 14 10 1", "PIXEL 14 24 1").replace(
+        "PIXEL 17 10 1", "PIXEL 17 24 1"
+    )
+
+    report = _analyze(script)
+
+    assert {"stray_pixel", "disconnected_part"} & {
+        d["type"] for d in report["detected_defects"]
+    }
