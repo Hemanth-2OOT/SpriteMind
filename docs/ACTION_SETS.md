@@ -43,8 +43,10 @@ curl -s localhost:7861/api/action_set -H 'Content-Type: application/json' \
 ```
 
 `POST /api/action_set` fields: `prompt`, `category`, `style`, `palette`, `width`, `height`,
-`engine` (`procedural_baseline|trained_model|untrained_model`), `seed`, `actions` (force an
-explicit clip list), `max_actions` (1–18), `include_gif`.
+`engine` (`procedural_baseline|trained_model|untrained_model`), `seed`, `facing`
+(`right|left`), `actions` (force an explicit clip list), `max_actions` (1–18), `include_gif`.
+The same `prompt` and `seed` always rebuild the same character; change the seed to get
+another build of the same prompt.
 
 Every action in the response carries `key`, `label`, `frames` (each with `image_base64`,
 `script_text`, `pixel_count`), `num_frames`, `fps`, `loop`, `effects` and `gif_base64`.
