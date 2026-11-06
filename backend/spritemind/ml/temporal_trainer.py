@@ -15,6 +15,17 @@ from spritemind.ml.temporal import TemporalSVAN, PARTS, PART_TO_IDX, CAT_TO_IDX,
 from spritemind.renderer.engine import PixelScriptEngine
 
 
+def _record_checkpoint(path, extra):
+    """Best-effort manifest entry; training must never fail because of bookkeeping."""
+    try:
+        from spritemind.ml.checkpoint_manifest import describe_file, record
+
+        entry = describe_file(Path(path), **extra)
+        record(Path(path).parent, entry)
+    except Exception:
+        pass
+
+
 class AnimationSequenceDataset(Dataset):
     """Loads temporal animation sequences from JSONL dataset files."""
 
@@ -278,6 +289,12 @@ class TemporalModelTrainer:
                     "device": self.device,
                     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                 }, ckpt_p)
+                _record_checkpoint(ckpt_p, {
+                    "trained_animations": len(ANIMATION_CATEGORIES),
+                    "taxonomy": list(ANIMATION_CATEGORIES),
+                    "parameter_count": self.model.count_parameters(),
+                    "best_val_loss": round(best_val_loss, 4),
+                })
 
         history["best_val_loss"] = best_val_loss
         history["parameter_count"] = self.model.count_parameters()

@@ -43,6 +43,10 @@ from spritemind.critic.model import DEFECT_CLASSES
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.ml.temporal import TemporalAnimator, ANIMATION_CATEGORIES, CATEGORIES
 from spritemind.actions import ActionSetBuilder, ActionSetPlanner
+from spritemind.ml.checkpoint_manifest import (
+    list_entries as list_checkpoint_entries,
+    verify as verify_checkpoint,
+)
 from spritemind.assets.library import AssetLibrary, ASSET_CATEGORIES
 from spritemind.assets.composer import AssetComposer
 from spritemind.assets.pack import AssetPack
@@ -130,10 +134,26 @@ def get_health() -> Dict[str, Any]:
 def get_models() -> Dict[str, Any]:
     checkpoints = [p.name for p in pipeline.checkpoints_dir.glob("*.pt")]
     model_info = pipeline.get_loaded_model_info()
+    recorded = {entry["file"]: entry for entry in list_checkpoint_entries(pipeline.checkpoints_dir)}
+    integrity = {
+        name: verify_checkpoint(pipeline.checkpoints_dir, name) for name in checkpoints
+    }
     return {
         "available_checkpoints": checkpoints,
         "loaded_model": model_info,
         "supported_engines": ["procedural_baseline", "untrained_model", "trained_model"],
+        "checkpoints": [
+            {
+                "file": name,
+                "recorded": name in recorded,
+                "parameter_count": recorded.get(name, {}).get("parameter_count"),
+                "trained_animations": recorded.get(name, {}).get("trained_animations"),
+                "integrity": integrity[name]["reason"],
+                "ok": integrity[name]["ok"],
+            }
+            for name in checkpoints
+        ],
+        "temporal_checkpoint_status": TemporalAnimator.last_load_status,
     }
 
 

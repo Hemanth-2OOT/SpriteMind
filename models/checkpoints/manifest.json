@@ -1,0 +1,48 @@
+{
+  "checkpoints": {
+    "socket_predictor_best.pt": {
+      "bytes": 2490967,
+      "file": "socket_predictor_best.pt",
+      "parameter_count": 619884,
+      "sha256": "bcd1192b1ad2c8b27077d1b3d028d07febe7588f41737f8670010813e3e836f4"
+    },
+    "svan_checkpoint_best.pt": {
+      "best_val_loss": 0.5456,
+      "bytes": 9424396,
+      "epoch": 3,
+      "file": "svan_checkpoint_best.pt",
+      "model_config": {
+        "d_model": 128,
+        "dim_feedforward": 512,
+        "dropout": 0.1,
+        "max_seq_len": 320,
+        "nhead": 4,
+        "num_layers": 6,
+        "vocab_size": 401
+      },
+      "parameter_count": 2334741,
+      "sha256": "f79be0919c0de3586afcabffb51e4951ffebe49f931318b6479b25341a187770"
+    },
+    "svan_trained_baseline.pt": {
+      "bytes": 6925759,
+      "file": "svan_trained_baseline.pt",
+      "parameter_count": 1713936,
+      "sha256": "16c2cd7310a167dd6ac3ecc64dfbf1d03d1c11f68dc8ba3b1e6f87d23ca2d71e"
+    },
+    "temporal_svan_best.pt": {
+      "bytes": 1725109,
+      "file": "temporal_svan_best.pt",
+      "parameter_count": 426854,
+      "sha256": "14b4c6215b99a865a2b7cc13b560318285a87d4b458a7ff781da0b6310ee6506",
+      "trained_animations": 18
+    },
+    "visual_critic_best.pt": {
+      "bytes": 1501293,
+      "epoch": 4,
+      "file": "visual_critic_best.pt",
+      "parameter_count": 369077,
+      "sha256": "2e239ff97c34326d104fc652cd2c66e5f0a3b8930aaeabbfc4d6af13b48351d3"
+    }
+  },
+  "version": 1
+}

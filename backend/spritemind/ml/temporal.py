@@ -3,6 +3,7 @@
 Learns temporal transitions, continuous motion phase, and body-part kinematic trajectories
 while preserving character identity, anatomy, palette, and accessories across all frames.
 """
+import logging
 import math
 import time
 from pathlib import Path
@@ -16,11 +17,15 @@ from spritemind.dataset.generator import (
     CATEGORIES,
     CharacterGenerator,
 )
+from spritemind.ml.checkpoint_manifest import describe as describe_checkpoint
+
 from spritemind.dataset.temporal_dataset import (
     ANIMATION_CATEGORIES,
     CYCLIC_ANIMATIONS,
     TemporalDatasetGenerator,
 )
+logger = logging.getLogger(__name__)
+
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
@@ -207,6 +212,7 @@ class TemporalAnimator:
     """
 
     _cached_model: Optional[TemporalSVAN] = None
+    last_load_status: Dict[str, Any] = {}
     _cached_checkpoint: Optional[str] = None
 
     @staticmethod
@@ -230,19 +236,40 @@ class TemporalAnimator:
     def get_or_load_model(cls, checkpoint_name: str = "temporal_svan_best.pt", device: str = "cpu") -> Tuple[TemporalSVAN, bool]:
         """Loads trained checkpoint or returns initialized model."""
         ckpt_path = Path("models/checkpoints") / checkpoint_name
+        if cls._cached_model is not None and cls._cached_checkpoint == checkpoint_name:
+            return cls._cached_model, True
         has_trained = False
         model = TemporalSVAN().to(device)
+        cls.last_load_status = {"checkpoint": checkpoint_name, "loaded": False, "reason": "missing file"}
 
         if ckpt_path.exists():
             try:
                 ckpt = torch.load(ckpt_path, map_location=device)
                 state = ckpt.get("model_state_dict", ckpt)
-                model.load_state_dict(cls._widen_embeddings(model, state))
+                widened = cls._widen_embeddings(model, state)
+                model.load_state_dict(widened)
                 has_trained = True
                 cls._cached_model = model
                 cls._cached_checkpoint = checkpoint_name
-            except Exception:
+                recorded = describe_checkpoint(Path("models/checkpoints"), checkpoint_name)
+                trained_rows = int(state.get("animation_embed.weight", torch.empty(0)).shape[0]) if state else 0
+                cls.last_load_status = {
+                    "checkpoint": checkpoint_name,
+                    "loaded": True,
+                    "reason": "verified" if trained_rows >= len(ANIMATION_CATEGORIES) else "widened taxonomy",
+                    "trained_animations": trained_rows,
+                    "live_animations": len(ANIMATION_CATEGORIES),
+                    "recorded": recorded is not None,
+                }
+                if trained_rows and trained_rows < len(ANIMATION_CATEGORIES):
+                    logger.warning(
+                        "Checkpoint %s was trained on %d animation categories; %d new categories use averaged embeddings.",
+                        checkpoint_name, trained_rows, len(ANIMATION_CATEGORIES) - trained_rows,
+                    )
+            except Exception as exc:
                 has_trained = False
+                cls.last_load_status = {"checkpoint": checkpoint_name, "loaded": False, "reason": f"load failed: {exc}"}
+                logger.warning("Could not load temporal checkpoint %s: %s", checkpoint_name, exc)
         else:
             has_trained = False
 

@@ -17,6 +17,16 @@ from spritemind.dataset.generator import CATEGORIES, STYLES, POSES
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction
 
 
+def _record_checkpoint(path, extra):
+    """Best-effort manifest entry; training must never fail because of bookkeeping."""
+    try:
+        from spritemind.ml.checkpoint_manifest import describe_file, record
+
+        record(Path(path).parent, describe_file(Path(path), **extra))
+    except Exception:
+        pass
+
+
 class PixelScriptDataset(Dataset):
     """PyTorch Dataset loading generated PixelScript samples with pre-tokenized memory buffers."""
 
@@ -463,6 +473,11 @@ class ModelTrainer:
                             "saved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
                         }
                     }, best_ckpt_path)
+                    _record_checkpoint(best_ckpt_path, {
+                        "parameter_count": model.count_parameters(),
+                        "vocab_size": self.tokenizer.vocab_size,
+                        "best_val_loss": round(best_val_loss, 4),
+                    })
                 else:
                     patience_counter += 1
 
