@@ -136,6 +136,7 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 
 ## Documentation & Research Index
 
+- **Roadmap & TODO (next work, sizes, acceptance criteria):** [`ROADMAP.md`](ROADMAP.md)
 - **Action Sets (prompt → animation package):** [`docs/ACTION_SETS.md`](docs/ACTION_SETS.md)
 - **PixelScript Grammar (v2 primitives: SHADE / OUTLINE):** [`docs/PIXELSCRIPT_GRAMMAR.md`](docs/PIXELSCRIPT_GRAMMAR.md)
 - **Model Tuning & Generation Performance:** [`docs/MODEL_TUNING.md`](docs/MODEL_TUNING.md)
