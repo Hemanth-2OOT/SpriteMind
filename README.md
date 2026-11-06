@@ -10,9 +10,9 @@ SpriteMind is **NOT** a wrapper around conventional diffusion models or external
 
 - **Discrete Drawing Action Generation:** Generates 2D game characters via autoregressive token prediction over a virtual raster canvas.
 - **Topological Visual Intelligence & Critic:** Detects stray pixels, interior voids, dislocated limbs, and palette leaks with autonomous closed-loop self-correction.
-- **Recurrent Temporal Intelligence:** Predicts continuous kinematic trajectories $(\Delta x, \Delta y, \Delta \text{rot})$ across 18 animation categories (Basic, Combat, Creature gaits).
+- **Recurrent Temporal Intelligence:** Predicts continuous kinematic trajectories $(\Delta x, \Delta y, \Delta \text{rot})$ across 20 animation categories (Basic, Combat including cast and dash, Creature gaits).
 - **Multi-Layer Asset Composition:** Trainable `SocketPredictor` network (619K params) predicts sub-pixel equipment attachment sockets (`hand_r`, `head`, `back`) with dynamic multi-frame animation synchronization.
-- **Prompt-Driven Action Sets:** One prompt becomes a coherent animation package — archetype, element and weapon are inferred from the text, then idle, movement, attacks, cast, dash, defense and death are rendered from a single shared character program with element FX (`POST /api/action_set`, new **Action Sets** tab).
+- **Prompt-Driven Action Sets:** One prompt becomes a coherent animation package — archetype, element and weapon are inferred from the text, then idle, movement, attacks, cast, dash, defense and death are rendered from a single shared character program with element FX (`POST /api/action_set`, new **Action Sets** tab). Sets can be generated facing right or left, mirrored at the script level so both sides of a platformer match exactly.
 - **Game-Ready Packaging:** 2D bin-packing texture atlas builder with UV coordinates, spritesheets, and complete ZIP game packs (verified with top-down shooter *Dead Zone*).
 - **Auditable SQLite Data Management:** Relational catalog (`data/spritemind.db`) with strict data classification, trash lifecycle, zero-loss deletion gates, and verifiable backups.
 
@@ -106,7 +106,15 @@ npm run build   # production bundle in frontend/dist, served by the backend
 
 The web studio ships tabs for generation, animation, **composition** (equipment sockets and layered assets), dataset management, model lab and evaluation. `frontend/dist/` is build output and is not committed — build it before launching the studio.
 
-### 6. Regenerating the Metrics Table
+### 6. Checking a Change
+```bash
+./scripts/check.sh                      # ruff, pytest, README metrics, frontend build, quality gate
+SKIP_QUALITY_GATE=1 ./scripts/check.sh  # same, minus the generation sample
+python scripts/quality_gate.py --limit 12 --engine trained_model   # generation only
+```
+The quality gate samples held-out prompts and fails when validity, palette adherence, engine honesty, silhouette fill or critic-clean rate regress, so renderer and training changes cannot slip in silently. `.github/workflows/ci.yml` runs the same checks; pushing it needs a GitHub token with the `workflow` scope (`gh auth refresh -s workflow`), or you can add it through the GitHub web editor once.
+
+### 7. Regenerating the Metrics Table
 ```bash
 python scripts/update_readme_metrics.py           # rewrite the table below
 python scripts/update_readme_metrics.py --check   # fail if it is stale
