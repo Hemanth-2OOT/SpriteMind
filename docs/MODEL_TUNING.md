@@ -2,36 +2,79 @@
 
 ## Fine-tuning SVAN
 
-`scripts/finetune_svan.py` fine-tunes the shipped action transformer
-(`models/checkpoints/svan_checkpoint_best.pt`) on `generalization_detail_12k` and writes a
-separate checkpoint, so the shipped weights are never overwritten by an experiment:
+`scripts/finetune_svan.py` continues training from the shipped checkpoint
+(`models/checkpoints/svan_checkpoint_best.pt`) and writes a separate checkpoint, so the shipped
+weights are never overwritten by an experiment:
 
 ```bash
-PYTHONPATH=backend python scripts/finetune_svan.py
+# build a dataset first if needed (see below)
+PYTHONPATH=backend python scripts/finetune_svan.py \
+    --dataset expanded_synthetic_25k --epochs 2 --lr 0.0002 \
+    --save-name svan_expanded_ft.pt --history data/finetune_expanded_history.json
 ```
 
-The run records per-epoch history to `data/finetune_history.json`. To adopt a checkpoint, it
-has to beat the shipped one on the held-out benchmark below; otherwise it is discarded.
+Flags: `--dataset`, `--epochs`, `--lr`, `--batch-size`, `--threads`, `--save-name`,
+`--resume-from`, `--history`. The run records per-epoch history to the `--history` path. A
+checkpoint is adopted only when it beats the shipped one on the held-out benchmark below;
+otherwise it is discarded and deleted.
+
+### Building a larger dataset
+
+`scripts/build_expanded_dataset.py` wraps `DatasetManager.generate_dataset` and writes both the
+trainable layout and a flat JSON export:
+
+```bash
+PYTHONPATH=backend python scripts/build_expanded_dataset.py --samples 25000 --seed 7
+```
+
+- `data/datasets/expanded_synthetic_25k/` — `records.jsonl`, `metadata.json`, `samples/`
+  (20,000 train / 2,500 val / 2,500 test, split strictly by character identity hash).
+- `data/expanded_synthetic_dataset.json` — every record in one JSON array (189 MB for 25k).
+
+Both are gitignored; the script takes ~13 s and renders 24 preview samples.
 
 ### Measured results
 
-Both runs were evaluated on the same 40 held-out benchmark prompts with
-`GeneralizationBenchmark`, on the same machine and pipeline.
+All rows come from `GeneralizationBenchmark` on the same machine and pipeline. The 12k runs were
+scored on 40 held-out prompts; the 25k runs were re-scored on the full 100 prompts, so the
+`original shipped` row is listed twice to give each comparison the right baseline. `Clean rate`
+is the project quality gate over 40 prompts (share of sprites the visual critic finds free of
+defects).
 
-| Weights | Val loss | Val token acc | Silhouette IoU | Structural consistency | Pixels filled |
-| --- | --- | --- | --- | --- | --- |
-| shipped `svan_checkpoint_best.pt` | 0.5456 | 98.53% | **0.407** | **89.62** | 186.2 |
-| 3 epochs, lr 5e-4, dropout 0.05, label smoothing 0.03 | **0.3459** | 98.55% | 0.397 | 86.75 | 181.6 |
-| 1 epoch, lr 1.5e-4, dropout 0.10, label smoothing 0.05 | 0.542 | 98.55% | 0.407 | 84.25 | 186.2 |
+| Weights | Train data | Prompts | Val loss | IoU | Structural | Clean rate |
+| --- | --- | --- | --- | --- | --- | --- |
+| original shipped | 12k | 40 | 0.5456 | 0.407 | 89.62 | 100% |
+| 3 epochs, lr 5e-4 | 12k | 40 | 0.3459 | 0.397 | 86.75 | — |
+| 1 epoch, lr 1.5e-4 | 12k | 40 | 0.542 | 0.407 | 84.25 | — |
+| original shipped | 12k | 100 | 0.5456 | 0.406 | 90.15 | 100% |
+| 2 epochs, lr 2e-4 | 25k | 100 | 0.3431 | **0.410** | **94.45** | **67.5%** |
+| +1 epoch, lr 1e-4 | 25k | 100 | 0.3423 | 0.409 | 94.70 | — |
 
-Both fine-tunes lower (or match) teacher-forced validation loss but do not improve held-out
-rendering: silhouette IoU stalls and structural consistency drops. Token-level loss on this
-dataset saturates, so more epochs over the same 12k programs mostly model the training
-distribution rather than the prompt-to-program mapping. The shipped checkpoint was kept.
+The 25k run is the first fine-tune to move the benchmark: silhouette IoU 0.406 → 0.410 and
+structural consistency 90.15 → 94.45 on the full 100 prompts. It was still **rejected**, because
+the quality gate tells the opposite story: the share of sprites with critic-detected defects fell
+from 100% to 67.5% over 40 prompts. Pixel-level artefacts (floating islands, detached limbs)
+that the silhouette and inter-frame metrics do not see are what the critic catches.
 
-What would plausibly move held-out quality: new synthetic programs (more categories, props and
-poses) rather than more passes over the current ones, and program-level metrics in the training
-loop instead of token accuracy alone.
+Three findings drove the outcome:
+
+1. **More data beats more passes over the same data.** On the original 12k, token loss fell but
+   rendering degraded. On the fresh 25k (new seed, 20k training characters) both benchmark
+   metrics improved at a similar validation loss, which suggests the 12k program distribution
+   was the bottleneck, not optimisation.
+2. **Judge checkpoints on the whole gate, not one metric.** IoU and structural consistency are
+   silhouette-level; the critic's clean rate is pixel-level. A checkpoint has to satisfy both,
+   and the gate is the cheaper signal to run before adopting.
+3. **Evaluate on 100 prompts.** On a 40-prompt subset the 25k checkpoint looked like a tie
+   (IoU 0.405 vs 0.407); the same weights win clearly over 100 prompts. Small subsets are too
+   noisy to accept or reject a checkpoint on.
+
+What would plausibly keep the 25k gains without the pixel regressions: mixed training (25k plus
+a replay slice of the 12k programs), a critic-defect penalty in the training loss, or early
+stopping on this clean rate directly instead of validation loss.
+
+The shipped checkpoint is unchanged, and `models/checkpoints/manifest.json` lists exactly the
+committed checkpoints (`scripts/build_checkpoint_manifest.py --prune` removes stale entries).
 
 ## Generation performance
 
