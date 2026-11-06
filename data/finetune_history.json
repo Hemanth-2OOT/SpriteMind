@@ -1,0 +1,59 @@
+{
+  "dataset_name": "generalization_detail_12k",
+  "train_samples": 9600,
+  "val_samples": 1200,
+  "total_epochs": 3,
+  "completed_epochs": 6,
+  "best_epoch": 6,
+  "best_val_loss": 0.3459,
+  "device": "cpu",
+  "parameters": 2292104,
+  "vocab_size": 401,
+  "learning_rate": 0.0005,
+  "elapsed_seconds": 3306.3,
+  "loss_history": [
+    {
+      "epoch": 4,
+      "loss": 0.3561
+    },
+    {
+      "epoch": 5,
+      "loss": 0.3505
+    },
+    {
+      "epoch": 6,
+      "loss": 0.3472
+    }
+  ],
+  "val_loss_history": [
+    {
+      "epoch": 4,
+      "val_loss": 0.35
+    },
+    {
+      "epoch": 5,
+      "val_loss": 0.348
+    },
+    {
+      "epoch": 6,
+      "val_loss": 0.3459
+    }
+  ],
+  "token_accuracy_history": [
+    {
+      "epoch": 4,
+      "train_accuracy": 98.4,
+      "val_accuracy": 98.55
+    },
+    {
+      "epoch": 5,
+      "train_accuracy": 98.51,
+      "val_accuracy": 98.55
+    },
+    {
+      "epoch": 6,
+      "train_accuracy": 98.58,
+      "val_accuracy": 98.61
+    }
+  ]
+}

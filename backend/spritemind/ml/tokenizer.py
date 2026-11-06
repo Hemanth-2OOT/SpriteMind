@@ -3,6 +3,9 @@ from typing import List, Dict, Any, Optional, Tuple
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 
 
+_MISSING = object()
+
+
 class ActionTokenizer:
     """Encodes PixelScript actions into discrete token IDs and decodes them back."""
 
@@ -16,6 +19,7 @@ class ActionTokenizer:
         self.id_to_token: Dict[int, str] = {}
         self._build_vocab()
         self._prefix_cache: Dict[str, List[int]] = {}
+        self._allowed_cache: Dict[Any, Optional[List[int]]] = {}
 
     def _prefix_ids(self, prefix: str) -> List[int]:
         """Token ids starting with `prefix`, computed once per prefix."""
@@ -187,52 +191,77 @@ class ActionTokenizer:
             ids.extend(self._prefix_ids(p))
         return ids
 
+    #: (command token, params consumed, palette channels consumed)
+    GrammarState = Tuple[Optional[str], int, int]
+
+    def grammar_start_state(self) -> "GrammarState":
+        return (None, 0, 0)
+
+    def advance_grammar(self, state: "GrammarState", token_id: int) -> "GrammarState":
+        """Feeds one token to the grammar machine and returns the next state.
+
+        Decoding calls this once per token, so the state is carried forward
+        instead of being recomputed from the whole prefix at every step.
+        """
+        cmd, consumed, channels = state
+        tok = self.id_to_token.get(token_id, self.UNK_TOKEN)
+        if tok.startswith("CMD_"):
+            return (tok, 0, 0)
+        if cmd is None:
+            return state
+        spec = self.ACTION_GRAMMAR.get(cmd[4:], [])
+        if consumed >= len(spec):
+            return state
+        if spec[consumed] == "COLOR" and tok.startswith("CH_"):
+            channels += 1
+            if channels >= 4:
+                return (cmd, consumed + 1, 0)
+            return (cmd, consumed, channels)
+        return (cmd, consumed + 1, 0)
+
     def _grammar_state(self, tokens: List[int]) -> Tuple[Optional[str], int]:
         """Returns (command token, consumed-params) for the action being decoded."""
-        cmd = None
-        consumed = 0
-        palette_channels = 0
+        state = self.grammar_start_state()
         for tid in tokens:
-            tok = self.id_to_token.get(tid, self.UNK_TOKEN)
-            if tok.startswith("CMD_"):
-                cmd = tok
-                consumed = 0
-                palette_channels = 0
-                continue
-            if cmd is None:
-                continue
-            spec = self.ACTION_GRAMMAR.get(cmd[4:], [])
-            if consumed >= len(spec):
-                continue
-            if spec[consumed] == "COLOR" and tok.startswith("CH_"):
-                palette_channels += 1
-                if palette_channels >= 4:
-                    consumed += 1
-                continue
-            consumed += 1
-        return cmd, consumed
+            state = self.advance_grammar(state, tid)
+        return state[0], state[1]
+
+    def allowed_from_state(self, state: "GrammarState") -> Optional[List[int]]:
+        """Token ids legal at the next position, or None when unconstrained."""
+        cached = self._allowed_cache.get(state, _MISSING)
+        if cached is not _MISSING:
+            return cached
+
+        cmd, consumed, _channels = state
+        if cmd is None:
+            allowed: Optional[List[int]] = self._ids_with_prefix("CMD_") + [self.eos_id]
+        else:
+            spec = self.ACTION_GRAMMAR.get(cmd[4:])
+            if spec is None or consumed >= len(spec):
+                allowed = self._ids_with_prefix("CMD_") + [self.eos_id]
+            else:
+                expected = spec[consumed]
+                if expected == "COLOR":
+                    # Either a raw channel colour or the "no colour" marker.
+                    allowed = self._ids_with_prefix("CH_") + [self.token_to_id["NUM_0"]]
+                elif expected == "NUM":
+                    allowed = self._ids_with_prefix("NUM_")
+                elif expected == "NAME":
+                    allowed = self._ids_with_prefix("NAME_")
+                elif expected == "COL":
+                    allowed = self._ids_with_prefix("COL_")
+                else:
+                    allowed = None
+
+        self._allowed_cache[state] = allowed
+        return allowed
 
     def allowed_token_ids(self, tokens: List[int]) -> Optional[List[int]]:
         """Token ids legal at the next position, or None when unconstrained."""
-        cmd, consumed = self._grammar_state(tokens)
-        if cmd is None:
-            return self._ids_with_prefix("CMD_") + [self.eos_id]
-
-        spec = self.ACTION_GRAMMAR.get(cmd[4:])
-        if spec is None or consumed >= len(spec):
-            return self._ids_with_prefix("CMD_") + [self.eos_id]
-
-        expected = spec[consumed]
-        if expected == "COLOR":
-            # Either a raw channel colour or the "no colour" marker.
-            return self._ids_with_prefix("CH_") + [self.token_to_id["NUM_0"]]
-        if expected == "NUM":
-            return self._ids_with_prefix("NUM_")
-        if expected == "NAME":
-            return self._ids_with_prefix("NAME_")
-        if expected == "COL":
-            return self._ids_with_prefix("COL_")
-        return None
+        state = self.grammar_start_state()
+        for tid in tokens:
+            state = self.advance_grammar(state, tid)
+        return self.allowed_from_state(state)
 
     def encode_program(self, program: PixelScriptProgram, max_length: Optional[int] = None) -> List[int]:
         ids = [self.sos_id]

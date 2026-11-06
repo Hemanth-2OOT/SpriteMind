@@ -204,8 +204,13 @@ class DrawingActionTransformer(nn.Module):
         heads = self.transformer_decoder.layers[0].self_attn.num_heads
         head_dim = self.d_model // heads
         caches: List[Dict[str, torch.Tensor]] = []
-        for _ in self.transformer_decoder.layers:
-            entry: Dict[str, torch.Tensor] = {}
+        for layer in self.transformer_decoder.layers:
+            cross = layer.multihead_attn
+            # Cross-attention only ever needs the query projection of the step
+            # token; keeping its slice avoids projecting keys and values again.
+            entry: Dict[str, torch.Tensor] = {"w_q": cross.in_proj_weight[: self.d_model]}
+            if cross.in_proj_bias is not None:
+                entry["b_q"] = cross.in_proj_bias[: self.d_model]
             if max_len > 0:
                 entry["k"] = torch.zeros(batch_size, heads, max_len, head_dim)
                 entry["v"] = torch.zeros(batch_size, heads, max_len, head_dim)
@@ -248,6 +253,9 @@ class DrawingActionTransformer(nn.Module):
         x = self.token_embed(token) * math.sqrt(self.d_model)
         x = x + self.pos_encoder.pe[:, position : position + 1]
 
+        split = self._split
+        attend = self._attend
+        merge = self._merge
         for layer, layer_cache in zip(self.transformer_decoder.layers, cache):
             attn = layer.self_attn
             q, k, v = self._project(x, attn)
@@ -261,19 +269,17 @@ class DrawingActionTransformer(nn.Module):
                 layer_cache["k"] = k if "k" not in layer_cache else torch.cat([layer_cache["k"], k], dim=2)
                 layer_cache["v"] = v if "v" not in layer_cache else torch.cat([layer_cache["v"], v], dim=2)
                 keys, values = layer_cache["k"], layer_cache["v"]
-            sa = self._attend(q, keys, values)
-            sa = attn.out_proj(self._merge(sa))
+            sa = attend(q, keys, values)
+            sa = attn.out_proj(merge(sa))
             x = layer.norm1(x + sa)
 
-            q_m = self._split(
-                F.linear(x, layer.multihead_attn.in_proj_weight, layer.multihead_attn.in_proj_bias).chunk(3, dim=-1)[0],
-                layer.multihead_attn.num_heads,
-            )
+            cross = layer.multihead_attn
+            q_m = split(F.linear(x, layer_cache["w_q"], layer_cache.get("b_q")), cross.num_heads)
             if "k_mem" not in layer_cache:
-                _, k_m, v_m = self._project(memory, layer.multihead_attn)
+                _, k_m, v_m = self._project(memory, cross)
                 layer_cache["k_mem"], layer_cache["v_mem"] = k_m, v_m
-            ca = self._attend(q_m, layer_cache["k_mem"], layer_cache["v_mem"])
-            ca = layer.multihead_attn.out_proj(self._merge(ca))
+            ca = attend(q_m, layer_cache["k_mem"], layer_cache["v_mem"])
+            ca = cross.out_proj(merge(ca))
             x = layer.norm2(x + ca)
 
             ff = layer.linear2(layer.activation(layer.linear1(x)))

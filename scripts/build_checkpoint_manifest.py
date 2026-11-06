@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 import torch  # noqa: E402
 
-from spritemind.ml.checkpoint_manifest import describe_file, record  # noqa: E402
+from spritemind.ml.checkpoint_manifest import describe_file, read_manifest, record, write_manifest  # noqa: E402
 
 DEFAULT_DIR = Path("models/checkpoints")
 
@@ -45,6 +45,7 @@ def describe(path: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", default=str(DEFAULT_DIR))
+    parser.add_argument("--prune", action="store_true", help="drop entries whose checkpoint file is gone")
     args = parser.parse_args()
 
     directory = Path(args.dir)
@@ -57,6 +58,13 @@ def main() -> int:
         entry = describe(path)
         record(directory, entry)
         print(f"recorded {path.name}: {entry.get('bytes', 0)} bytes, {entry.get('parameter_count', 0)} params")
+    if args.prune:
+        present = {path.name for path in files}
+        entries = read_manifest(directory)["checkpoints"]
+        for name in sorted(set(entries) - present):
+            del entries[name]
+            print(f"pruned {name}")
+        write_manifest(directory, entries)
     print(f"manifest written to {directory / 'manifest.json'}")
     return 0
 
