@@ -64,6 +64,12 @@ class TextureAtlasBuilder:
                 "w": arr.shape[1],
                 "h": arr.shape[0],
             })
+        for item in items:
+            if item["w"] + 2 * padding > max_size or item["h"] + 2 * padding > max_size:
+                raise ValueError(
+                    f"Sprite '{item['name']}' is {item['w']}x{item['h']}, which cannot fit an atlas "
+                    f"of max_size {max_size} with padding {padding}"
+                )
         items.sort(key=lambda x: (x["h"], x["w"]), reverse=True)
 
         # Estimate required atlas size (power of two)
