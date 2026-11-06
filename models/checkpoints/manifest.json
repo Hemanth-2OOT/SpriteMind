@@ -37,11 +37,11 @@
       "trained_animations": 18
     },
     "visual_critic_best.pt": {
-      "bytes": 1501293,
-      "epoch": 4,
+      "bytes": 1501214,
+      "epoch": 5,
       "file": "visual_critic_best.pt",
       "parameter_count": 369077,
-      "sha256": "2e239ff97c34326d104fc652cd2c66e5f0a3b8930aaeabbfc4d6af13b48351d3"
+      "sha256": "5e24e4b2e4f6422bffb0019ba99a9e45949902e49009f6bdbf4ba715c38a9a01"
     }
   },
   "version": 1

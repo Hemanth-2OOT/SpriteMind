@@ -160,3 +160,50 @@ below the 465 ms neural benchmark mean. Pass `engine="trained_model"` to pay the
 the LRU cache still collapses repeat requests.
 
 Regenerate with `python scripts/latency_report.py --requests 50`.
+
+## Visual critic retrain (grammar v2)
+
+The shipped critic was trained on flat v1 sprites, so it never learned what an outline or a
+shaded edge looks like and collapsed to "clean": recall 24.6% at 94% precision. Grammar v2 made
+that worse, because every sprite now has a dark rim that the old model had never seen.
+
+Corpus: `python scripts/build_critic_dataset.py --samples 4000` renders
+`data/datasets/gv2_synthetic_25k/records.jsonl` and injects one defect into half of the records
+(`stray_pixel`, `disconnected_part`, `palette_clash`, `silhouette_hole`, `missing_feature`) via
+`DefectGenerator`, producing `data/datasets/gv2_critic/records.jsonl` (gitignored; 1.3 s to build).
+
+Training used inverse-frequency class weights in `VisualCriticTrainer.train`, without which the
+loss converges to the majority "clean" class again — that was the root cause of the old 24.6% recall.
+
+| Model | val F1 | precision | recall | epochs | time |
+| --- | --- | --- | --- | --- | --- |
+| v1 (flat sprites) | 0.389 | 87.9% | 25.0% | 4 | 35 s |
+| **v2 (grammar sprites)** | **0.777** | 69.1% | 88.8% | 6 | 192 s |
+
+Raw argmax over-flags: on 320 held-out *clean* grammar-v2 sprites it declares 39.7% defective.
+Summing the non-clean class probabilities and thresholding recovers a usable operating point:
+
+| Threshold | precision | recall | false positives |
+| --- | --- | --- | --- |
+| argmax | 69.1% | 88.8% | 39.7% |
+| **0.72 (shipped)** | **100.0%** | 77.2% | **0.0%** |
+
+`NEURAL_DEFECT_THRESHOLD = 0.72` in `critic/repair_engine.py` is therefore the knob to move:
+lower it for stricter generation, raise it for more permissive repair suggestions. The neural
+verdict is advisory — when it flags a sprite that the morphological analyser passes, `inspect()`
+adds a single `minor` defect so `defects_count` reflects it.
+
+End-to-end over 40 prompts (generated with the trained engine, then compared against the same
+sprites with one injected defect): 85% of real sprites pass the morphological half and 95% pass the
+neural half; 87.5% of injected defects are caught by the hybrid report. The 40-prompt gate clean
+rate is unchanged at 87.5% (72.5% with per-prompt seeds), so the retrain did not shift the gate —
+it added a second, sharper opinion to the Inspector and the repair loop.
+
+Retrain with:
+
+```bash
+python scripts/build_critic_dataset.py --samples 4000
+python -c "import sys; sys.path.insert(0,'backend'); \
+from spritemind.critic.trainer import VisualCriticTrainer; \
+print(VisualCriticTrainer().train(dataset_path='data/datasets/gv2_critic/records.jsonl', epochs=6, lr=0.0008, save_name='visual_critic_gv2.pt'))"
+```

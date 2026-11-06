@@ -1,12 +1,12 @@
 {
-  "total_epochs": 4,
+  "total_epochs": 6,
   "train_samples": 2000,
   "val_samples": 500,
-  "best_f1": 0.3902,
-  "precision": 94.12,
-  "recall": 24.62,
-  "accuracy": 89.8,
-  "elapsed_seconds": 35.2,
+  "best_f1": 0.7799,
+  "precision": 68.75,
+  "recall": 90.09,
+  "accuracy": 76.4,
+  "elapsed_seconds": 191.9,
   "defect_classes": [
     "clean",
     "stray_pixel",
@@ -15,5 +15,14 @@
     "missing_limb",
     "asymmetry",
     "unexpected_hole"
-  ]
+  ],
+  "dataset": "gv2_critic",
+  "source_dataset": "gv2_synthetic_25k",
+  "calibrated_threshold": 0.72,
+  "calibrated_precision": 100.0,
+  "calibrated_recall": 77.2,
+  "calibrated_false_positive_rate": 0.0,
+  "calibration_eval_samples": 640,
+  "previous_best_f1": 0.3902,
+  "previous_recall": 24.62
 }

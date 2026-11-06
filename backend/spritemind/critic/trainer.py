@@ -168,7 +168,11 @@ class VisualCriticTrainer:
         val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
 
         optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=1e-4)
-        cls_criterion = nn.CrossEntropyLoss()
+        # Inverse-frequency class weights: defect classes are rare, and an unweighted
+        # loss collapses to "everything is clean" (recall below 25%).
+        counts = torch.bincount(train_ds.defect_labels, minlength=len(DEFECT_CLASSES)).float().clamp(min=1.0)
+        cls_weights = (counts.sum() / (counts * len(DEFECT_CLASSES))).to(self.device) if len(train_ds) else None
+        cls_criterion = nn.CrossEntropyLoss(weight=cls_weights)
         sev_criterion = nn.CrossEntropyLoss()
         heat_criterion = nn.MSELoss()
         qual_criterion = nn.L1Loss()
