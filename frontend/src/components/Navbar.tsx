@@ -91,6 +91,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('composition')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+              activeTab === 'composition'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Composition</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('dataset')}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               activeTab === 'dataset'

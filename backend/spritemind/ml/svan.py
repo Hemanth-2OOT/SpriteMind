@@ -194,6 +194,72 @@ class DrawingActionTransformer(nn.Module):
         logits = self.head(out)  # (batch_size, seq_len, vocab_size)
         return logits
 
+    # ------------------------------------------------------------------
+    # Incremental (cached) decoding: same weights, one token at a time.
+    # ------------------------------------------------------------------
+    def new_cache(self) -> List[Dict[str, torch.Tensor]]:
+        return [{} for _ in self.transformer_decoder.layers]
+
+    @staticmethod
+    def _split(t: torch.Tensor, nhead: int) -> torch.Tensor:
+        b, length, d = t.shape
+        return t.view(b, length, nhead, d // nhead).transpose(1, 2)
+
+    @staticmethod
+    def _merge(t: torch.Tensor) -> torch.Tensor:
+        b, _, length, _ = t.shape
+        return t.transpose(1, 2).reshape(b, length, -1)
+
+    def _project(self, x: torch.Tensor, attn: nn.MultiheadAttention):
+        qkv = F.linear(x, attn.in_proj_weight, attn.in_proj_bias)
+        q, k, v = qkv.chunk(3, dim=-1)
+        return self._split(q, attn.num_heads), self._split(k, attn.num_heads), self._split(v, attn.num_heads)
+
+    @staticmethod
+    def _attend(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(q.size(-1))
+        return torch.matmul(torch.softmax(scores, dim=-1), v)
+
+    def forward_step(
+        self,
+        token: torch.Tensor,
+        memory: torch.Tensor,
+        cache: List[Dict[str, torch.Tensor]],
+        position: int,
+    ) -> torch.Tensor:
+        """Single-token forward pass with self/cross attention KV caching.
+
+        Mathematically equivalent to `forward` restricted to the last position,
+        but O(1) in sequence length per call.
+        """
+        x = self.token_embed(token) * math.sqrt(self.d_model)
+        x = x + self.pos_encoder.pe[:, position : position + 1]
+
+        for layer, layer_cache in zip(self.transformer_decoder.layers, cache):
+            attn = layer.self_attn
+            q, k, v = self._project(x, attn)
+            layer_cache["k"] = k if "k" not in layer_cache else torch.cat([layer_cache["k"], k], dim=2)
+            layer_cache["v"] = v if "v" not in layer_cache else torch.cat([layer_cache["v"], v], dim=2)
+            sa = self._attend(q, layer_cache["k"], layer_cache["v"])
+            sa = attn.out_proj(self._merge(sa))
+            x = layer.norm1(x + sa)
+
+            q_m = self._split(
+                F.linear(x, layer.multihead_attn.in_proj_weight, layer.multihead_attn.in_proj_bias).chunk(3, dim=-1)[0],
+                layer.multihead_attn.num_heads,
+            )
+            if "k_mem" not in layer_cache:
+                _, k_m, v_m = self._project(memory, layer.multihead_attn)
+                layer_cache["k_mem"], layer_cache["v_mem"] = k_m, v_m
+            ca = self._attend(q_m, layer_cache["k_mem"], layer_cache["v_mem"])
+            ca = layer.multihead_attn.out_proj(self._merge(ca))
+            x = layer.norm2(x + ca)
+
+            ff = layer.linear2(layer.activation(layer.linear1(x)))
+            x = layer.norm3(x + ff)
+
+        return self.head(x)
+
 
 class VisualCritic(nn.Module):
     """Predicts defect presence, defect classification, and overall visual quality."""

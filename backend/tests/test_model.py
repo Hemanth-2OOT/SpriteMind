@@ -6,6 +6,7 @@ from spritemind.pixelscript.ast import ActionType, PixelAction, PixelScriptProgr
 from spritemind.ml.svan import SVANModel
 from spritemind.dataset.generator import CharacterGenerator
 from spritemind.dataset.defects import DefectGenerator
+from spritemind.pixelscript.parser import PixelScriptParser
 
 
 def test_tokenizer_encode_decode():
@@ -73,6 +74,25 @@ def test_palette_without_color_renders_safely():
     assert result.to_dict()["image_base64"]
 
 
+def test_incremental_decoding_matches_full_forward():
+    torch.manual_seed(0)
+    model = SVANModel(vocab_size=64)
+    model.eval()
+    tokens = torch.tensor([[0, 1, 2, 3]])
+    cond = torch.tensor([0])
+    memory = torch.stack([model.semantic_encoder(cond, cond, cond, cond)] * 3, dim=1)
+
+    with torch.no_grad():
+        full = model.action_transformer(tokens, memory)
+        cache = model.action_transformer.new_cache()
+        steps = [
+            model.action_transformer.forward_step(torch.tensor([[t]]), memory, cache, i)
+            for i, t in enumerate(tokens[0].tolist())
+        ]
+    incremental = torch.cat(steps, dim=1)
+    assert torch.allclose(full, incremental, atol=1e-5)
+
+
 def test_defect_generator():
     prog = CharacterGenerator.generate_character(category="zombie", seed=42)
     corrupted, info = DefectGenerator.inject_defect(prog, defect_type="stray_pixel", seed=42)
@@ -103,3 +123,28 @@ def test_svan_model_forward():
     q_score, def_logits = model.critic(dummy_img)
     assert q_score.shape == (batch_size, 1)
     assert def_logits.shape == (batch_size, 6)
+
+
+def test_grammar_mask_restricts_token_classes():
+    tokenizer = ActionTokenizer()
+    cmd = tokenizer.token_to_id["CMD_PIXEL"]
+    allowed = tokenizer.allowed_token_ids([tokenizer.sos_id, cmd])
+    assert allowed
+    assert all(tokenizer.id_to_token[t].startswith("NUM_") for t in allowed)
+
+    boundary = tokenizer.allowed_token_ids([tokenizer.sos_id])
+    assert tokenizer.eos_id in boundary
+    assert all(tokenizer.id_to_token[t].startswith("CMD_") for t in boundary if t != tokenizer.eos_id)
+
+
+def test_trained_generation_respects_grammar():
+    from spritemind.ml.pipeline import SpriteMindPipeline
+    from spritemind.pixelscript.validator import PixelScriptValidator
+
+    pipeline = SpriteMindPipeline()
+    pipeline.load_checkpoint("svan_checkpoint_best.pt")
+    for seed in range(3):
+        result = pipeline.generate(category="knight", engine_mode="trained_model", seed=seed)
+        program = PixelScriptParser.parse_text(result["frames"][0]["script_text"])
+        report = PixelScriptValidator.validate(program)
+        assert report.is_valid, report

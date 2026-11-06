@@ -1,4 +1,5 @@
 """Generation Pipeline coordinating Neural SVAN and Procedural Engines."""
+import os
 import time
 import re
 import torch
@@ -22,6 +23,8 @@ class SpriteMindPipeline:
     """End-to-end generation, inference, criticism, and rendering pipeline."""
 
     def __init__(self, checkpoints_dir: str = "models/checkpoints"):
+        # Small tensors lose badly to thread-pool overhead on many-core boxes.
+        torch.set_num_threads(int(os.environ.get("SPRITEMIND_THREADS", "2")))
         self.tokenizer = ActionTokenizer()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.checkpoints_dir = Path(checkpoints_dir)
@@ -246,7 +249,7 @@ class SpriteMindPipeline:
         pose_idx = torch.tensor([POSES.index(pose) if pose in POSES else 0], device=self.device)
         pal_idx = torch.tensor([0], device=self.device)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             sem_cond = model.semantic_encoder(cat_idx, style_idx, pose_idx, pal_idx)
             struct_cond = torch.zeros_like(sem_cond)
             vis_cond = torch.zeros_like(sem_cond)
@@ -254,11 +257,25 @@ class SpriteMindPipeline:
 
             curr_tokens = [self.tokenizer.sos_id]
             max_tokens = min(128, max_actions * 4)
+            transformer = model.action_transformer
+            use_cache = hasattr(transformer, "forward_step")
+            cache = transformer.new_cache() if use_cache else None
 
-            for _ in range(max_tokens):
-                tgt_tensor = torch.tensor([curr_tokens], dtype=torch.long, device=self.device)
-                logits = model.action_transformer(tgt_tensor, memory)
+            for step in range(max_tokens):
+                if use_cache:
+                    token_tensor = torch.tensor([[curr_tokens[-1]]], dtype=torch.long, device=self.device)
+                    logits = transformer.forward_step(token_tensor, memory, cache, step)
+                else:
+                    tgt_tensor = torch.tensor([curr_tokens], dtype=torch.long, device=self.device)
+                    logits = transformer(tgt_tensor, memory)
                 next_token_logits = logits[0, -1, :]
+
+                # Grammar mask: only tokens legal for the current action position.
+                allowed = self.tokenizer.allowed_token_ids(curr_tokens)
+                if allowed is not None:
+                    masked = torch.full_like(next_token_logits, float("-inf"))
+                    masked[allowed] = 0.0
+                    next_token_logits = next_token_logits + masked
 
                 # Sample next token
                 probs = torch.softmax(next_token_logits, dim=-1)
