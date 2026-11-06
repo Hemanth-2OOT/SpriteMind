@@ -77,6 +77,12 @@ class TemporalDatasetGenerator:
         "accessory",
     ]
 
+    @staticmethod
+    def _clamp_down(dy: int, limit: int = 1) -> int:
+        """Arms that travel further down than this sink behind the torso and the
+        sprite visibly loses pixels from one frame to the next."""
+        return min(dy, limit)
+
     @classmethod
     def compute_motion_offsets(
         cls,
@@ -89,12 +95,13 @@ class TemporalDatasetGenerator:
         rad = phase * 2.0 * math.pi
 
         if anim_category == "idle":
-            # Subtle breathing bobbing
-            bob = 1 if math.sin(rad) > 0.3 else 0
-            offsets["torso"] = (0, bob, 0)
-            offsets["head"] = (0, bob, 0)
-            offsets["arm_left"] = (0, bob, 0)
-            offsets["arm_right"] = (0, bob, 0)
+            # Breathing is read through the shoulders and head only: lifting the
+            # torso would leave an empty row above the legs and make the sprite
+            # pulse in size from frame to frame.
+            breathe = 1 if math.sin(rad) > 0.3 else 0
+            offsets["head"] = (0, -breathe, 0)
+            offsets["arm_left"] = (0, -breathe, 0)
+            offsets["arm_right"] = (0, -breathe, 0)
 
         elif anim_category == "walk":
             # Alternating leg stride, foot lift, and counter-arm swing with rotation
@@ -105,9 +112,9 @@ class TemporalDatasetGenerator:
             offsets["head"] = (0, bob, 0)
             offsets["leg_left"] = (stride, -1 if stride > 0 else 0, stride * 8)
             offsets["leg_right"] = (-stride, -1 if stride < 0 else 0, -stride * 8)
-            offsets["arm_left"] = (0, arm_swing, arm_swing * 12)
-            offsets["arm_right"] = (0, -arm_swing, -arm_swing * 12)
-            offsets["weapon"] = (0, -arm_swing, -arm_swing * 15)
+            offsets["arm_left"] = (0, cls._clamp_down(arm_swing), arm_swing * 12)
+            offsets["arm_right"] = (0, cls._clamp_down(-arm_swing), -arm_swing * 12)
+            offsets["weapon"] = (0, cls._clamp_down(-arm_swing), -arm_swing * 15)
 
         elif anim_category == "run":
             # Dynamic leaning stride with exaggerated arm drive and rotation
@@ -118,9 +125,9 @@ class TemporalDatasetGenerator:
             offsets["head"] = (1, bob, 3)
             offsets["leg_left"] = (stride, -1 if stride > 0 else 1, stride * 12)
             offsets["leg_right"] = (-stride, -1 if stride < 0 else 1, -stride * 12)
-            offsets["arm_left"] = (-1, arm_swing, arm_swing * 20)
-            offsets["arm_right"] = (1, -arm_swing, -arm_swing * 20)
-            offsets["weapon"] = (1, -arm_swing, 10 - arm_swing * 15)
+            offsets["arm_left"] = (-1, cls._clamp_down(arm_swing), arm_swing * 20)
+            offsets["arm_right"] = (1, cls._clamp_down(-arm_swing), -arm_swing * 20)
+            offsets["weapon"] = (1, cls._clamp_down(-arm_swing), 10 - arm_swing * 15)
 
         elif anim_category == "jump":
             # Anticipation -> Apex flight -> Descent & Landing

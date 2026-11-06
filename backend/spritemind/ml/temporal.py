@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
+from spritemind.pixelscript.coherence import stabilize_offsets
 from spritemind.renderer.engine import PixelScriptEngine
 
 
@@ -361,6 +362,8 @@ class TemporalAnimator:
                 prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
                 lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
                 
+                frame_offsets: Dict[str, Tuple[int, int, int]] = {}
+
                 for p_idx, part_name in enumerate(PARTS):
                     pred_dx = float(traj[f_idx, p_idx, 0])
                     pred_dy = float(traj[f_idx, p_idx, 1])
@@ -394,6 +397,12 @@ class TemporalAnimator:
                         rot = int(round(prior_rot * 0.5))
 
                     if dx != 0 or dy != 0 or rot != 0:
+                        frame_offsets[part_name] = (dx, dy, rot)
+
+                for part_name, (dx, dy, rot) in stabilize_offsets(
+                    base_script, frame_offsets, width=width, height=height, palette_name=palette_name
+                ).items():
+                    if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
 
                 frame_script = "\n".join(lines)
@@ -412,7 +421,9 @@ class TemporalAnimator:
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
                 lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
-                for part_name, (dx, dy, rot) in offsets.items():
+                for part_name, (dx, dy, rot) in stabilize_offsets(
+                    base_script, offsets, width=width, height=height, palette_name=palette_name
+                ).items():
                     if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
 

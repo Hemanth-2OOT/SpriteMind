@@ -70,3 +70,31 @@ ActionSetBuilder.build(prompt="ice paladin with shield who blocks", seed=3, max_
 - Element effects are stylised 1–3 px shapes chosen from the palette, not painted VFX sheets.
 - Frame counts are fixed per clip type (4–7); the temporal model, not the planner, decides how
   the motion reads. Quality tracks the temporal checkpoint you select.
+
+## Staying connected, staying varied
+
+Two things made generated sets look broken, and both are now covered by tests in
+`backend/tests/test_coherence.py` and `backend/tests/test_action_sets.py`.
+
+**No floating parts.** Every emitted frame is checked for silhouette islands. If an
+offset would tear a part off — an arm swung too far, a leg lifted out of the pelvis —
+`spritemind.pixelscript.coherence` attenuates that frame's motion until the body is a
+single connected shape again, and prefers offsets that keep the most visible pixels
+so nothing appears to vanish between frames. Thin limbs (under 4 px) swing without
+rotating, because a rotated 1 px limb breaks into a staircase and loses pixels.
+Spell and slash effects are drawn after this check, so projectiles are allowed to
+fly free of the body.
+
+Rest poses are generated connected too: horns, wings, tails, bows and shields used to
+be drawn as diagonal 1 px lines that only touched at the corners, or anchored to the
+wrong arm, which is what "body part disconnect" looked like on a static sprite.
+
+**No two characters alike.** The planner infers a body `proportion`
+(standard/stocky/slender/chibi) and an `accessory` (helmet/cape/horns/wings/backpack/
+pauldrons) from the prompt, and falls back to a seed-stable choice. The same prompt and
+seed always rebuild the same character; a new seed — the dice button in the Action Sets
+tab — gives a different build from the same prompt.
+
+![varied builds](assets/coherence/variety_grid.png)
+
+![a connected cast cycle](assets/coherence/cast_filmstrip.png)

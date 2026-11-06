@@ -322,6 +322,7 @@ export async function planActionSetApi(params: {
   style?: string;
   palette?: string;
   actions?: string[];
+  seed?: number;
 }): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/action_set/plan`, {
     method: 'POST',

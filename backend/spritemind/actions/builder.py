@@ -47,6 +47,7 @@ class ActionSetBuilder:
             height=height,
             requested_actions=actions,
             max_actions=max_actions,
+            seed=seed,
         )
         return cls.build_from_plan(
             plan, engine=engine, seed=seed, include_gif=include_gif, facing=facing
@@ -69,6 +70,8 @@ class ActionSetBuilder:
             width=plan.width,
             height=plan.height,
             seed=seed,
+            proportion=plan.proportion,
+            accessory=plan.accessory,
             weapon=None if plan.weapon == "none" else plan.weapon,
         )
         base_script = PixelScriptSerializer.serialize_program(base_program)

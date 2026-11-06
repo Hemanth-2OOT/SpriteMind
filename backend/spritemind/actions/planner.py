@@ -3,6 +3,7 @@
 Turns a free-text character prompt into a coherent list of animations
 (archetype, element, weapon and action ordering) that a game asset needs.
 """
+import hashlib
 import re
 from typing import Dict, List, Optional, Sequence
 
@@ -18,7 +19,7 @@ from spritemind.actions.catalog import (
     ActionPlan,
     ActionSpec,
 )
-from spritemind.dataset.generator import CATEGORIES, STYLES
+from spritemind.dataset.generator import ACCESSORIES, CATEGORIES, PROPORTIONS, STYLES
 from spritemind.utils.palettes import PALETTES
 
 PALETTE_NAMES = set(PALETTES.keys())
@@ -35,7 +36,29 @@ CATEGORY_ALIASES = {
     "fantasy_creature": ("dragon", "demon", "golem", "elemental", "creature", "titan"),
 }
 
+# Body-shape words in a prompt pick a proportion, and accessories are in the
+# same list a character would be described with.
+PROPORTION_HINTS = {
+    "stocky": ("stocky", "bulky", "heavy", "burly", "armored", "armoured", "huge", "brute", "tank", "dwarf", "wide", "muscular"),
+    "slender": ("slender", "slim", "thin", "lanky", "agile", "nimble", "willowy", "lean"),
+    "chibi": ("chibi", "cute", "tiny", "small", "mini", "kawaii", "chubby"),
+}
+ACCESSORY_HINTS = {
+    "helmet": ("helmet", "helm", "knight", "paladin", "guard"),
+    "cape": ("cape", "cloak", "mantle"),
+    "horns": ("horn", "demon", "devil", "tiefling"),
+    "wings": ("wing", "angel", "fairy", "dragon"),
+    "backpack": ("backpack", "pack", "gear", "explorer"),
+    "pauldrons": ("pauldron", "shoulder", "armor", "armour"),
+}
 SIGNATURE_ORDER = ["cast", "cast_burst", "shoot", "attack", "attack_heavy", "block", "hurt", "jump", "fall"]
+
+
+def _find_exact(words: Sequence[str], text: str) -> Optional[str]:
+    for word in words:
+        if re.search(rf"\b{re.escape(word)}\b", text):
+            return word
+    return None
 
 
 def _find(words: Sequence[str], text: str) -> Optional[str]:
@@ -59,6 +82,7 @@ class ActionSetPlanner:
         height: int = 32,
         requested_actions: Optional[Sequence[str]] = None,
         max_actions: int = 12,
+        seed: int = 0,
     ) -> ActionPlan:
         text = (prompt or "").lower().strip()
         rationale: List[str] = []
@@ -83,6 +107,15 @@ class ActionSetPlanner:
         if element != "none":
             rationale.append(f"element '{element}' on attack effects")
 
+        proportion = cls._infer_proportion(text) or cls._stable_choice(
+            prompt, final_category, PROPORTIONS, "proportion", seed
+        )
+        if proportion != "standard":
+            rationale.append(f"proportion '{proportion}'")
+        accessory = cls._infer_accessory(text) or cls._stable_accessory(prompt, final_category, seed)
+        if accessory != "none":
+            rationale.append(f"accessory '{accessory}'")
+
         actions = cls._select_actions(text, archetype, requested_actions, max_actions)
         rationale.append(f"{len(actions)} actions: " + ", ".join(a.key for a in actions))
 
@@ -96,9 +129,48 @@ class ActionSetPlanner:
             archetype=archetype,
             element=element,
             weapon=weapon,
+            proportion=proportion,
+            accessory=accessory,
             actions=actions,
             rationale=rationale,
         )
+
+    @classmethod
+    def _infer_proportion(cls, text: str) -> Optional[str]:
+        # Whole words only: "slime" must not be read as "slim".
+        for proportion, words in PROPORTION_HINTS.items():
+            if _find_exact(words, text):
+                return proportion
+        return None
+
+    @classmethod
+    def _infer_accessory(cls, text: str) -> Optional[str]:
+        for accessory, words in ACCESSORY_HINTS.items():
+            if _find_exact(words, text):
+                return accessory
+        return None
+
+    @staticmethod
+    def _stable_choice(
+        prompt: str, category: str, options: Sequence[str], salt: str, seed: int = 0
+    ) -> str:
+        # Same prompt and seed always build the same body, a new seed or a
+        # different prompt builds a different one: "every character looks
+        # identical" was the complaint.
+        # sha256, not crc32: crc32 is affine, so incrementing the seed left the
+        # low bits (and therefore the choice) unchanged for every seed.
+        key = f"{salt}:{category}:{seed}:{prompt.strip().lower()}".encode("utf-8")
+        return options[int.from_bytes(hashlib.sha256(key).digest()[:4], "big") % len(options)]
+
+    @classmethod
+    def _stable_accessory(cls, prompt: str, category: str, seed: int = 0) -> str:
+        # Accessories that read well on every category; horns and wings stay
+        # opt-in through the prompt so a knight does not sprout demon horns.
+        if category in ("zombie", "skeleton", "slime", "animal", "fantasy_creature"):
+            safe = ["none", "none", "cape", "horns"]
+        else:
+            safe = ["helmet", "cape", "backpack", "pauldrons", "none"]
+        return cls._stable_choice(prompt, category, safe, "accessory", seed)
 
     @classmethod
     def _infer_category(cls, text: str) -> Optional[str]:

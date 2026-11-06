@@ -85,3 +85,48 @@ def test_plan_endpoint_returns_actions():
     plan = res.json()["plan"]
     assert plan["actions"][0]["key"] == "idle"
     assert any(a["key"] in ("attack", "attack_heavy") for a in plan["actions"])
+
+
+class TestCharacterVariety:
+    def test_prompt_words_drive_proportion_and_accessory(self):
+        plan = ActionSetPlanner.plan("a burly dwarf knight in heavy armor")
+        assert plan.proportion == "stocky"
+        plan = ActionSetPlanner.plan("an agile slim rogue with a dagger")
+        assert plan.proportion == "slender"
+
+    def test_whole_words_only(self):
+        plan = ActionSetPlanner.plan("a cute chibi slime")
+        assert plan.proportion == "chibi"
+
+    def test_hints_are_word_bound(self):
+        from spritemind.actions.planner import _find_exact
+
+        assert _find_exact(["slim"], "a slime blob") is None
+        assert _find_exact(["slim"], "a slim rogue") == "slim"
+
+    def test_same_prompt_is_stable_and_seeds_vary(self):
+        first = ActionSetPlanner.plan("a wandering stranger", seed=1)
+        again = ActionSetPlanner.plan("a wandering stranger", seed=1)
+        assert (first.proportion, first.accessory) == (again.proportion, again.accessory)
+        variants = {
+            (ActionSetPlanner.plan("a wandering stranger", seed=seed).proportion,
+             ActionSetPlanner.plan("a wandering stranger", seed=seed).accessory)
+            for seed in range(12)
+        }
+        assert len(variants) > 1
+
+    def test_built_sprite_uses_plan_variety(self):
+        from spritemind.pixelscript import coherence
+
+        scripts = set()
+        proportions = set()
+        for seed in range(6):
+            plan = ActionSetPlanner.plan("a wandering stranger", seed=seed)
+            result = ActionSetBuilder.build(prompt=plan.prompt, category=plan.category,
+                                            actions=["idle"], include_gif=False, seed=seed)
+            scripts.add(result["base_script"])
+            proportions.add(plan.proportion)
+            islands, _ = coherence._frame_stats(result["base_script"], {}, 32, 32, plan.palette)
+            assert islands == 1
+        assert len(scripts) > 1
+        assert len(proportions) > 1

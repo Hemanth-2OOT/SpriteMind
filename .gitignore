@@ -45,3 +45,6 @@ data/temporal_dataset_4k/
 .vscode/
 *.log
 start.local.ps1
+
+# Agent workspace notes
+.openhands/

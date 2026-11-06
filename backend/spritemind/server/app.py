@@ -219,6 +219,7 @@ def action_set_plan(req: ActionSetRequest) -> Dict[str, Any]:
         height=req.height,
         requested_actions=req.actions,
         max_actions=req.max_actions,
+        seed=req.seed,
     )
     return {"status": "success", "plan": plan.to_dict()}
 

@@ -138,12 +138,13 @@ export const ActionSetPage: React.FC = () => {
   const [planning, setPlanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [facing, setFacing] = useState<'right' | 'left'>('right');
+  const [seed, setSeed] = useState(42);
 
   const refreshPlan = async () => {
     setPlanning(true);
     setError(null);
     try {
-      const res = await planActionSetApi({ prompt });
+      const res = await planActionSetApi({ prompt, seed });
       setPlan(res.plan);
       setSelected(res.plan.actions.map((a: ActionSpec) => a.key));
     } catch (e: any) {
@@ -161,7 +162,7 @@ export const ActionSetPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await generateActionSetApi({ prompt, actions: selected, facing });
+      const res = await generateActionSetApi({ prompt, actions: selected, facing, seed });
       setPlan(res.plan);
       setActions(res.actions);
     } catch (e: any) {
@@ -229,6 +230,20 @@ export const ActionSetPage: React.FC = () => {
                 </button>
               ))}
             </div>
+            <input
+              type="number"
+              value={seed}
+              onChange={(e) => setSeed(Number(e.target.value) || 0)}
+              title="Variation seed: same seed and prompt rebuild the same character"
+              className="w-16 bg-dark-950 border border-dark-800 rounded-md px-2 py-1.5 text-[10px] text-slate-300 outline-none focus:border-purple-500"
+            />
+            <button
+              onClick={() => setSeed(Math.floor(Math.random() * 100000))}
+              title="New variation"
+              className="px-2 py-1.5 text-xs bg-dark-900 hover:bg-dark-800 rounded-md text-slate-300"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={refreshPlan}
               disabled={planning}

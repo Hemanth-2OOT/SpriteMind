@@ -207,7 +207,10 @@ class CharacterGenerator:
 
             # Tail
             actions.append(PixelAction(ActionType.PART, {"name": "tail", "parent": "torso", "anchor_x": bx, "anchor_y": by}))
-            actions.append(PixelAction(ActionType.LINE, {"x0": bx, "y0": by + 1, "x1": bx - 3, "y1": by - 2, "color": c_skin}))
+            # Stepped columns keep the tail in one piece; a 45 degree LINE breaks
+            # into dots that only touch at the corners.
+            for step in range(3):
+                actions.append(PixelAction(ActionType.RECT, {"x": bx - 1 - step, "y": by - step, "w": 1, "h": 2, "color": c_skin, "filled": True}))
             actions.append(PixelAction(ActionType.PIXEL, {"x": bx - 3, "y": by - 3, "color": c_skin_hi}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
@@ -289,14 +292,15 @@ class CharacterGenerator:
         actions.append(PixelAction(ActionType.LINE, {"x0": tx + 1, "y0": ty + 2, "x1": tx + 1, "y1": ty + torso_h - 2, "color": 8}))
         actions.append(PixelAction(ActionType.LINE, {"x0": tx + 2, "y0": ty + 1, "x1": tx + torso_w - 2, "y1": ty + torso_h - 2, "color": c_pants}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": cx, "y": ty + torso_h - 1, "color": 10}))
-        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
-
-        # Neck and shoulder shelf separate head from torso in silhouette
+        # Neck and shoulder shelf live inside the torso part: if they were drawn
+        # outside any part they would not move with the body and would tear a
+        # hole between head and shoulders on every animated frame.
         neck_w = max(2, head_w // 3)
         actions.append(PixelAction(ActionType.RECT, {"x": cx - neck_w // 2, "y": ty - 1, "w": neck_w, "h": 1, "color": c_skin, "filled": True}))
         actions.append(PixelAction(ActionType.RECT, {"x": tx - 1, "y": ty, "w": torso_w + 2, "h": 1, "color": c_cloth, "filled": True}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": tx - 1, "y": ty, "color": c_skin_hi}))
         actions.append(PixelAction(ActionType.PIXEL, {"x": tx + torso_w, "y": ty, "color": c_skin_hi}))
+        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Head
         hx = cx - (head_w // 2)
@@ -324,8 +328,11 @@ class CharacterGenerator:
         # Horns (for fantasy_creature or demon)
         if acc == "horns" or category == "fantasy_creature":
             actions.append(PixelAction(ActionType.PART, {"name": "horns", "parent": "head", "anchor_x": cx, "anchor_y": hy - 2}))
-            actions.append(PixelAction(ActionType.LINE, {"x0": hx, "y0": hy, "x1": hx - 1, "y1": hy - 2, "color": 11}))
-            actions.append(PixelAction(ActionType.LINE, {"x0": hx + head_w - 1, "y0": hy, "x1": hx + head_w, "y1": hy - 2, "color": 11}))
+            # Vertical stacks, not diagonals: a 1px diagonal line leaves the horn
+            # as three dots that only touch at the corners.
+            for horn_x, curve in ((hx, -1), (hx + head_w - 1, 1)):
+                actions.append(PixelAction(ActionType.RECT, {"x": horn_x, "y": hy - 3, "w": 1, "h": 3, "color": 11, "filled": True}))
+                actions.append(PixelAction(ActionType.PIXEL, {"x": horn_x + curve, "y": hy - 2, "color": 11}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Eyes
@@ -340,8 +347,12 @@ class CharacterGenerator:
         # Wings (if fantasy_creature or accessory)
         if acc == "wings" or category == "fantasy_creature":
             actions.append(PixelAction(ActionType.PART, {"name": "wings", "parent": "torso", "anchor_x": cx, "anchor_y": ty}))
-            actions.append(PixelAction(ActionType.LINE, {"x0": tx, "y0": ty + 1, "x1": tx - 4, "y1": ty - 3, "color": 14}))
-            actions.append(PixelAction(ActionType.LINE, {"x0": tx + torso_w, "y0": ty + 1, "x1": tx + torso_w + 4, "y1": ty - 3, "color": 14}))
+            # Overlapping runs so the wing is a solid feather mass instead of a
+            # diagonal of isolated pixels.
+            for step, (y, x, w) in enumerate(((ty - 2, tx - 3, 3), (ty - 1, tx - 2, 3), (ty, tx - 1, 3))):
+                actions.append(PixelAction(ActionType.RECT, {"x": x, "y": y, "w": w, "h": 1, "color": 14, "filled": True}))
+                mirror_x = tx + torso_w - x + tx - 1
+                actions.append(PixelAction(ActionType.RECT, {"x": mirror_x, "y": y, "w": w, "h": 1, "color": 14, "filled": True}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
         # Cape
@@ -392,7 +403,15 @@ class CharacterGenerator:
         # Weapon
         if wep != "none":
             actions.append(PixelAction(ActionType.LAYER, {"id": 1, "name": "equipment", "opacity": 1.0}))
-            actions.append(PixelAction(ActionType.PART, {"name": "weapon", "parent": "arm_right", "anchor_x": ar_x + arm_w, "anchor_y": ar_y + 2}))
+            # A shield is carried on the left arm: anchoring it to the right arm
+            # left it floating in mid-air and made it swing with the sword hand.
+            offhand = wep == "shield"
+            actions.append(PixelAction(ActionType.PART, {
+                "name": "weapon",
+                "parent": "arm_left" if offhand else "arm_right",
+                "anchor_x": al_x - 3 if offhand else ar_x + arm_w,
+                "anchor_y": al_y if offhand else ar_y + 2,
+            }))
 
             if wep == "sword":
                 actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y + 2, "x1": ar_x + arm_w, "y1": ar_y - 6, "color": 7}))
@@ -406,15 +425,22 @@ class CharacterGenerator:
             elif wep == "dagger":
                 actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y + 2, "x1": ar_x + arm_w, "y1": ar_y - 2, "color": 7}))
             elif wep == "shield":
-                actions.append(PixelAction(ActionType.RECT, {"x": al_x - 3, "y": al_y, "w": 3, "h": 5, "color": 2, "filled": True}))
-                actions.append(PixelAction(ActionType.PIXEL, {"x": al_x - 2, "y": al_y + 2, "color": 10}))
+                actions.append(PixelAction(ActionType.RECT, {"x": al_x - 3, "y": al_y + 2, "w": 3, "h": 5, "color": 2, "filled": True}))
+                actions.append(PixelAction(ActionType.PIXEL, {"x": al_x - 2, "y": al_y + 4, "color": 10}))
             elif wep == "bow":
-                actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y - 4, "x1": ar_x + arm_w + 2, "y1": ar_y, "color": 5}))
-                actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w + 2, "y0": ar_y, "x1": ar_x + arm_w, "y1": ar_y + 4, "color": 5}))
+                # Stave as three touching runs so the curve stays connected, then the string.
+                for x_off, y_off, run in ((2, -4, 3), (1, -2, 5), (2, 2, 3)):
+                    actions.append(PixelAction(ActionType.RECT, {
+                        "x": ar_x + arm_w + x_off, "y": ar_y + y_off, "w": 1, "h": run, "color": 5, "filled": True,
+                    }))
                 actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y - 4, "x1": ar_x + arm_w, "y1": ar_y + 4, "color": 7}))
 
-            # Detail pass: weapon glint and grip wrap
-            actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w, "y": ar_y - 5, "color": 8}))
+            # Detail pass: weapon glint and grip wrap. The glint has to sit on the
+            # weapon itself; a fixed offset left a lone pixel floating in the air
+            # above short blades and above the left-hand shield.
+            if wep != "shield":
+                glint_y = ar_y - 1 if wep == "dagger" else ar_y - 5
+                actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w, "y": glint_y, "color": 8}))
             actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y + 1, "x1": ar_x + arm_w, "y1": ar_y + 2, "color": c_outline}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 

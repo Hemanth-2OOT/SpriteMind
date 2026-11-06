@@ -36,6 +36,8 @@ class ActionPlan:
     archetype: str
     element: str
     weapon: str
+    proportion: str = "standard"
+    accessory: str = "none"
     actions: List[ActionSpec] = field(default_factory=list)
     rationale: List[str] = field(default_factory=list)
 
@@ -50,6 +52,8 @@ class ActionPlan:
             "archetype": self.archetype,
             "element": self.element,
             "weapon": self.weapon,
+            "proportion": self.proportion,
+            "accessory": self.accessory,
             "actions": [a.to_dict() for a in self.actions],
             "rationale": list(self.rationale),
         }
