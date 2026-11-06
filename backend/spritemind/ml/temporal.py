@@ -3,6 +3,7 @@
 Learns temporal transitions, continuous motion phase, and body-part kinematic trajectories
 while preserving character identity, anatomy, palette, and accessories across all frames.
 """
+import logging
 import math
 import time
 from pathlib import Path
@@ -16,14 +17,19 @@ from spritemind.dataset.generator import (
     CATEGORIES,
     CharacterGenerator,
 )
+from spritemind.ml.checkpoint_manifest import describe as describe_checkpoint
+
 from spritemind.dataset.temporal_dataset import (
     ANIMATION_CATEGORIES,
     CYCLIC_ANIMATIONS,
     TemporalDatasetGenerator,
 )
+logger = logging.getLogger(__name__)
+
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
+from spritemind.pixelscript.coherence import stabilize_offsets
 from spritemind.renderer.engine import PixelScriptEngine
 
 
@@ -207,25 +213,64 @@ class TemporalAnimator:
     """
 
     _cached_model: Optional[TemporalSVAN] = None
+    last_load_status: Dict[str, Any] = {}
     _cached_checkpoint: Optional[str] = None
+
+    @staticmethod
+    def _widen_embeddings(model: TemporalSVAN, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Grows category embeddings when the animation taxonomy gained entries after training."""
+        state = dict(state)
+        for name, param in model.named_parameters():
+            saved = state.get(name)
+            if saved is None or saved.shape == param.shape:
+                continue
+            if saved.dim() == 2 and param.dim() == 2 and saved.shape[1] == param.shape[1]:
+                grown = param.detach().clone()
+                rows = min(saved.shape[0], grown.shape[0])
+                grown[:rows] = saved[:rows]
+                if grown.shape[0] > rows:
+                    grown[rows:] = saved.mean(dim=0, keepdim=True)
+                state[name] = grown
+        return state
 
     @classmethod
     def get_or_load_model(cls, checkpoint_name: str = "temporal_svan_best.pt", device: str = "cpu") -> Tuple[TemporalSVAN, bool]:
         """Loads trained checkpoint or returns initialized model."""
         ckpt_path = Path("models/checkpoints") / checkpoint_name
+        if cls._cached_model is not None and cls._cached_checkpoint == checkpoint_name:
+            return cls._cached_model, True
         has_trained = False
         model = TemporalSVAN().to(device)
+        cls.last_load_status = {"checkpoint": checkpoint_name, "loaded": False, "reason": "missing file"}
 
         if ckpt_path.exists():
             try:
                 ckpt = torch.load(ckpt_path, map_location=device)
                 state = ckpt.get("model_state_dict", ckpt)
-                model.load_state_dict(state)
+                widened = cls._widen_embeddings(model, state)
+                model.load_state_dict(widened)
                 has_trained = True
                 cls._cached_model = model
                 cls._cached_checkpoint = checkpoint_name
-            except Exception as e:
+                recorded = describe_checkpoint(Path("models/checkpoints"), checkpoint_name)
+                trained_rows = int(state.get("animation_embed.weight", torch.empty(0)).shape[0]) if state else 0
+                cls.last_load_status = {
+                    "checkpoint": checkpoint_name,
+                    "loaded": True,
+                    "reason": "verified" if trained_rows >= len(ANIMATION_CATEGORIES) else "widened taxonomy",
+                    "trained_animations": trained_rows,
+                    "live_animations": len(ANIMATION_CATEGORIES),
+                    "recorded": recorded is not None,
+                }
+                if trained_rows and trained_rows < len(ANIMATION_CATEGORIES):
+                    logger.warning(
+                        "Checkpoint %s was trained on %d animation categories; %d new categories use averaged embeddings.",
+                        checkpoint_name, trained_rows, len(ANIMATION_CATEGORIES) - trained_rows,
+                    )
+            except Exception as exc:
                 has_trained = False
+                cls.last_load_status = {"checkpoint": checkpoint_name, "loaded": False, "reason": f"load failed: {exc}"}
+                logger.warning("Could not load temporal checkpoint %s: %s", checkpoint_name, exc)
         else:
             has_trained = False
 
@@ -317,6 +362,8 @@ class TemporalAnimator:
                 prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
                 lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
                 
+                frame_offsets: Dict[str, Tuple[int, int, int]] = {}
+
                 for p_idx, part_name in enumerate(PARTS):
                     pred_dx = float(traj[f_idx, p_idx, 0])
                     pred_dy = float(traj[f_idx, p_idx, 1])
@@ -350,6 +397,12 @@ class TemporalAnimator:
                         rot = int(round(prior_rot * 0.5))
 
                     if dx != 0 or dy != 0 or rot != 0:
+                        frame_offsets[part_name] = (dx, dy, rot)
+
+                for part_name, (dx, dy, rot) in stabilize_offsets(
+                    base_script, frame_offsets, width=width, height=height, palette_name=palette_name
+                ).items():
+                    if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
 
                 frame_script = "\n".join(lines)
@@ -368,7 +421,9 @@ class TemporalAnimator:
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
                 lines = [ln.strip() for ln in base_script.splitlines() if ln.strip() and not ln.strip().startswith("TRANSFORM")]
-                for part_name, (dx, dy, rot) in offsets.items():
+                for part_name, (dx, dy, rot) in stabilize_offsets(
+                    base_script, offsets, width=width, height=height, palette_name=palette_name
+                ).items():
                     if dx != 0 or dy != 0 or rot != 0:
                         lines.append(f"TRANSFORM {part_name} {dx} {dy} {rot}")
 

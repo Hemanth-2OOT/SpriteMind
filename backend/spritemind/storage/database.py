@@ -172,7 +172,6 @@ class StorageDatabase:
 
     def sync_from_disk(self) -> Dict[str, Any]:
         """Scans filesystem to populate relational database with current project state."""
-        root = Path(".")
         scan_count = 0
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -375,17 +374,17 @@ class StorageDatabase:
             cur = conn.cursor()
             if table_name == "storage_registry" and q_filter:
                 cur.execute(
-                    f"SELECT * FROM storage_registry WHERE path LIKE ? OR filename LIKE ? LIMIT ?",
+                    "SELECT * FROM storage_registry WHERE path LIKE ? OR filename LIKE ? LIMIT ?",
                     (f"%{q_filter}%", f"%{q_filter}%", limit),
                 )
             elif table_name == "assets" and q_filter:
                 cur.execute(
-                    f"SELECT * FROM assets WHERE name LIKE ? OR category LIKE ? LIMIT ?",
+                    "SELECT * FROM assets WHERE name LIKE ? OR category LIKE ? LIMIT ?",
                     (f"%{q_filter}%", f"%{q_filter}%", limit),
                 )
             elif table_name == "checkpoints" and q_filter:
                 cur.execute(
-                    f"SELECT * FROM checkpoints WHERE checkpoint_name LIKE ? LIMIT ?",
+                    "SELECT * FROM checkpoints WHERE checkpoint_name LIKE ? LIMIT ?",
                     (f"%{q_filter}%", limit),
                 )
             else:

@@ -15,6 +15,15 @@ class ActionTokenizer:
         self.token_to_id: Dict[str, int] = {}
         self.id_to_token: Dict[int, str] = {}
         self._build_vocab()
+        self._prefix_cache: Dict[str, List[int]] = {}
+
+    def _prefix_ids(self, prefix: str) -> List[int]:
+        """Token ids starting with `prefix`, computed once per prefix."""
+        cached = self._prefix_cache.get(prefix)
+        if cached is None:
+            cached = [tid for tok, tid in self.token_to_id.items() if tok.startswith(prefix)]
+            self._prefix_cache[prefix] = cached
+        return cached
 
     def _add_token(self, token: str):
         if token not in self.token_to_id:
@@ -41,12 +50,15 @@ class ActionTokenizer:
         # 4. Color index tokens (0..31)
         for i in range(32):
             self._add_token(f"COL_{i}")
+        # Raw RGB(A) channels, used to preserve PALETTE colours losslessly
+        for i in range(256):
+            self._add_token(f"CH_{i}")
 
         # 5. Part and parent identifiers
         common_parts = [
             "none", "torso", "head", "eyes", "arm_left", "arm_right",
             "leg_left", "leg_right", "weapon", "wings", "tail", "horns",
-            "base", "equipment", "details"
+            "base", "equipment", "details", "PROGRAM", "PART"
         ]
         for p in common_parts:
             self._add_token(f"NAME_{p}")
@@ -77,9 +89,12 @@ class ActionTokenizer:
         p = action.params
 
         if action.action_type == ActionType.PALETTE:
-            tokens.append(f"COL_{p.get('index', 0)}")
-            # Hex color or fallback
-            tokens.append(f"NUM_1")
+            tokens.append(f"COL_{int(p.get('index', 0)) % 32}")
+            channels = self._color_channels(p.get("color"))
+            if channels is None:
+                tokens.append("NUM_0")
+            else:
+                tokens.extend(f"CH_{c}" for c in channels)
 
         elif action.action_type == ActionType.LAYER:
             tokens.append(f"NUM_{p.get('id', 0)}")
@@ -135,16 +150,89 @@ class ActionTokenizer:
             tokens.append(f"NUM_{p.get('dest_x', 0)}")
             tokens.append(f"NUM_{p.get('dest_y', 0)}")
             tokens.append("NUM_1" if p.get("flip_x", False) else "NUM_0")
+            tokens.append("NUM_1" if p.get("flip_y", False) else "NUM_0")
 
         elif action.action_type == ActionType.TRANSFORM:
             tokens.append(f"NAME_{p.get('part_name', 'torso')}")
             tokens.append(f"NUM_{p.get('dx', 0)}")
             tokens.append(f"NUM_{p.get('dy', 0)}")
+            tokens.append(f"NUM_{p.get('rot_deg', 0)}")
 
         elif action.action_type == ActionType.END:
             tokens.append(f"NAME_{p.get('target', 'PROGRAM')}")
 
         return [self.token_to_id.get(t, self.unk_id) for t in tokens]
+
+    #: Token-class grammar for each action: the decoder may only emit tokens
+    #: matching the next class, which keeps sampled programs structurally valid.
+    ACTION_GRAMMAR: Dict[str, List[str]] = {
+        ActionType.PALETTE.value: ["COL", "COLOR"],
+        ActionType.LAYER.value: ["NUM", "NAME"],
+        ActionType.PART.value: ["NAME", "NAME", "NUM", "NUM"],
+        ActionType.PIXEL.value: ["NUM", "NUM", "COL"],
+        ActionType.RECT.value: ["NUM", "NUM", "NUM", "NUM", "COL", "NUM"],
+        ActionType.LINE.value: ["NUM", "NUM", "NUM", "NUM", "COL"],
+        ActionType.FILL.value: ["NUM", "NUM", "COL"],
+        ActionType.ERASE.value: ["NUM", "NUM", "NUM", "NUM"],
+        ActionType.REUSE.value: ["NAME", "NUM", "NUM", "NUM", "NUM"],
+        ActionType.TRANSFORM.value: ["NAME", "NUM", "NUM", "NUM"],
+        ActionType.END.value: ["NAME"],
+    }
+
+    def _ids_with_prefix(self, *prefixes: str) -> List[int]:
+        if len(prefixes) == 1:
+            return self._prefix_ids(prefixes[0])
+        ids: List[int] = []
+        for p in prefixes:
+            ids.extend(self._prefix_ids(p))
+        return ids
+
+    def _grammar_state(self, tokens: List[int]) -> Tuple[Optional[str], int]:
+        """Returns (command token, consumed-params) for the action being decoded."""
+        cmd = None
+        consumed = 0
+        palette_channels = 0
+        for tid in tokens:
+            tok = self.id_to_token.get(tid, self.UNK_TOKEN)
+            if tok.startswith("CMD_"):
+                cmd = tok
+                consumed = 0
+                palette_channels = 0
+                continue
+            if cmd is None:
+                continue
+            spec = self.ACTION_GRAMMAR.get(cmd[4:], [])
+            if consumed >= len(spec):
+                continue
+            if spec[consumed] == "COLOR" and tok.startswith("CH_"):
+                palette_channels += 1
+                if palette_channels >= 4:
+                    consumed += 1
+                continue
+            consumed += 1
+        return cmd, consumed
+
+    def allowed_token_ids(self, tokens: List[int]) -> Optional[List[int]]:
+        """Token ids legal at the next position, or None when unconstrained."""
+        cmd, consumed = self._grammar_state(tokens)
+        if cmd is None:
+            return self._ids_with_prefix("CMD_") + [self.eos_id]
+
+        spec = self.ACTION_GRAMMAR.get(cmd[4:])
+        if spec is None or consumed >= len(spec):
+            return self._ids_with_prefix("CMD_") + [self.eos_id]
+
+        expected = spec[consumed]
+        if expected == "COLOR":
+            # Either a raw channel colour or the "no colour" marker.
+            return self._ids_with_prefix("CH_") + [self.token_to_id["NUM_0"]]
+        if expected == "NUM":
+            return self._ids_with_prefix("NUM_")
+        if expected == "NAME":
+            return self._ids_with_prefix("NAME_")
+        if expected == "COL":
+            return self._ids_with_prefix("COL_")
+        return None
 
     def encode_program(self, program: PixelScriptProgram, max_length: Optional[int] = None) -> List[int]:
         ids = [self.sos_id]
@@ -183,7 +271,19 @@ class ActionTokenizer:
                     i += 1
                     continue
 
-                if act_type == ActionType.PIXEL and i + 3 < n:
+                if act_type == ActionType.PALETTE and i + 2 < n:
+                    idx = self._parse_col(tokens[i + 1], 0)
+                    j = i + 2
+                    channels: List[int] = []
+                    while j < n and tokens[j].startswith("CH_") and len(channels) < 4:
+                        channels.append(int(tokens[j][3:]))
+                        j += 1
+                    params: Dict[str, Any] = {"index": idx}
+                    if len(channels) in (3, 4):
+                        params["color"] = "#" + "".join(f"{c:02x}" for c in channels)
+                    actions.append(PixelAction(act_type, params))
+                    i = max(j, i + 2)
+                elif act_type == ActionType.PIXEL and i + 3 < n:
                     x = self._parse_num(tokens[i + 1], 0)
                     y = self._parse_num(tokens[i + 2], 0)
                     col = self._parse_col(tokens[i + 3], 1)
@@ -206,6 +306,39 @@ class ActionTokenizer:
                     col = self._parse_col(tokens[i + 5], 1)
                     actions.append(PixelAction(act_type, {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "color": col}))
                     i += 6
+                elif act_type == ActionType.FILL and i + 3 < n:
+                    x = self._parse_num(tokens[i + 1], 0)
+                    y = self._parse_num(tokens[i + 2], 0)
+                    col = self._parse_col(tokens[i + 3], 1)
+                    actions.append(PixelAction(act_type, {"x": x, "y": y, "color": col}))
+                    i += 4
+                elif act_type == ActionType.ERASE and i + 4 < n:
+                    x = self._parse_num(tokens[i + 1], 0)
+                    y = self._parse_num(tokens[i + 2], 0)
+                    w = max(1, self._parse_num(tokens[i + 3], 1))
+                    h = max(1, self._parse_num(tokens[i + 4], 1))
+                    actions.append(PixelAction(act_type, {"x": x, "y": y, "w": w, "h": h}))
+                    i += 5
+                elif act_type == ActionType.REUSE and i + 5 < n:
+                    name = self._parse_name(tokens[i + 1])
+                    dx = self._parse_num(tokens[i + 2], 0)
+                    dy = self._parse_num(tokens[i + 3], 0)
+                    flip_x = self._parse_num(tokens[i + 4], 0) == 1
+                    flip_y = self._parse_num(tokens[i + 5], 0) == 1
+                    actions.append(PixelAction(act_type, {
+                        "part_name": name, "dest_x": dx, "dest_y": dy,
+                        "flip_x": flip_x, "flip_y": flip_y,
+                    }))
+                    i += 6
+                elif act_type == ActionType.TRANSFORM and i + 4 < n:
+                    name = self._parse_name(tokens[i + 1])
+                    dx = self._parse_num(tokens[i + 2], 0)
+                    dy = self._parse_num(tokens[i + 3], 0)
+                    rot = self._parse_num(tokens[i + 4], 0)
+                    actions.append(PixelAction(act_type, {
+                        "part_name": name, "dx": dx, "dy": dy, "rot_deg": rot,
+                    }))
+                    i += 5
                 elif act_type == ActionType.PART and i + 4 < n:
                     name = tokens[i + 1].replace("NAME_", "")
                     parent_raw = tokens[i + 2].replace("NAME_", "")
@@ -230,6 +363,27 @@ class ActionTokenizer:
                 i += 1
 
         return actions
+
+    @staticmethod
+    def _parse_name(tok: str) -> str:
+        return tok[5:] if tok.startswith("NAME_") else tok.replace("NAME_", "")
+
+    @staticmethod
+    def _color_channels(color: Any) -> Optional[List[int]]:
+        if isinstance(color, str):
+            s = color.strip().lstrip("#")
+            if len(s) in (6, 8):
+                try:
+                    return [int(s[i:i + 2], 16) for i in range(0, len(s), 2)]
+                except ValueError:
+                    return None
+            return None
+        if isinstance(color, (list, tuple)) and len(color) in (3, 4):
+            try:
+                return [max(0, min(255, int(c))) for c in color]
+            except (TypeError, ValueError):
+                return None
+        return None
 
     @staticmethod
     def _parse_num(tok: str, default: int = 0) -> int:

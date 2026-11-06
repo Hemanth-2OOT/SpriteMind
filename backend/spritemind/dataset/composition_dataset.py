@@ -58,7 +58,6 @@ class CompositionDatasetBuilder:
         seed: int = 42,
     ) -> Dict[str, Any]:
         """Generates characters and records exact ground truth socket coordinates."""
-        rng = random.Random(seed)
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
@@ -140,7 +139,7 @@ class CompositionDatasetBuilder:
         device: str = "cpu",
     ) -> Dict[str, Any]:
         """Trains SocketPredictor and saves checkpoint."""
-        print(f"[Composition Trainer] Building dataset...")
+        print("[Composition Trainer] Building dataset...")
         data_splits = cls.generate_samples(total_samples=300, seed=777)
         train_ds = CompositionDataset(data_splits["train"])
         val_ds = CompositionDataset(data_splits["val"])

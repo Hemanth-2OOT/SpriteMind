@@ -194,6 +194,93 @@ class DrawingActionTransformer(nn.Module):
         logits = self.head(out)  # (batch_size, seq_len, vocab_size)
         return logits
 
+    # ------------------------------------------------------------------
+    # Incremental (cached) decoding: same weights, one token at a time.
+    # ------------------------------------------------------------------
+    def new_cache(self, max_len: int = 0, batch_size: int = 1) -> List[Dict[str, torch.Tensor]]:
+        """Per-layer caches. With max_len > 0 the self-attention KV is a preallocated
+        ring-free buffer written in place, which avoids re-copying a growing tensor
+        at every decode step."""
+        heads = self.transformer_decoder.layers[0].self_attn.num_heads
+        head_dim = self.d_model // heads
+        caches: List[Dict[str, torch.Tensor]] = []
+        for _ in self.transformer_decoder.layers:
+            entry: Dict[str, torch.Tensor] = {}
+            if max_len > 0:
+                entry["k"] = torch.zeros(batch_size, heads, max_len, head_dim)
+                entry["v"] = torch.zeros(batch_size, heads, max_len, head_dim)
+                entry["len"] = 0
+            caches.append(entry)
+        return caches
+
+    @staticmethod
+    def _split(t: torch.Tensor, nhead: int) -> torch.Tensor:
+        b, length, d = t.shape
+        return t.view(b, length, nhead, d // nhead).transpose(1, 2)
+
+    @staticmethod
+    def _merge(t: torch.Tensor) -> torch.Tensor:
+        b, _, length, _ = t.shape
+        return t.transpose(1, 2).reshape(b, length, -1)
+
+    def _project(self, x: torch.Tensor, attn: nn.MultiheadAttention):
+        qkv = F.linear(x, attn.in_proj_weight, attn.in_proj_bias)
+        q, k, v = qkv.chunk(3, dim=-1)
+        return self._split(q, attn.num_heads), self._split(k, attn.num_heads), self._split(v, attn.num_heads)
+
+    @staticmethod
+    def _attend(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(q.size(-1))
+        return torch.matmul(torch.softmax(scores, dim=-1), v)
+
+    def forward_step(
+        self,
+        token: torch.Tensor,
+        memory: torch.Tensor,
+        cache: List[Dict[str, torch.Tensor]],
+        position: int,
+    ) -> torch.Tensor:
+        """Single-token forward pass with self/cross attention KV caching.
+
+        Mathematically equivalent to `forward` restricted to the last position,
+        but O(1) in sequence length per call.
+        """
+        x = self.token_embed(token) * math.sqrt(self.d_model)
+        x = x + self.pos_encoder.pe[:, position : position + 1]
+
+        for layer, layer_cache in zip(self.transformer_decoder.layers, cache):
+            attn = layer.self_attn
+            q, k, v = self._project(x, attn)
+            if "len" in layer_cache:
+                n = layer_cache["len"]
+                layer_cache["k"][:, :, n : n + 1, :] = k
+                layer_cache["v"][:, :, n : n + 1, :] = v
+                layer_cache["len"] = n + 1
+                keys, values = layer_cache["k"][:, :, : n + 1, :], layer_cache["v"][:, :, : n + 1, :]
+            else:
+                layer_cache["k"] = k if "k" not in layer_cache else torch.cat([layer_cache["k"], k], dim=2)
+                layer_cache["v"] = v if "v" not in layer_cache else torch.cat([layer_cache["v"], v], dim=2)
+                keys, values = layer_cache["k"], layer_cache["v"]
+            sa = self._attend(q, keys, values)
+            sa = attn.out_proj(self._merge(sa))
+            x = layer.norm1(x + sa)
+
+            q_m = self._split(
+                F.linear(x, layer.multihead_attn.in_proj_weight, layer.multihead_attn.in_proj_bias).chunk(3, dim=-1)[0],
+                layer.multihead_attn.num_heads,
+            )
+            if "k_mem" not in layer_cache:
+                _, k_m, v_m = self._project(memory, layer.multihead_attn)
+                layer_cache["k_mem"], layer_cache["v_mem"] = k_m, v_m
+            ca = self._attend(q_m, layer_cache["k_mem"], layer_cache["v_mem"])
+            ca = layer.multihead_attn.out_proj(self._merge(ca))
+            x = layer.norm2(x + ca)
+
+            ff = layer.linear2(layer.activation(layer.linear1(x)))
+            x = layer.norm3(x + ff)
+
+        return self.head(x)
+
 
 class VisualCritic(nn.Module):
     """Predicts defect presence, defect classification, and overall visual quality."""
@@ -234,14 +321,46 @@ class VisualCritic(nn.Module):
 class SVANModel(nn.Module):
     """Integrated SpriteMind Visual-Action Network."""
 
-    def __init__(self, vocab_size: int = 256, d_model: int = 128):
+    def __init__(
+        self,
+        vocab_size: int = 256,
+        d_model: int = 128,
+        nhead: int = 4,
+        num_layers: int = 4,
+        dim_feedforward: int = 512,
+        max_seq_len: int = 384,
+        dropout: float = 0.1,
+    ):
         super().__init__()
         self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.model_config = {
+            "vocab_size": vocab_size,
+            "d_model": d_model,
+            "nhead": nhead,
+            "num_layers": num_layers,
+            "dim_feedforward": dim_feedforward,
+            "max_seq_len": max_seq_len,
+            "dropout": dropout,
+        }
         self.semantic_encoder = SemanticEncoder(d_model=d_model)
         self.visual_encoder = VisualEncoder(in_channels=4, d_model=d_model)
         self.structure_graph = StructureGraph(d_model=d_model)
-        self.action_transformer = DrawingActionTransformer(vocab_size=vocab_size, d_model=d_model)
+        self.action_transformer = DrawingActionTransformer(
+            vocab_size=vocab_size,
+            d_model=d_model,
+            nhead=nhead,
+            num_layers=num_layers,
+            dim_feedforward=dim_feedforward,
+            max_seq_len=max_seq_len,
+            dropout=dropout,
+        )
         self.critic = VisualCritic(in_channels=4)
+
+    @classmethod
+    def from_config(cls, config: Dict[str, Any]) -> "SVANModel":
+        keys = ("vocab_size", "d_model", "nhead", "num_layers", "dim_feedforward", "max_seq_len", "dropout")
+        return cls(**{k: config[k] for k in keys if k in config})
 
     def count_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)

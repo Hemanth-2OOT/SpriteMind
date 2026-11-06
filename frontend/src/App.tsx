@@ -7,6 +7,8 @@ import { ModelLabPage } from './pages/ModelLabPage';
 import { EvaluationLabPage } from './pages/EvaluationLabPage';
 import { AssetLibraryPage } from './pages/AssetLibraryPage';
 import { DataManagerPage } from './pages/DataManagerPage';
+import { AssetStudioPage } from './pages/AssetStudioPage';
+import { ActionSetPage } from './pages/ActionSetPage';
 import { SystemHealth, ModelsInfo, TrainingStatus } from './types';
 import { fetchHealth, fetchModels, fetchTrainingStatus } from './services/api';
 
@@ -58,6 +60,8 @@ export const App: React.FC = () => {
           <GeneratePage modelsInfo={modelsInfo} selectedEngine={selectedEngine} />
         )}
         {activeTab === 'animation' && <AnimationStudioPage />}
+        {activeTab === 'action_sets' && <ActionSetPage />}
+        {activeTab === 'composition' && <AssetStudioPage />}
         {activeTab === 'dataset' && <DatasetStudioPage />}
         {activeTab === 'model_lab' && (
           <ModelLabPage

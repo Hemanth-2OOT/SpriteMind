@@ -212,6 +212,8 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
               <option value="walk">Walk Cycle</option>
               <option value="run">Running</option>
               <option value="attack">Attack Slash</option>
+              <option value="cast">Spell Cast</option>
+              <option value="dash">Dash Burst</option>
               <option value="death">Death / Fall</option>
             </select>
           </div>

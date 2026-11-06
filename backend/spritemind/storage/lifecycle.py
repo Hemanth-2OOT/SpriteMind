@@ -29,8 +29,9 @@ class AssetLifecycleManager:
 
     def trash_asset(self, asset_id: str, reason: str = "User deletion request") -> Dict[str, Any]:
         """Moves a user-generated asset to recoverable trash. Strictly blocks protected files."""
-        # Non-negotiable immutability gate: check input ID/path first
-        StorageClassifier.assert_deletable(asset_id)
+        # A path-like ID is gated before lookup, so protected paths raise even if absent.
+        if "/" in asset_id or "\\" in asset_id or Path(asset_id).suffix:
+            StorageClassifier.assert_deletable(asset_id)
 
         # Find asset file path
         asset_file = Path(f"data/assets/{asset_id}.json")
@@ -43,6 +44,14 @@ class AssetLifecycleManager:
                 raise FileNotFoundError(f"Asset '{asset_id}' not found on disk.")
 
         rel_path = asset_file.as_posix()
+
+        # Only assets inside data/assets may be trashed, even if classification slips.
+        try:
+            asset_file.resolve().relative_to(Path("data/assets").resolve())
+        except ValueError:
+            raise ProtectedResourceException(
+                f"ILLEGAL OPERATION: '{asset_id}' resolves outside the user asset directory."
+            )
 
         # Non-negotiable immutability gate on resolved path
         StorageClassifier.assert_deletable(rel_path)

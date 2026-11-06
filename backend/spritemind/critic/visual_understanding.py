@@ -71,6 +71,21 @@ def find_connected_components(alpha: np.ndarray) -> List[Dict[str, Any]]:
     return components
 
 
+HEAD_MOUNTED_PARTS = {"eyes", "mouth", "nose", "ears", "hair", "helmet", "horns", "beard", "crown", "visor"}
+
+
+def _is_between_legs_gap(hole: Dict[str, Any], torso_part: Any, canvas_width: int) -> bool:
+    """The transparent wedge between two legs is anatomy, not a hole to repair."""
+    if torso_part is None or torso_part.bounding_box is None:
+        return False
+    box = hole["bbox"]
+    torso = torso_part.bounding_box
+    below_hips = box["min_y"] > torso["max_y"] - 1
+    centred = abs((box["min_x"] + box["max_x"]) / 2 - canvas_width / 2) <= 3
+    narrow = (box["max_x"] - box["min_x"] + 1) <= 3
+    return below_hips and centred and narrow
+
+
 def detect_interior_holes(alpha: np.ndarray, main_component_bbox: Optional[Dict[str, int]] = None) -> List[Tuple[int, int]]:
     """Detects unexpected transparent holes fully enclosed inside solid sprite regions.
     Uses border-seed flood-fill to differentiate background from interior enclosed voids.
@@ -243,6 +258,8 @@ class VisualUnderstandingPipeline:
             hole_components = find_connected_components(hole_mask.astype(np.uint8) * 255)
 
             for hc in hole_components:
+                if _is_between_legs_gap(hc, parts_dict.get("torso"), w):
+                    continue
                 # Suggest filling with dominant adjacent color
                 hx, hy = hc["pixels"][0]
                 # Sample color from top or left adjacent opaque pixel
@@ -273,7 +290,6 @@ class VisualUnderstandingPipeline:
                 defect_counter += 1
 
         # 3. Disconnected Body Parts (Humanoid & Non-Humanoid)
-        parts_dict = render_res.canvas.parts
         torso_part = parts_dict.get("torso")
 
         if torso_part and torso_part.bounding_box:
@@ -281,8 +297,15 @@ class VisualUnderstandingPipeline:
             for pname, part in parts_dict.items():
                 if pname != "torso" and part.bounding_box:
                     pb = part.bounding_box
-                    dx = max(0, tb["min_x"] - pb["max_x"], pb["min_x"] - tb["max_x"])
-                    dy = max(0, tb["min_y"] - pb["max_y"], pb["min_y"] - tb["max_y"])
+                    if pname in HEAD_MOUNTED_PARTS:
+                        head = parts_dict.get("head")
+                        if head is None or head.bounding_box is None:
+                            continue
+                        tb_cmp = head.bounding_box
+                    else:
+                        tb_cmp = tb
+                    dx = max(0, tb_cmp["min_x"] - pb["max_x"], pb["min_x"] - tb_cmp["max_x"])
+                    dy = max(0, tb_cmp["min_y"] - pb["max_y"], pb["min_y"] - tb_cmp["max_y"])
                     gap = max(dx, dy)
 
                     # Category-specific gap tolerances
@@ -294,8 +317,8 @@ class VisualUnderstandingPipeline:
 
                     if gap > max_allowed_gap:
                         # Compute directional correction translation
-                        shift_x = -(pb["min_x"] - tb["max_x"]) if pb["min_x"] > tb["max_x"] else (tb["min_x"] - pb["max_x"] if pb["max_x"] < tb["min_x"] else 0)
-                        shift_y = -(pb["min_y"] - tb["max_y"]) if pb["min_y"] > tb["max_y"] else (tb["min_y"] - pb["max_y"] if pb["max_y"] < tb["min_y"] else 0)
+                        shift_x = -(pb["min_x"] - tb_cmp["max_x"]) if pb["min_x"] > tb_cmp["max_x"] else (tb_cmp["min_x"] - pb["max_x"] if pb["max_x"] < tb_cmp["min_x"] else 0)
+                        shift_y = -(pb["min_y"] - tb_cmp["max_y"]) if pb["min_y"] > tb_cmp["max_y"] else (tb_cmp["min_y"] - pb["max_y"] if pb["max_y"] < tb_cmp["min_y"] else 0)
                         # Bound shift to close the gap
                         shift_x = max(-4, min(4, shift_x))
                         shift_y = max(-4, min(4, shift_y))
@@ -306,7 +329,8 @@ class VisualUnderstandingPipeline:
                             "category": category,
                             "severity": "critical" if gap > 5 else "moderate",
                             "confidence": 0.94,
-                            "description": f"Anatomical part '{pname}' is disconnected from torso by a {gap}px spatial gap",
+                            "anchor": "head" if pname in HEAD_MOUNTED_PARTS else "torso",
+                            "description": f"Anatomical part '{pname}' is disconnected from {'head' if pname in HEAD_MOUNTED_PARTS else 'torso'} by a {gap}px spatial gap",
                             "bbox": pb,
                             "affected_pixels": [],
                             "suggested_fix": f"TRANSFORM {pname} {shift_x} {shift_y} 0",

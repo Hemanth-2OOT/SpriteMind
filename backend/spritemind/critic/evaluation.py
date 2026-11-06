@@ -288,7 +288,7 @@ class Stage3EvaluationSuite:
 
     def run_evaluation(self) -> Dict[str, Any]:
         case_results = []
-        tp, fp, fn, tn = 0, 0, 0, 0
+        tp, fp, fn = 0, 0, 0
         total_repairs_successful = 0
         total_iou_gain = []
         total_unintended_changes = []

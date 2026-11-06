@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Sparkles,
+  Wand2,
   Layers,
   Cpu,
   Activity,
@@ -88,6 +89,30 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Film className="w-3.5 h-3.5" />
             <span>Animation Studio</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('action_sets')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+              activeTab === 'action_sets'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
+            }`}
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>Action Sets</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('composition')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+              activeTab === 'composition'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-dark-800'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Composition</span>
           </button>
 
           <button

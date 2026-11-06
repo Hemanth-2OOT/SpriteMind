@@ -12,12 +12,14 @@ import uvicorn
 
 
 def main():
+    # All data/ and models/ paths are project-relative, so pin the CWD to the repo root.
+    os.chdir(backend_dir.parent)
     port = int(os.environ.get("PORT", 7860))
     host = os.environ.get("HOST", "127.0.0.1")
-    print(f"==================================================")
-    print(f"  Starting SpriteMind Local AI Server")
+    print("==================================================")
+    print("  Starting SpriteMind Local AI Server")
     print(f"  URL: http://{host}:{port}")
-    print(f"==================================================")
+    print("==================================================")
     uvicorn.run("spritemind.server.app:app", host=host, port=port, reload=False, log_level="info")
 
 

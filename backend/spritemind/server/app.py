@@ -3,19 +3,21 @@ import os
 import io
 import json
 import base64
+import hmac
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 import torch
 import numpy as np
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Response
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from spritemind.server.schemas import (
     GenerateRequest,
+    ActionSetRequest,
     RefineRequest,
     RenderRequest,
     ExportRequest,
@@ -41,6 +43,11 @@ from spritemind.critic.repair_engine import AutonomousRepairEngine
 from spritemind.critic.model import DEFECT_CLASSES
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.ml.temporal import TemporalAnimator, ANIMATION_CATEGORIES, CATEGORIES
+from spritemind.actions import ActionSetBuilder, ActionSetPlanner
+from spritemind.ml.checkpoint_manifest import (
+    list_entries as list_checkpoint_entries,
+    verify as verify_checkpoint,
+)
 from spritemind.assets.library import AssetLibrary, ASSET_CATEGORIES
 from spritemind.assets.composer import AssetComposer
 from spritemind.assets.pack import AssetPack
@@ -70,9 +77,40 @@ app = FastAPI(
     version="0.1.0",
 )
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:7860,http://127.0.0.1:7860,"
+    "http://localhost:7861,http://127.0.0.1:7861"
+)
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("SPRITEMIND_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
+API_KEY_ENV = "SPRITEMIND_API_KEY"
+API_KEY_EXEMPT = {"/api/health", "/docs", "/openapi.json", "/redoc"}
+
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    """Optional shared-secret guard for deployments that are not localhost-only."""
+    expected = os.environ.get(API_KEY_ENV, "").strip()
+    path = request.url.path
+    if expected and path.startswith("/api") and path not in API_KEY_EXEMPT:
+        supplied = request.headers.get("x-api-key", "")
+        if not supplied:
+            header = request.headers.get("authorization", "")
+            if header.lower().startswith("bearer "):
+                supplied = header[7:].strip()
+        if not hmac.compare_digest(supplied, expected):
+            return JSONResponse({"detail": "Invalid or missing API key"}, status_code=401)
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -117,10 +155,26 @@ def get_health() -> Dict[str, Any]:
 def get_models() -> Dict[str, Any]:
     checkpoints = [p.name for p in pipeline.checkpoints_dir.glob("*.pt")]
     model_info = pipeline.get_loaded_model_info()
+    recorded = {entry["file"]: entry for entry in list_checkpoint_entries(pipeline.checkpoints_dir)}
+    integrity = {
+        name: verify_checkpoint(pipeline.checkpoints_dir, name) for name in checkpoints
+    }
     return {
         "available_checkpoints": checkpoints,
         "loaded_model": model_info,
         "supported_engines": ["procedural_baseline", "untrained_model", "trained_model"],
+        "checkpoints": [
+            {
+                "file": name,
+                "recorded": name in recorded,
+                "parameter_count": recorded.get(name, {}).get("parameter_count"),
+                "trained_animations": recorded.get(name, {}).get("trained_animations"),
+                "integrity": integrity[name]["reason"],
+                "ok": integrity[name]["ok"],
+            }
+            for name in checkpoints
+        ],
+        "temporal_checkpoint_status": TemporalAnimator.last_load_status,
     }
 
 
@@ -153,64 +207,43 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
     )
     return result
 
+@app.post("/api/action_set/plan")
+def action_set_plan(req: ActionSetRequest) -> Dict[str, Any]:
+    """Cheap prompt interpretation: which animations the prompt implies."""
+    plan = ActionSetPlanner.plan(
+        prompt=req.prompt,
+        category=req.category,
+        style=req.style,
+        palette=req.palette,
+        width=req.width,
+        height=req.height,
+        requested_actions=req.actions,
+        max_actions=req.max_actions,
+        seed=req.seed,
+    )
+    return {"status": "success", "plan": plan.to_dict()}
 
-@app.post("/api/critic/inspect")
-def inspect_sprite_endpoint(req: InspectRequest) -> Dict[str, Any]:
-    res = PixelScriptEngine.execute(req.script_text, width=req.width, height=req.height, palette_name=req.palette)
-    prog = PixelScriptParser.parse_text(req.script_text)
-    report = repair_engine.inspect(res, category=req.category, palette_name=req.palette, prog=prog)
-    frame_dict = res.to_dict(include_passes=True)
-    frame_dict["script_text"] = req.script_text
-    return {
-        "frame": frame_dict,
-        "critic": report,
-    }
 
-
-@app.post("/api/critic/repair")
-def repair_sprite_endpoint(req: CriticRepairRequest) -> Dict[str, Any]:
-    if req.auto_refine:
-        res = repair_engine.refine_closed_loop(
-            req.script_text,
+@app.post("/api/action_set")
+def action_set(req: ActionSetRequest) -> Dict[str, Any]:
+    """Builds a coherent, game-ready animation set from a single prompt."""
+    try:
+        return ActionSetBuilder.build(
+            prompt=req.prompt,
             category=req.category,
-            palette_name=req.palette,
+            style=req.style,
+            palette=req.palette,
             width=req.width,
             height=req.height,
-            max_iterations=req.max_iterations,
+            engine=req.engine,
+            seed=req.seed,
+            actions=req.actions,
+            max_actions=req.max_actions,
+            include_gif=req.include_gif,
+            facing=req.facing,
         )
-        return res
-    else:
-        patch = req.action_patch or ""
-        new_script = repair_engine.apply_patch_to_script(req.script_text, patch) if patch else req.script_text
-        res = PixelScriptEngine.execute(new_script, width=req.width, height=req.height, palette_name=req.palette)
-        prog = PixelScriptParser.parse_text(new_script)
-        critic = repair_engine.inspect(res, category=req.category, palette_name=req.palette, prog=prog)
-        frame_dict = res.to_dict(include_passes=True)
-        frame_dict["script_text"] = new_script
-        return {
-            "status": "applied",
-            "action_applied": patch,
-            "frame": frame_dict,
-            "critic": critic,
-        }
-
-
-@app.get("/api/critic/metrics")
-def get_critic_metrics() -> Dict[str, Any]:
-    metrics_file = Path("data/critic_metrics.json")
-    if metrics_file.exists():
-        try:
-            with open(metrics_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
-        "precision": 94.12,
-        "recall": 24.62,
-        "f1": 0.3902,
-        "accuracy": 89.8,
-        "defect_classes": DEFECT_CLASSES,
-    }
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/refine")
@@ -295,9 +328,15 @@ def export_assets(req: ExportRequest):
 def get_dataset_stats(name: str = "default_synth") -> Dict[str, Any]:
     stats = dataset_mgr.get_dataset_stats(name)
     if stats is None:
-        # Auto-generate starter dataset if none exists yet!
-        stats = dataset_mgr.generate_dataset(name=name, total_samples=20, defect_rate=0.2)
-    return stats
+        return {
+            "exists": False,
+            "name": name,
+            "total_samples": 0,
+            "splits": {"train": 0, "val": 0, "test": 0},
+            "category_distribution": {},
+            "defect_distribution": {},
+        }
+    return {**stats, "exists": True}
 
 
 @app.get("/api/dataset/samples")
@@ -849,3 +888,13 @@ for dist_path in possible_dist_paths:
     if dist_path.exists():
         app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
         break
+else:
+    @app.get("/", include_in_schema=False)
+    def frontend_not_built() -> HTMLResponse:
+        return HTMLResponse(
+            "<h1>SpriteMind API is running</h1>"
+            "<p>The web studio has not been built yet. Run:</p>"
+            "<pre>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</pre>"
+            "<p>API docs: <a href='/docs'>/docs</a></p>",
+            status_code=200,
+        )

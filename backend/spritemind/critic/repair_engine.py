@@ -102,7 +102,6 @@ class AutonomousRepairEngine:
                     confidence = float(probs[pred_class_idx].item())
 
                     q_score = float(n_out["quality_score"][0, 0].item())
-                    heatmap = n_out["heatmap"][0, 0].cpu().numpy().tolist()
 
                     neural_predictions = {
                         "predicted_class": pred_class,

@@ -148,7 +148,6 @@ def compute_metrics(
     # Healthy 32x32 character sprites fill between 100 and 600 pixels (10% - 60% of canvas)
     fill_ratio = (pixels_count / total_canvas_pixels) * 100.0
     fill_healthy = (100 <= pixels_count <= 600)
-    fill_score = min(100.0, max(0.0, 100.0 - abs(fill_ratio - 25.0) * 2.5))
 
     # 2. Valid PixelScript action rate
     total_actions = len(prog.actions) if hasattr(prog, "actions") else 0
@@ -161,7 +160,6 @@ def compute_metrics(
     adherence = 100.0 if errors_count == 0 else max(50.0, 100.0 - errors_count * 10.0)
 
     # 4. Silhouette IoU (approximation based on density and non-zero coverage)
-    bb = render_dict.get("bounding_box", {})
     if pixels_count > 0:
         # Typical 32x32 character bounding box spans ~16x22 = 352 pixels
         expected_envelope = 350.0
@@ -182,6 +180,7 @@ def compute_metrics(
         "palette_adherence": round(adherence, 2),
         "silhouette_iou": silhouette_iou,
         "pixel_fill_count": pixels_count,
+        "pixel_fill_ratio": round(fill_ratio, 2),
         "fill_healthy": fill_healthy,
         "structural_consistency": round(structural_score, 2),
         "latency_ms": round(inference_time_ms, 2),

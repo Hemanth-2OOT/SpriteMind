@@ -10,19 +10,29 @@ import {
 } from '../types';
 
 const BASE_URL = '';
+const API_KEY: string =
+  (import.meta.env?.VITE_SPRITEMIND_API_KEY as string | undefined) ||
+  (typeof localStorage !== 'undefined' ? localStorage.getItem('spritemind_api_key') || '' : '');
+
+async function apiFetch(input: string, init: RequestInit = {}): Promise<globalThis.Response> {
+  if (!API_KEY) return fetch(input, init);
+  const headers = new Headers(init.headers || {});
+  if (!headers.has('X-API-Key')) headers.set('X-API-Key', API_KEY);
+  return fetch(input, { ...init, headers });
+}
 
 export async function fetchHealth(): Promise<SystemHealth> {
-  const res = await fetch(`${BASE_URL}/api/health`);
+  const res = await apiFetch(`${BASE_URL}/api/health`);
   return res.json();
 }
 
 export async function fetchModels(): Promise<ModelsInfo> {
-  const res = await fetch(`${BASE_URL}/api/models`);
+  const res = await apiFetch(`${BASE_URL}/api/models`);
   return res.json();
 }
 
 export async function loadCheckpoint(checkpointName: string): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/checkpoints/load`, {
+  const res = await apiFetch(`${BASE_URL}/api/checkpoints/load`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ checkpoint_name: checkpointName }),
@@ -44,7 +54,7 @@ export async function generateSprite(params: {
   seed?: number;
   max_actions?: number;
 }): Promise<GenerationResult> {
-  const res = await fetch(`${BASE_URL}/api/generate`, {
+  const res = await apiFetch(`${BASE_URL}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -63,7 +73,7 @@ export async function refineSprite(params: {
   height?: number;
   palette?: string;
 }): Promise<{ status: string; frame: FrameData; critic: VisualCriticReport }> {
-  const res = await fetch(`${BASE_URL}/api/refine`, {
+  const res = await apiFetch(`${BASE_URL}/api/refine`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -78,7 +88,7 @@ export async function renderScript(params: {
   palette?: string;
   scale?: number;
 }): Promise<FrameData> {
-  const res = await fetch(`${BASE_URL}/api/render`, {
+  const res = await apiFetch(`${BASE_URL}/api/render`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -100,7 +110,7 @@ export async function exportAsset(params: {
   fps?: number;
   cols?: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/export`, {
+  const res = await apiFetch(`${BASE_URL}/api/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -109,12 +119,12 @@ export async function exportAsset(params: {
 }
 
 export async function fetchDatasetStats(name = 'default_synth'): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/dataset/stats?name=${name}`);
+  const res = await apiFetch(`${BASE_URL}/api/dataset/stats?name=${name}`);
   return res.json();
 }
 
 export async function fetchDatasetSamples(name = 'default_synth', limit = 24, offset = 0): Promise<any[]> {
-  const res = await fetch(`${BASE_URL}/api/dataset/samples?name=${name}&limit=${limit}&offset=${offset}`);
+  const res = await apiFetch(`${BASE_URL}/api/dataset/samples?name=${name}&limit=${limit}&offset=${offset}`);
   return res.json();
 }
 
@@ -124,7 +134,7 @@ export async function triggerDatasetGeneration(params: {
   defect_rate: number;
   seed: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/dataset/generate`, {
+  const res = await apiFetch(`${BASE_URL}/api/dataset/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -140,7 +150,7 @@ export async function startTraining(params: {
   optimizer: string;
   checkpoint_name: string;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/training/start`, {
+  const res = await apiFetch(`${BASE_URL}/api/training/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -149,39 +159,39 @@ export async function startTraining(params: {
 }
 
 export async function stopTraining(): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/training/stop`, { method: 'POST' });
+  const res = await apiFetch(`${BASE_URL}/api/training/stop`, { method: 'POST' });
   return res.json();
 }
 
 export async function fetchTrainingStatus(): Promise<TrainingStatus> {
-  const res = await fetch(`${BASE_URL}/api/training/status`);
+  const res = await apiFetch(`${BASE_URL}/api/training/status`);
   return res.json();
 }
 
 export async function fetchTrainingHistory(): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/training/history`);
+  const res = await apiFetch(`${BASE_URL}/api/training/history`);
   return res.json();
 }
 
 export async function fetchBenchmarkGallery(limit = 100): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/benchmarks/gallery?limit=${limit}`);
+  const res = await apiFetch(`${BASE_URL}/api/benchmarks/gallery?limit=${limit}`);
   return res.json();
 }
 
 export async function runBenchmark(limit = 20): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/benchmarks/run?limit=${limit}`, {
+  const res = await apiFetch(`${BASE_URL}/api/benchmarks/run?limit=${limit}`, {
     method: 'POST',
   });
   return res.json();
 }
 
 export async function fetchEvaluationResults(): Promise<EvaluationResults> {
-  const res = await fetch(`${BASE_URL}/api/evaluation/results`);
+  const res = await apiFetch(`${BASE_URL}/api/evaluation/results`);
   return res.json();
 }
 
 export async function fetchAssets(query = ''): Promise<AssetRecord[]> {
-  const res = await fetch(`${BASE_URL}/api/assets${query ? `?query=${encodeURIComponent(query)}` : ''}`);
+  const res = await apiFetch(`${BASE_URL}/api/assets${query ? `?query=${encodeURIComponent(query)}` : ''}`);
   return res.json();
 }
 
@@ -192,7 +202,7 @@ export async function saveAsset(data: {
   frames: FrameData[];
   metadata?: Record<string, any>;
 }): Promise<AssetRecord> {
-  const res = await fetch(`${BASE_URL}/api/assets`, {
+  const res = await apiFetch(`${BASE_URL}/api/assets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -201,7 +211,7 @@ export async function saveAsset(data: {
 }
 
 export async function deleteAsset(id: string): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/assets/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`${BASE_URL}/api/assets/${id}`, { method: 'DELETE' });
   return res.json();
 }
 
@@ -212,7 +222,7 @@ export async function inspectSpriteApi(params: {
   width?: number;
   height?: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/critic/inspect`, {
+  const res = await apiFetch(`${BASE_URL}/api/critic/inspect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -234,7 +244,7 @@ export async function repairSpriteApi(params: {
   width?: number;
   height?: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/critic/repair`, {
+  const res = await apiFetch(`${BASE_URL}/api/critic/repair`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -247,7 +257,7 @@ export async function repairSpriteApi(params: {
 }
 
 export async function fetchCriticMetrics(): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/critic/metrics`);
+  const res = await apiFetch(`${BASE_URL}/api/critic/metrics`);
   return res.json();
 }
 
@@ -265,7 +275,7 @@ export async function generateAnimationApi(params: {
   engine?: string;
   seed?: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/animation/generate`, {
+  const res = await apiFetch(`${BASE_URL}/api/animation/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -287,7 +297,7 @@ export async function regenerateFrameApi(params: {
   engine?: string;
   seed?: number;
 }): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/animation/regenerate_frame`, {
+  const res = await apiFetch(`${BASE_URL}/api/animation/regenerate_frame`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -300,7 +310,54 @@ export async function regenerateFrameApi(params: {
 }
 
 export async function fetchAnimationMetrics(): Promise<any> {
-  const res = await fetch(`${BASE_URL}/api/animation/metrics`);
+  const res = await apiFetch(`${BASE_URL}/api/animation/metrics`);
   return res.json();
 }
 
+
+
+export async function planActionSetApi(params: {
+  prompt: string;
+  category?: string;
+  style?: string;
+  palette?: string;
+  actions?: string[];
+  seed?: number;
+}): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/action_set/plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Action planning failed');
+  }
+  return res.json();
+}
+
+export async function generateActionSetApi(params: {
+  prompt: string;
+  category?: string;
+  style?: string;
+  palette?: string;
+  width?: number;
+  height?: number;
+  engine?: string;
+  seed?: number;
+  actions?: string[];
+  max_actions?: number;
+  include_gif?: boolean;
+  facing?: 'left' | 'right';
+}): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/action_set`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Action set generation failed');
+  }
+  return res.json();
+}
