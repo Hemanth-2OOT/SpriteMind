@@ -1,0 +1,46 @@
+{
+  "dataset_name": "expanded_synthetic_25k",
+  "train_samples": 20000,
+  "val_samples": 2500,
+  "total_epochs": 2,
+  "completed_epochs": 5,
+  "best_epoch": 5,
+  "best_val_loss": 0.3431,
+  "device": "cpu",
+  "parameters": 2292104,
+  "vocab_size": 401,
+  "learning_rate": 0.0002,
+  "elapsed_seconds": 4515.6,
+  "loss_history": [
+    {
+      "epoch": 4,
+      "loss": 0.3574
+    },
+    {
+      "epoch": 5,
+      "loss": 0.3451
+    }
+  ],
+  "val_loss_history": [
+    {
+      "epoch": 4,
+      "val_loss": 0.3446
+    },
+    {
+      "epoch": 5,
+      "val_loss": 0.3431
+    }
+  ],
+  "token_accuracy_history": [
+    {
+      "epoch": 4,
+      "train_accuracy": 98.4,
+      "val_accuracy": 98.69
+    },
+    {
+      "epoch": 5,
+      "train_accuracy": 98.67,
+      "val_accuracy": 98.69
+    }
+  ]
+}

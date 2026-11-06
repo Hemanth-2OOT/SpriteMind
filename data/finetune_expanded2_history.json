@@ -1,0 +1,33 @@
+{
+  "dataset_name": "expanded_synthetic_25k",
+  "train_samples": 20000,
+  "val_samples": 2500,
+  "total_epochs": 1,
+  "completed_epochs": 6,
+  "best_epoch": 6,
+  "best_val_loss": 0.3423,
+  "device": "cpu",
+  "parameters": 2292104,
+  "vocab_size": 401,
+  "learning_rate": 0.0001,
+  "elapsed_seconds": 2249.0,
+  "loss_history": [
+    {
+      "epoch": 6,
+      "loss": 0.3436
+    }
+  ],
+  "val_loss_history": [
+    {
+      "epoch": 6,
+      "val_loss": 0.3423
+    }
+  ],
+  "token_accuracy_history": [
+    {
+      "epoch": 6,
+      "train_accuracy": 98.7,
+      "val_accuracy": 98.69
+    }
+  ]
+}
