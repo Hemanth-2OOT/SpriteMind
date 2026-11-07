@@ -64,6 +64,16 @@ class ExportRequest(BaseModel):
     frame_index: int = 0
 
 
+class ActionSheetRequest(BaseModel):
+    actions: Dict[str, List[str]]
+    width: int = 32
+    height: int = 32
+    palette: str = "pico8"
+    scale: int = 1
+    padding: int = 1
+    max_columns: int = 12
+
+
 class DatasetGenerateRequest(BaseModel):
     name: str = "default_synth"
     total_samples: int = Field(default=200, ge=10, le=10000)

@@ -12,6 +12,7 @@ import {
   BenchmarkGallery,
   HistoryResponse,
   ExportResult,
+  ActionSheetResult,
   ExportParams,
   GenerateParams,
   RefineParams,
@@ -105,6 +106,26 @@ export async function exportAsset(params: ExportParams): Promise<ExportResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
+  return res.json();
+}
+
+export async function exportActionSheet(params: {
+  actions: Record<string, string[]>;
+  width?: number;
+  height?: number;
+  palette?: string;
+  scale?: number;
+  padding?: number;
+}): Promise<ActionSheetResult> {
+  const res = await apiFetch(`${BASE_URL}/api/export/sheet`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Sprite sheet export failed');
+  }
   return res.json();
 }
 

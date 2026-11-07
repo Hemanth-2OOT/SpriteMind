@@ -2,6 +2,7 @@
 import base64
 import io
 import json
+import random
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -10,6 +11,8 @@ import numpy as np
 from PIL import Image
 
 from spritemind.assets.faithfulness import colour_faithfulness
+from spritemind.dataset.conditioning import COLOUR_RGB, ELEMENT_RGB, element_hue_matches, parse_conditioning
+from spritemind.dataset.generator import CATEGORIES, POSES, STYLES
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.utils.palettes import PALETTES
 
@@ -135,6 +138,51 @@ BENCHMARK_PROMPTS: List[Dict[str, Any]] = [
     {"id": "bench_099", "prompt": "A chronomancer bending time ripples with golden hourglass", "category": "wizard", "style": "cyberpunk", "pose": "walk", "palette": "cyberpunk"},
     {"id": "bench_100", "prompt": "An 8-bit wizard apprentice reciting beginner magic spells", "category": "wizard", "style": "retro_8bit", "pose": "idle", "palette": "pico8"},
 ]
+
+
+BENCHMARK_SUITE_SIZE = 300
+GENERATED_PROMPT_SEED = 20261105
+
+_ELEMENTS = tuple(sorted(ELEMENT_RGB))
+_COLOURS = tuple(sorted(COLOUR_RGB))
+_PALETTES = tuple(sorted(PALETTES))
+_SHAPES = ("A stout", "A slim", "A towering", "A tiny", "A lean", "A hulking", "A graceful")
+_VERBS = {
+    "idle": ("standing ready", "watching the horizon", "guarding a narrow pass"),
+    "walk": ("patrolling the ruins", "trudging down a wet road", "pacing the hall"),
+    "run": ("sprinting from danger", "dashing across the yard", "charging downhill"),
+    "attack": ("mid-swing of a heavy blow", "lunging forward", "unleashing a strike"),
+    "death": ("collapsing to its knees", "falling apart in a heap", "slumping backwards"),
+}
+
+
+def generated_prompts(count: int, seed: int = GENERATED_PROMPT_SEED) -> List[Dict[str, Any]]:
+    """Deterministic combinatorial prompts; every second one names an element so the
+    aura path is exercised without relying on the hand-written set alone."""
+    rng = random.Random(seed)
+    prompts: List[Dict[str, Any]] = []
+    for index in range(count):
+        category = rng.choice(CATEGORIES)
+        pose = rng.choice(POSES)
+        style = rng.choice(STYLES)
+        palette = rng.choice(_PALETTES)
+        colour = rng.choice(_COLOURS)
+        verb = rng.choice(_VERBS.get(pose, _VERBS["idle"]))
+        words = [rng.choice(_SHAPES), colour, category.replace("_", " ")]
+        if index % 2 == 0:
+            words.insert(2, f"{rng.choice(_ELEMENTS)}-crackling")
+        prompts.append({
+            "id": f"bench_{len(BENCHMARK_PROMPTS) + index + 1:03d}",
+            "prompt": " ".join(words) + f" {verb}",
+            "category": category,
+            "style": style,
+            "pose": pose,
+            "palette": palette,
+        })
+    return prompts
+
+
+BENCHMARK_PROMPTS.extend(generated_prompts(BENCHMARK_SUITE_SIZE - len(BENCHMARK_PROMPTS)))
 
 
 def decode_rgba(image_base64: str) -> Optional[np.ndarray]:
@@ -298,6 +346,12 @@ class GeneralizationBenchmark:
                 colour = colour_faithfulness(p_text, rgba) if rgba is not None else None
                 m["colour_faithfulness"] = colour["score"] if colour else None
                 m["colours_missing"] = colour["missing"] if colour else []
+                element = parse_conditioning(p_text)["element"]
+                m["element_faithfulness"] = (
+                    round(100.0 * element_hue_matches(element, rgba), 1)
+                    if rgba is not None and element
+                    else None
+                )
 
                 if eng == "procedural_baseline":
                     procedural_metrics.append(m)
@@ -316,12 +370,20 @@ class GeneralizationBenchmark:
 
             gallery_items.append(gallery_entry)
 
+        def stderr(values: List[float]) -> float:
+            if len(values) < 2:
+                return 0.0
+            mean = sum(values) / len(values)
+            variance = sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+            return round((variance / len(values)) ** 0.5, 3)
+
         def aggregate(metrics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
             if not metrics_list:
                 return {}
             n = len(metrics_list)
             colour_rows = [m for m in metrics_list if m.get("colour_faithfulness") is not None]
-            return {
+            element_rows = [m for m in metrics_list if m.get("element_faithfulness") is not None]
+            summary = {
                 "avg_valid_action_rate": round(sum(m["valid_action_rate"] for m in metrics_list) / n, 2),
                 "avg_palette_adherence": round(sum(m["palette_adherence"] for m in metrics_list) / n, 2),
                 "avg_silhouette_iou": round(sum(m["silhouette_iou"] for m in metrics_list) / n, 3),
@@ -338,7 +400,25 @@ class GeneralizationBenchmark:
                     if colour_rows
                     else None
                 ),
+                "avg_element_faithfulness": (
+                    round(sum(m["element_faithfulness"] for m in element_rows) / len(element_rows), 1)
+                    if element_rows
+                    else None
+                ),
             }
+            summary["standard_error"] = {
+                key: stderr([m[key] for m in metrics_list])
+                for key in (
+                    "valid_action_rate",
+                    "palette_adherence",
+                    "silhouette_iou",
+                    "structural_consistency",
+                    "latency_ms",
+                    "pixel_fill_count",
+                )
+            }
+            summary["n_samples"] = n
+            return summary
 
         summary = {
             "total_prompts": len(prompts),

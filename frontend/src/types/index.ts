@@ -382,6 +382,34 @@ export interface BuiltAction extends Omit<ActionSpec, 'frames'> {
   gif_base64?: string;
 }
 
+export interface ActionSheetRow {
+  name: string;
+  row: number;
+  y: number;
+  x: number;
+  frames: number;
+  width: number;
+  height: number;
+}
+
+export interface ActionSheetMetadata {
+  width: number;
+  height: number;
+  frame_width: number;
+  frame_height: number;
+  padding: number;
+  columns: number;
+  scale: number;
+  actions: ActionSheetRow[];
+}
+
+export interface ActionSheetResult {
+  status: string;
+  format: 'sheet';
+  image_base64: string;
+  metadata: ActionSheetMetadata;
+}
+
 export interface ActionSetResponse {
   plan: ActionPlan;
   actions: BuiltAction[];

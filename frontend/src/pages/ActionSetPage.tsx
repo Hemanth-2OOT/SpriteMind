@@ -14,7 +14,7 @@ import {
   Zap,
   Shuffle,
 } from 'lucide-react';
-import { generateActionSetApi, planActionSetApi } from '../services/api';
+import { exportActionSheet, generateActionSetApi, planActionSetApi } from '../services/api';
 import { ActionSpec, BuiltAction } from '../types';
 
 interface PlanInfo {
@@ -122,6 +122,8 @@ export const ActionSetPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sheetBusy, setSheetBusy] = useState(false);
+  const [sheetError, setSheetError] = useState<string | null>(null);
   const [facing, setFacing] = useState<'right' | 'left'>('right');
   const [seed, setSeed] = useState(42);
 
@@ -157,6 +159,38 @@ export const ActionSetPage: React.FC = () => {
     }
   };
 
+  const downloadSheet = async () => {
+    if (actions.length === 0) return;
+    setSheetBusy(true);
+    setSheetError(null);
+    try {
+      const payload: Record<string, string[]> = {};
+      for (const action of actions) {
+        payload[action.key] = action.frames.map((f) => f.script_text);
+      }
+      const res = await exportActionSheet({
+        actions: payload,
+        palette: plan?.palette || 'pico8',
+        scale: 2,
+      });
+      const png = document.createElement('a');
+      png.href = res.image_base64;
+      png.download = `spritemind_${plan?.category || 'character'}_sheet.png`;
+      png.click();
+      const atlas = document.createElement('a');
+      atlas.href = URL.createObjectURL(
+        new Blob([JSON.stringify(res.metadata, null, 2)], { type: 'application/json' })
+      );
+      atlas.download = `spritemind_${plan?.category || 'character'}_atlas.json`;
+      atlas.click();
+      URL.revokeObjectURL(atlas.href);
+    } catch (e: any) {
+      setSheetError(e.message || 'Sprite sheet export failed');
+    } finally {
+      setSheetBusy(false);
+    }
+  };
+
   const summary = useMemo(() => {
     if (!plan) return null;
     return [
@@ -181,6 +215,16 @@ export const ActionSetPage: React.FC = () => {
             One prompt in, a coherent animation package out: idle, movement, attacks, defense and death.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <button
+          onClick={downloadSheet}
+          disabled={sheetBusy || actions.length === 0}
+          title="Export every animation as one PNG sprite sheet plus atlas JSON"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-dark-800 hover:bg-dark-700 disabled:opacity-40 text-slate-200 rounded-md"
+        >
+          {sheetBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          Sprite Sheet
+        </button>
         <button
           onClick={generate}
           disabled={loading || selected.length === 0}
@@ -189,6 +233,7 @@ export const ActionSetPage: React.FC = () => {
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           Generate Set
         </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -280,6 +325,7 @@ export const ActionSetPage: React.FC = () => {
           )}
 
           {error && <div className="text-[11px] text-red-400">{error}</div>}
+          {sheetError && <div className="text-[11px] text-red-400">{sheetError}</div>}
         </div>
 
         {actions.length > 0 && (
