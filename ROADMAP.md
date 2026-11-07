@@ -145,13 +145,15 @@ give the same distribution. This is the largest quality jump available.
   *Why:* users want the same character in 8-bit and 16-bit without re-prompting.
   *How:* re-quantise an existing sprite's PixelScript into another palette/style pass rather than a new generation.
 
-- [ ] **Docs site pass** — `S`
+- [x] **Docs site pass** — `S` ✓ #19 (`docs/README.md`)
   *Why:* 7 docs in `docs/` with no index; new users do not know where to start.
   *How:* `docs/README.md` linking each file with a one-line purpose, plus a quickstart in the root README.
+  **Met:** `docs/README.md` groups the docs by generating, training and operating, and points at the scripts that produce
+  every published number.
 
 ## P6 — Hygiene (opportunistic)
 
-- [ ] CI cache for pip and npm — `S` (backend job re-installs torch every run, ~40 s of the 48 s)
+- [x] CI cache for pip and npm — `S` ✓ (`.github/workflows/ci.yml`: `cache: pip` and `cache: npm` with `frontend/package-lock.json`)
 - [ ] Nightly benchmark job with a regression comment on the PR — `M`
 - [ ] `SECURITY-REPORT.md` sweep before any public launch — `M`
 - [ ] Revoke the development GitHub token once development pauses — `S` *(user-owned action)*
@@ -176,6 +178,7 @@ give the same distribution. This is the largest quality jump available.
 | Onion-skin PNG export from the animation timeline | #16 |
 | Per-category report card in the Model Lab | #17 |
 | Prompt history with re-seed (SQLite) | #18 |
+| Docs index (`docs/README.md`) | #19 |
 
 ---
 

@@ -136,6 +136,7 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 
 ## Documentation & Research Index
 
+- **Documentation index (start here):** [`docs/README.md`](docs/README.md)
 - **Roadmap & TODO (next work, sizes, acceptance criteria):** [`ROADMAP.md`](ROADMAP.md)
 - **Prompt colour faithfulness (metric definition + baseline):** [`docs/PROMPT_FAITHFULNESS.md`](docs/PROMPT_FAITHFULNESS.md)
 - **Prompt conditioning in the corpus (colour/element tags, palette mapping, probe):** [`docs/PROMPT_CONDITIONING.md`](docs/PROMPT_CONDITIONING.md)
