@@ -102,9 +102,10 @@ give the same distribution. This is the largest quality jump available.
   *How:* per-frame-pair delta of opaque masks, report mean/median and worst pair; add to the coherence report.
   **Met:** mean IoU 0.8206, worst pair 0.7688, 311 pixels lost over 12 transitions; the broken-frame test ranks worst.
 
-- [ ] **Onion-skin export** — `S`
+- [x] **Onion-skin export** — `S` ✓ #16 (`compose_onion_skin`, `format: "onion"` in `/api/export`)
   *Why:* animators want to check motion without opening the app.
   *How:* composite Ghost PNG from the existing onion-skin view.
+  **Met:** Export ▸ *Onion Skin PNG* writes the current frame over the previous (30%) and next (18%) ghosts.
 
 ## P4 — Evaluation and trust
 
@@ -167,6 +168,7 @@ give the same distribution. This is the largest quality jump available.
 | `best_of` / `temperature` / `top_k` exposed in API, cache key and Generate panel | #13 |
 | `GET /api/metrics` p50/p95 ring buffer + Model Lab card | #14 |
 | Inter-frame continuity metric in the coherence report | #15 |
+| Onion-skin PNG export from the animation timeline | #16 |
 
 ---
 

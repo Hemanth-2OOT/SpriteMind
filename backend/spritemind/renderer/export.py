@@ -111,3 +111,30 @@ def export_spritesheet(
     }
 
     return buf.getvalue(), meta
+
+
+def _with_alpha(arr: np.ndarray, alpha: float) -> np.ndarray:
+    out = arr.copy()
+    out[..., 3] = (out[..., 3].astype(np.float32) * alpha).astype(np.uint8)
+    return out
+
+
+def compose_onion_skin(
+    frames: List[np.ndarray],
+    index: int,
+    previous_alpha: float = 0.30,
+    next_alpha: float = 0.18,
+    scale: int = 4,
+) -> Image.Image:
+    """Stacks the current frame over faint ghosts of its neighbours, for animators."""
+    if not frames:
+        raise ValueError("No frames provided for onion skin")
+    index = max(0, min(index, len(frames) - 1))
+    height, width, _ = frames[index].shape
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    if index > 0:
+        canvas.alpha_composite(Image.fromarray(_with_alpha(frames[index - 1], previous_alpha), mode="RGBA"))
+    if index + 1 < len(frames):
+        canvas.alpha_composite(Image.fromarray(_with_alpha(frames[index + 1], next_alpha), mode="RGBA"))
+    canvas.alpha_composite(Image.fromarray(frames[index], mode="RGBA"))
+    return array_to_image(np.array(canvas), scale)

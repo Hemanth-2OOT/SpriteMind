@@ -253,7 +253,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
     setCurrentFrameIndex(Math.max(0, currentFrameIndex - 1));
   };
 
-  const handleExport = async (format: 'png' | 'spritesheet' | 'gif' | 'json') => {
+  const handleExport = async (format: 'png' | 'spritesheet' | 'gif' | 'json' | 'onion') => {
     if (frames.length === 0) return;
     try {
       const res = await exportAsset({
@@ -264,6 +264,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         format,
         scale: 4,
         fps: 8,
+        frame_index: currentFrameIndex,
       });
 
       if (format === 'json') {
@@ -276,9 +277,13 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       } else if (res.image_base64) {
         const a = document.createElement('a');
         a.href = res.image_base64;
-        a.download = `spritemind_${format}.${format === 'gif' ? 'gif' : 'png'}`;
+        const extension = format === 'gif' ? 'gif' : 'png';
+        a.download =
+          format === 'onion' ? `spritemind_onion_f${currentFrameIndex}.png` : `spritemind_${format}.${extension}`;
         a.click();
       }
+
+      if (format === 'onion') return;
 
       // Auto save to asset library
       await saveAsset({

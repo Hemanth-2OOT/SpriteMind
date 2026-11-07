@@ -57,10 +57,11 @@ class ExportRequest(BaseModel):
     width: int = 32
     height: int = 32
     palette: str = "pico8"
-    format: str = "png"  # "png" | "spritesheet" | "gif" | "json"
+    format: str = "png"  # "png" | "spritesheet" | "gif" | "json" | "onion"
     scale: int = 1
     fps: int = 8
     cols: Optional[int] = None
+    frame_index: int = 0
 
 
 class DatasetGenerateRequest(BaseModel):
