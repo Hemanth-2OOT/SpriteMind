@@ -67,6 +67,12 @@ def test_cache_key_covers_every_output_affecting_field():
     variant = pipeline.generate(prompt=PROMPT, engine_mode="trained_model", seed=5, best_of=3)
     assert variant["cache_hit"] is False, "best_of must be part of the cache key"
 
+    hot = pipeline.generate(prompt=PROMPT, engine_mode="trained_model", seed=5, best_of=1, temperature=0.3)
+    assert hot["cache_hit"] is False, "temperature must be part of the cache key"
+
+    narrow = pipeline.generate(prompt=PROMPT, engine_mode="trained_model", seed=5, best_of=1, top_k=10)
+    assert narrow["cache_hit"] is False, "top_k must be part of the cache key"
+
     pose = pipeline.generate(prompt=PROMPT, engine_mode="trained_model", seed=5, pose="walk")
     assert pose["cache_hit"] is False, "pose must be part of the cache key"
     assert base["pose"] != pose["pose"]

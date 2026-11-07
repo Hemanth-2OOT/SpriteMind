@@ -205,6 +205,9 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
         engine_mode=req.engine,
         seed=req.seed,
         max_actions=req.max_actions,
+        best_of=req.best_of,
+        temperature=req.temperature,
+        top_k=req.top_k,
     )
     return result
 

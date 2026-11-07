@@ -70,10 +70,10 @@ give the same distribution. This is the largest quality jump available.
   *How:* route candidates through `SVAN._sample_batch` in one pass, then rerank as today.
   *Done when:* benchmark mean drops with identical seed-for-seed output. **Met:** 2.6× faster, candidates still distinct and seed-deterministic.
 
-- [ ] **Expose `best_of`, `temperature`, `top_k` in the API and Generate form** — `S`
+- [x] **Expose `best_of`, `temperature`, `top_k` in the API and Generate form** — `S` ✓ #13
   *Why:* users cannot trade speed for quality today; the knobs exist but are hard-coded.
   *How:* add to the request schema with bounds, wire a compact slider row in the Generate panel, include them in the cache key.
-  *Done when:* the UI changes output and the latency difference is visible.
+  *Done when:* the UI changes output and the latency difference is visible. **Met:** all three reach the sampler, cache key covers them, sliders live in the Sampler block.
 
 - [ ] **`GET /api/metrics` (p50/p95 ring buffer)** — `S`
   *Why:* latency is currently a one-off JSON file in `data/`, so regressions are invisible at runtime.
@@ -164,6 +164,7 @@ give the same distribution. This is the largest quality jump available.
 | Golden-image regression set (10 categories, exact pixel diff) | #10 |
 | Prompt-conditioned corpus (colour/element tags, palette-aware mapping) | #11 |
 | Batched `best_of` sampling (`test_best_of.py`, 2.6× faster) | #12 |
+| `best_of` / `temperature` / `top_k` exposed in API, cache key and Generate panel | #13 |
 
 ---
 
