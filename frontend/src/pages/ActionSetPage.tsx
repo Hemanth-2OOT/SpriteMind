@@ -15,16 +15,7 @@ import {
   Shuffle,
 } from 'lucide-react';
 import { generateActionSetApi, planActionSetApi } from '../services/api';
-
-interface ActionSpec {
-  key: string;
-  label: string;
-  anim: string;
-  frames: number;
-  fps: number;
-  loop: boolean;
-  effects: string[];
-}
+import { ActionSpec, BuiltAction } from '../types';
 
 interface PlanInfo {
   category: string;
@@ -35,13 +26,6 @@ interface PlanInfo {
   weapon: string;
   actions: ActionSpec[];
   rationale: string[];
-}
-
-interface BuiltAction extends ActionSpec {
-  engine_used: string;
-  num_frames: number;
-  frames: { image_base64: string; script_text: string; pixel_count: number }[];
-  gif_base64?: string;
 }
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {

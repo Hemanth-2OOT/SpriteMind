@@ -170,6 +170,7 @@ export interface TrainingStatus {
   learning_rate: number;
   loss_history: { epoch: number; loss: number }[];
   val_loss_history: { epoch: number; val_loss: number }[];
+  token_accuracy_history?: { epoch: number; token_accuracy: number }[];
   device?: string;
   error_message?: string;
 }
@@ -197,4 +198,222 @@ export interface AssetRecord {
   created_at: string;
   frames: FrameData[];
   metadata?: Record<string, any>;
+}
+
+export interface EngineLatency {
+  samples: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+}
+
+export interface RuntimeMetrics {
+  latency: {
+    window: number;
+    samples: number;
+    cache_hits: number;
+    p50_ms: number | null;
+    p95_ms: number | null;
+    mean_ms: number | null;
+    engines: Record<string, EngineLatency>;
+  };
+  cache: { hits: number; misses: number; size: number };
+}
+
+export interface ReportCardRow {
+  category: string;
+  samples: number;
+  silhouette_iou: number;
+  palette_accuracy: number;
+  valid_rate: number;
+  mean_score: number;
+}
+
+export interface BenchmarkReportCard {
+  engine: string;
+  categories: ReportCardRow[];
+  mean_score: number;
+  samples: number;
+}
+
+export interface HistoryRun {
+  id: number;
+  created_at: string;
+  prompt: string;
+  category: string;
+  style: string;
+  pose: string | null;
+  palette: string;
+  engine: string;
+  seed: number | null;
+  num_frames: number | null;
+  best_of: number | null;
+  temperature: number | null;
+  top_k: number | null;
+  latency_ms: number | null;
+}
+
+export interface HistoryResponse {
+  runs: HistoryRun[];
+  total: number;
+}
+
+export interface BenchmarkGalleryEntry {
+  prompt: string;
+  category: string;
+  engine?: string;
+  seed?: number;
+  silhouette_iou?: number;
+  palette_accuracy?: number;
+  valid?: boolean;
+  score?: number;
+  image?: string;
+}
+
+export interface BenchmarkGallery {
+  summary: Record<string, number>;
+  gallery: BenchmarkGalleryEntry[];
+  total: number;
+}
+
+export interface ExportResult {
+  format: string;
+  /** Data URL for png, spritesheet, gif and onion exports. */
+  image_base64?: string;
+  metadata?: { width: number; height: number; cols: number; rows: number; frames: number };
+  fps?: number;
+  frame_index?: number;
+  total_frames?: number;
+  frames_scripts?: string[];
+  width?: number;
+  height?: number;
+}
+
+export interface ServiceStatus {
+  status: string;
+  id?: string | number;
+  deleted?: boolean;
+  trash_id?: string;
+}
+
+export interface GenerateParams {
+  prompt?: string;
+  negative_prompt?: string;
+  category?: string;
+  style?: string;
+  pose?: string;
+  palette?: string;
+  width?: number;
+  height?: number;
+  num_frames?: number;
+  engine?: string;
+  seed?: number;
+  max_actions?: number;
+  best_of?: number;
+  temperature?: number;
+  top_k?: number;
+}
+
+export interface RefineParams {
+  script_text: string;
+  suggested_fix?: string;
+  width?: number;
+  height?: number;
+  palette?: string;
+}
+
+export interface RenderParams {
+  script_text: string;
+  width?: number;
+  height?: number;
+  palette?: string;
+  scale?: number;
+}
+
+export interface ExportParams {
+  frames_scripts: string[];
+  width: number;
+  height: number;
+  palette: string;
+  format: 'png' | 'spritesheet' | 'gif' | 'json' | 'onion';
+  scale?: number;
+  fps?: number;
+  cols?: number;
+  frame_index?: number;
+}
+
+export interface AssetSaveParams {
+  name: string;
+  category: string;
+  tags?: string[];
+  frames: FrameData[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface ActionSpec {
+  key: string;
+  label: string;
+  anim: string;
+  frames: number;
+  fps: number;
+  loop: boolean;
+  effects: string[];
+}
+
+export interface ActionPlan {
+  category: string;
+  style: string;
+  palette: string;
+  archetype: string;
+  element: string;
+  weapon: string;
+  actions: ActionSpec[];
+  rationale: string[];
+}
+
+export interface ActionPlanResponse {
+  status: string;
+  plan: ActionPlan;
+}
+
+export interface BuiltAction extends Omit<ActionSpec, 'frames'> {
+  engine_used: string;
+  num_frames: number;
+  frames: { image_base64: string; script_text: string; pixel_count: number }[];
+  gif_base64?: string;
+}
+
+export interface ActionSetResponse {
+  plan: ActionPlan;
+  actions: BuiltAction[];
+}
+
+export interface AnimationMetrics {
+  status: string;
+  model_architecture: string;
+  parameter_count: number;
+  supported_animation_categories: string[];
+  supported_character_categories: string[];
+  training_metrics?: Record<string, unknown>;
+  benchmark_results?: Record<string, unknown>;
+}
+
+export interface CriticMetrics {
+  status: string;
+  model_architecture: string;
+  parameter_count: number;
+  classes: string[];
+  evaluation_summary?: Record<string, unknown>;
+}
+
+export interface DatasetStats {
+  total_samples: number;
+  [key: string]: unknown;
+}
+
+export interface TrainingHistory {
+  loss_history: { epoch: number; loss: number }[];
+  val_loss_history: { epoch: number; val_loss: number }[];
+  token_accuracy_history?: { epoch: number; token_accuracy: number }[];
+  best_val_loss?: number;
+  [key: string]: unknown;
 }
