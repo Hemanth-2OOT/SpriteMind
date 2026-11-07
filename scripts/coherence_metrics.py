@@ -23,6 +23,8 @@ import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 
 from spritemind.ml.pipeline import SpriteMindPipeline  # noqa: E402
+from spritemind.ml.temporal import TemporalAnimator  # noqa: E402
+from spritemind.renderer.continuity import continuity_report, masks_from_frames  # noqa: E402
 
 PROMPTS_PATH = Path("data/benchmarks/generalization_prompts.json")
 
@@ -83,6 +85,8 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=24)
     ap.add_argument("--engine", default="trained_model")
     ap.add_argument("--out", default="data/benchmarks/coherence_metrics.json")
+    ap.add_argument("--anim-frames", type=int, default=4, help="frames per animation used for continuity")
+    ap.add_argument("--skip-continuity", action="store_true")
     args = ap.parse_args()
 
     prompts = json.loads(PROMPTS_PATH.read_text()) if PROMPTS_PATH.exists() else []
@@ -91,6 +95,7 @@ def main() -> None:
     if not pipeline.load_checkpoint("svan_checkpoint_best.pt"):
         raise SystemExit(pipeline.checkpoint_error or "no usable checkpoint")
 
+    continuity_rows = []
     rows = []
     for index, item in enumerate(prompts):
         prompt = item["prompt"] if isinstance(item, dict) else str(item)
@@ -112,15 +117,36 @@ def main() -> None:
             }
         )
 
+    if not args.skip_continuity:
+        for index, item in enumerate(prompts[: max(1, min(4, len(prompts)))]):
+            prompt = item["prompt"] if isinstance(item, dict) else str(item)
+            anim = TemporalAnimator.generate_animation(
+                base_script_or_prompt=prompt,
+                category=next((r["category"] for r in rows if r["prompt"] == prompt), "knight"),
+                anim_category="walk",
+                num_frames=args.anim_frames,
+                engine_mode=args.engine,
+                seed=index + 1,
+            )
+            report = continuity_report(masks_from_frames(anim["frames"], decode))
+            continuity_rows.append({"prompt": prompt, **report})
+
     summary = {
         "samples": len(rows),
         "mean_outline_coverage": round(float(np.mean([r["outline_coverage"] for r in rows])), 3),
         "prompts_with_islands": int(sum(1 for r in rows if r["islands"] > 1)),
         "mean_island_pixels": round(float(np.mean([r["island_pixels"] for r in rows])), 2),
     }
+    if continuity_rows:
+        summary["continuity"] = {
+            "animations": len(continuity_rows),
+            "mean_iou": round(float(np.mean([c["mean_iou"] for c in continuity_rows])), 4),
+            "worst_iou": round(min(c["worst_iou"] for c in continuity_rows), 4),
+            "total_lost_pixels": int(sum(c["total_lost_pixels"] for c in continuity_rows)),
+        }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=2))
+    out.write_text(json.dumps({"summary": summary, "rows": rows, "continuity": continuity_rows}, indent=2))
     print(json.dumps(summary, indent=2))
     print("wrote", out)
 
