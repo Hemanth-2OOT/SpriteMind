@@ -9,15 +9,21 @@ wishlists. Each item lists **why**, **how**, **done when**, and a **size**:
 
 Tick items as they land and move them to the "Shipped" section at the bottom with the PR number.
 
-Current baseline (as of `386c060`):
+Current baseline (as of `6d0d58a`):
 
 | Metric | Value |
 | --- | --- |
 | SVAN checkpoint | 2,351,639 params, val loss 0.3482, token acc 98.68%, vocab 403 |
-| Benchmark (100 held-out prompts) | IoU 0.495, valid 100%, palette 100%, 465 ms |
+| Benchmark (100 held-out prompts) | IoU 0.495, valid 100%, palette 100%, 291 ms mean |
+| Per-category report card | mean 65.38; weakest wizard 64.2 (`/api/benchmarks/report_card`) |
+| Silhouette coherence | 24 prompts, outline coverage 1.0, 0 islands |
+| Inter-frame continuity | mean IoU 0.8206, worst pair 0.7688, 311 px lost over 12 transitions |
+| Colour faithfulness | trained 6.1%, procedural 10.1%, untrained 0.9% |
+| Latency | `best_of=1` ~160 ms, `best_of=4` 291 ms mean over 100 prompts (was 233 / 351 ms); repeated request < 1 ms |
 | Quality gate clean rate | 87.5% (8 prompts), 72.5% (per-prompt seeds) |
-| Visual critic | F1 0.777, recall 88.8%, calibrated p=0.72 → 100% precision / 0% FP |
-| Tests | 179 passing, CI green on every PR |
+| Visual critic | F1 0.7799, recall 88.8%, calibrated p=0.72 → 100% precision / 0% FP |
+| Tests | 233 passing, CI green on every PR |
+| API | generate (+ sampler controls), refine, action sets, animation, export (PNG / spritesheet / GIF / onion skin / JSON), critic, benchmarks (+ per-category report card), metrics, history |
 
 ---
 
@@ -181,6 +187,38 @@ give the same distribution. This is the largest quality jump available.
 | Docs index (`docs/README.md`) | #19 |
 
 ---
+
+## Where this stands
+
+Everything cheap and self-contained is done: determinism and cache guards, a golden-image set,
+colour faithfulness, prompt-conditioned corpus, batched `best_of`, sampler controls in the API
+and UI, latency percentiles, inter-frame continuity, onion-skin export, the per-category report
+card, prompt history and the docs index. That work is all `S`/`M` items with objective pass
+criteria, and each one shipped with tests.
+
+What is left is deliberately not in that category. Ranked by what would change the product most:
+
+1. **Prompt text encoder in SVAN** (`L`) — the only remaining real capability gap. Without it the
+   model still sees the prompt only through `category` / `style` / `pose`, so colour faithfulness
+   stays near 6% and "purple zombie" renders a zombie that is not purple. Needs a text encoder,
+   a retrain, and a benchmark comparison against the current checkpoint before it can ship.
+2. **Expanded 300-prompt benchmark** (`M`) — 100 prompts make a 1-point IoU change statistically
+   meaningless, and the report card explicitly shows category gaps. Bigger suite first means every
+   later model change can be judged. Cheap in compute, but it needs the prompts written.
+3. **Human-rated comparison set** (`M`) — IoU and clean rate are proxies nobody has validated.
+   Needs a person to rate 200 prompts × 3 seeds; the code around it is small.
+4. **TemporalSVAN gv2 retrain + sprite-sheet/atlas export** (`M` + `M`) — temporal quality is
+   measured (continuity 0.82) but the temporal model is still trained on grammar v1. Export is
+   mechanical once the frames are right.
+5. **ONNX / quantised export** (`L`) — a pure latency and portability win; no quality change.
+   Only worth it if the browser needs to run the model.
+6. **Batch generation, style transfer, element vocabulary in the DSL** (`M`/`L`) — product surface.
+   Useful, but each adds rendering paths that must be kept coherent with the rest.
+7. **Nightly benchmark + security sweep** (`M`) — hygiene before a public launch; the sweep is
+   most valuable once the product stops changing daily.
+
+Two things are not code: **revoke the development GitHub token** when development pauses (yours to
+do), and only run the `SECURITY-REPORT.md` sweep once the surface stops moving.
 
 ## Ordering advice
 
