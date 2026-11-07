@@ -31,6 +31,11 @@ export async function fetchModels(): Promise<ModelsInfo> {
   return res.json();
 }
 
+export async function fetchRuntimeMetrics(): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/metrics`);
+  return res.json();
+}
+
 export async function loadCheckpoint(checkpointName: string): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/checkpoints/load`, {
     method: 'POST',

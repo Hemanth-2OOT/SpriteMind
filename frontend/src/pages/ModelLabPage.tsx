@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { TrainingStatus, ModelsInfo } from '../types';
-import { startTraining, stopTraining, fetchTrainingStatus, fetchTrainingHistory, loadCheckpoint } from '../services/api';
+import { startTraining, stopTraining, fetchTrainingStatus, fetchTrainingHistory, loadCheckpoint, fetchRuntimeMetrics } from '../services/api';
 
 interface ModelLabPageProps {
   modelsInfo: ModelsInfo | null;
@@ -38,6 +38,7 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
   const [selectedDataset, setSelectedDataset] = useState('generalization_10k');
   const [localStatus, setLocalStatus] = useState<TrainingStatus | null>(trainingStatus);
   const [historyData, setHistoryData] = useState<any>(null);
+  const [runtime, setRuntime] = useState<any>(null);
 
   const loadHistory = async () => {
     try {
@@ -49,6 +50,19 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
       console.error('Failed to load training history', e);
     }
   };
+
+  useEffect(() => {
+    const pollRuntime = async () => {
+      try {
+        setRuntime(await fetchRuntimeMetrics());
+      } catch (e) {
+        console.error('Failed to load runtime metrics', e);
+      }
+    };
+    pollRuntime();
+    const runtimeTimer = setInterval(pollRuntime, 10000);
+    return () => clearInterval(runtimeTimer);
+  }, []);
 
   useEffect(() => {
     loadHistory();
@@ -166,6 +180,41 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
               <span>Status: {localStatus?.state || 'idle'}</span>
             </span>
           </div>
+        </div>
+
+        {/* Runtime Latency */}
+        <div className="bg-dark-900 rounded-xl border border-dark-750 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Runtime Latency</span>
+            </h2>
+            <span className="text-[10px] text-slate-500 font-mono">
+              last {runtime?.latency?.samples ?? 0} generations · {runtime?.latency?.cache_hits ?? 0} cache hits
+            </span>
+          </div>
+          {runtime?.latency?.samples ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'p50', value: runtime.latency.p50_ms, tone: 'text-emerald-400' },
+                { label: 'p95', value: runtime.latency.p95_ms, tone: 'text-amber-400' },
+                { label: 'Mean', value: runtime.latency.mean_ms, tone: 'text-slate-100' },
+                { label: 'Cache size', value: runtime.cache?.size ?? 0, tone: 'text-indigo-400', unit: '' },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-dark-950/60 rounded-lg border border-dark-750/60 px-3 py-2">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{stat.label}</span>
+                  <div className={`text-lg font-bold font-mono ${stat.tone}`}>
+                    {stat.value ?? '—'}
+                    {stat.value !== null && stat.label !== 'Cache size' ? <span className="text-[10px] text-slate-500 ml-1">ms</span> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">
+              No generations recorded yet — generate a sprite and the percentiles appear here.
+            </p>
+          )}
         </div>
 
         {/* Telemetry Overview Cards */}

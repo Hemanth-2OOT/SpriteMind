@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
+from spritemind.server.metrics import LATENCY, LatencyMeter, record_generation
 from spritemind.server.schemas import (
     GenerateRequest,
     ActionSetRequest,
@@ -191,6 +192,19 @@ def load_checkpoint(req: CheckpointLoadRequest) -> Dict[str, Any]:
     }
 
 
+@app.get("/api/metrics")
+def get_metrics() -> Dict[str, Any]:
+    """In-process latency percentiles plus pipeline cache counters."""
+    return {
+        "latency": LATENCY.to_dict(),
+        "cache": {
+            "hits": pipeline.cache_hits,
+            "misses": pipeline.cache_misses,
+            "size": pipeline._result_cache_size,
+        },
+    }
+
+
 @app.post("/api/generate")
 def generate(req: GenerateRequest) -> Dict[str, Any]:
     result = pipeline.generate(
@@ -209,6 +223,7 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
         temperature=req.temperature,
         top_k=req.top_k,
     )
+    record_generation(result, req.engine)
     return result
 
 @app.post("/api/action_set/plan")
