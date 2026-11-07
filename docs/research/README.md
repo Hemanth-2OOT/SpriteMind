@@ -11,6 +11,11 @@
 
 SpriteMind is an original, locally trainable machine learning system designed to understand, construct, inspect, animate, and compose game-ready 2D pixel-art assets. Unlike black-box diffusion models or pretrained cloud APIs, SpriteMind models pixel-art creation as structured drawing actions over a deterministic virtual canvas (PixelScript), evaluates its own renders through a topological and neural critic, and articulates characters through recurrent temporal kinematics and socket alignment networks.
 
+**Consolidated reference:** [`SYSTEM_RESEARCH_OVERVIEW.md`](SYSTEM_RESEARCH_OVERVIEW.md) — one
+document covering the whole system as it stands today (architecture, stack, models, data,
+evaluation, results, limitations). The stage reports below are the historical record of how each
+subsystem was arrived at.
+
 This directory contains the complete technical reports, empirical findings, architectural diagrams, and benchmark evaluations across all stages of development.
 
 ---

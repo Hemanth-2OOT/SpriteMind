@@ -3,6 +3,10 @@
 Start with the root [`README.md`](../README.md) for install, quickstart and the current
 benchmark numbers. Everything below is the detail behind those numbers.
 
+## Start here
+
+- [`research/SYSTEM_RESEARCH_OVERVIEW.md`](research/SYSTEM_RESEARCH_OVERVIEW.md) — the consolidated system reference: architecture, stack, every model and hyper-parameter, the data corpora, the evaluation methodology, the shipped numbers, the engineering invariants, and the limitations.
+
 ## Generating sprites
 
 - [`PIXELSCRIPT_GRAMMAR.md`](PIXELSCRIPT_GRAMMAR.md) — the text language every sprite is written in: primitives, `SHADE` / `OUTLINE` finishing passes, and the validation rules.

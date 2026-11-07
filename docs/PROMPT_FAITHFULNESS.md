@@ -21,20 +21,26 @@ then classifies every opaque sprite pixel in HSV:
 which is the failure a human notices immediately. Prompts without a colour name
 return `None` so they are excluded from averages rather than scored.
 
-## Baseline (main, 2026-11-07)
+## Current numbers (300-prompt benchmark, 2026-11-07 18:10:19)
 
-| Engine | Colour faithfulness | Prompts that get their colour |
-| --- | --- | --- |
-| Procedural baseline | 10.1% | 30.4% |
-| Untrained SVAN | 0.9% | 4.3% |
-| Trained SVAN | 6.1% | 30.4% |
+| Engine | Colour faithfulness | Prompts that get their colour | Silhouette IoU |
+| --- | --- | --- | --- |
+| Procedural baseline | 29.1% | 70.0% | 0.535 |
+| Untrained SVAN | — | — | — |
+| Trained SVAN v3 | 15.0% | 41.7% | 0.503 ± 0.002 |
 
-The trained model is *worse* than the rule-based baseline on colour, because the
-DSL's per-category default materials (grey armour, green slime) occasionally land
-on a requested colour by accident, while the neural decoder samples whatever its
-category prior prefers. Any prompt-driven colour work — a text encoder, a colour
-token in the conditioning, or a post-hoc palette remap — should be judged by
-moving the trained row above the procedural row.
+Earlier on `main` the same measurement read 10.1% / 30.4% for the procedural
+baseline, 0.9% / 4.3% untrained and 6.1% / 30.4% trained. The procedural row moved
+because the baseline now emits element and colour-tinted materials; the trained row
+moved 6.1% → 15.0% with the grammar-v2.1 colour/element conditioning corpus
+(`element_synthetic_20k`) and checkpoint v3.
+
+The trained model is still *below* the rule-based baseline on colour, because the
+DSL's per-category default materials occasionally land on a requested colour by
+accident, while the neural decoder samples whatever its category prior prefers. Any
+further prompt-driven colour work — the prompt text encoder, a colour-token
+curriculum, or a post-hoc palette remap — is judged by moving the trained row above
+the procedural row.
 
 ## How to run
 
