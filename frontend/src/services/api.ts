@@ -7,6 +7,23 @@ import {
   AssetRecord,
   FrameData,
   VisualCriticReport,
+  RuntimeMetrics,
+  BenchmarkReportCard,
+  BenchmarkGallery,
+  HistoryResponse,
+  ExportResult,
+  ExportParams,
+  GenerateParams,
+  RefineParams,
+  RenderParams,
+  AssetSaveParams,
+  ServiceStatus,
+  ActionPlanResponse,
+  ActionSetResponse,
+  AnimationMetrics,
+  CriticMetrics,
+  DatasetStats,
+  TrainingHistory,
 } from '../types';
 
 const BASE_URL = '';
@@ -31,12 +48,12 @@ export async function fetchModels(): Promise<ModelsInfo> {
   return res.json();
 }
 
-export async function fetchRuntimeMetrics(): Promise<any> {
+export async function fetchRuntimeMetrics(): Promise<RuntimeMetrics> {
   const res = await apiFetch(`${BASE_URL}/api/metrics`);
   return res.json();
 }
 
-export async function loadCheckpoint(checkpointName: string): Promise<any> {
+export async function loadCheckpoint(checkpointName: string): Promise<ServiceStatus> {
   const res = await apiFetch(`${BASE_URL}/api/checkpoints/load`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -45,23 +62,7 @@ export async function loadCheckpoint(checkpointName: string): Promise<any> {
   return res.json();
 }
 
-export async function generateSprite(params: {
-  prompt?: string;
-  negative_prompt?: string;
-  category?: string;
-  style?: string;
-  pose?: string;
-  palette?: string;
-  width?: number;
-  height?: number;
-  num_frames?: number;
-  engine?: string;
-  seed?: number;
-  max_actions?: number;
-  best_of?: number;
-  temperature?: number;
-  top_k?: number;
-}): Promise<GenerationResult> {
+export async function generateSprite(params: GenerateParams): Promise<GenerationResult> {
   const res = await apiFetch(`${BASE_URL}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -74,13 +75,9 @@ export async function generateSprite(params: {
   return res.json();
 }
 
-export async function refineSprite(params: {
-  script_text: string;
-  suggested_fix?: string;
-  width?: number;
-  height?: number;
-  palette?: string;
-}): Promise<{ status: string; frame: FrameData; critic: VisualCriticReport }> {
+export async function refineSprite(
+  params: RefineParams
+): Promise<{ status: string; frame: FrameData; critic: VisualCriticReport }> {
   const res = await apiFetch(`${BASE_URL}/api/refine`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -89,13 +86,7 @@ export async function refineSprite(params: {
   return res.json();
 }
 
-export async function renderScript(params: {
-  script_text: string;
-  width?: number;
-  height?: number;
-  palette?: string;
-  scale?: number;
-}): Promise<FrameData> {
+export async function renderScript(params: RenderParams): Promise<FrameData> {
   const res = await apiFetch(`${BASE_URL}/api/render`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -108,17 +99,7 @@ export async function renderScript(params: {
   return res.json();
 }
 
-export async function exportAsset(params: {
-  frames_scripts: string[];
-  width: number;
-  height: number;
-  palette: string;
-  format: 'png' | 'spritesheet' | 'gif' | 'json' | 'onion';
-  scale?: number;
-  fps?: number;
-  cols?: number;
-  frame_index?: number;
-}): Promise<any> {
+export async function exportAsset(params: ExportParams): Promise<ExportResult> {
   const res = await apiFetch(`${BASE_URL}/api/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -127,7 +108,7 @@ export async function exportAsset(params: {
   return res.json();
 }
 
-export async function fetchDatasetStats(name = 'default_synth'): Promise<any> {
+export async function fetchDatasetStats(name = 'default_synth'): Promise<DatasetStats> {
   const res = await apiFetch(`${BASE_URL}/api/dataset/stats?name=${name}`);
   return res.json();
 }
@@ -177,32 +158,32 @@ export async function fetchTrainingStatus(): Promise<TrainingStatus> {
   return res.json();
 }
 
-export async function fetchTrainingHistory(): Promise<any> {
+export async function fetchTrainingHistory(): Promise<TrainingHistory> {
   const res = await apiFetch(`${BASE_URL}/api/training/history`);
   return res.json();
 }
 
-export async function fetchHistory(limit = 20): Promise<any> {
+export async function fetchHistory(limit = 20): Promise<HistoryResponse> {
   const res = await apiFetch(`${BASE_URL}/api/history?limit=${limit}`);
   return res.json();
 }
 
-export async function deleteHistoryRun(id: number): Promise<any> {
+export async function deleteHistoryRun(id: number): Promise<ServiceStatus> {
   const res = await apiFetch(`${BASE_URL}/api/history/${id}`, { method: 'DELETE' });
   return res.json();
 }
 
-export async function clearHistory(): Promise<any> {
+export async function clearHistory(): Promise<ServiceStatus> {
   const res = await apiFetch(`${BASE_URL}/api/history`, { method: 'DELETE' });
   return res.json();
 }
 
-export async function fetchBenchmarkReportCard(engine = 'trained_model'): Promise<any> {
+export async function fetchBenchmarkReportCard(engine = 'trained_model'): Promise<BenchmarkReportCard> {
   const res = await apiFetch(`${BASE_URL}/api/benchmarks/report_card?engine=${engine}`);
   return res.json();
 }
 
-export async function fetchBenchmarkGallery(limit = 100): Promise<any> {
+export async function fetchBenchmarkGallery(limit = 100): Promise<BenchmarkGallery> {
   const res = await apiFetch(`${BASE_URL}/api/benchmarks/gallery?limit=${limit}`);
   return res.json();
 }
@@ -224,13 +205,7 @@ export async function fetchAssets(query = ''): Promise<AssetRecord[]> {
   return res.json();
 }
 
-export async function saveAsset(data: {
-  name: string;
-  category: string;
-  tags?: string[];
-  frames: FrameData[];
-  metadata?: Record<string, any>;
-}): Promise<AssetRecord> {
+export async function saveAsset(data: AssetSaveParams): Promise<AssetRecord> {
   const res = await apiFetch(`${BASE_URL}/api/assets`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -239,7 +214,7 @@ export async function saveAsset(data: {
   return res.json();
 }
 
-export async function deleteAsset(id: string): Promise<any> {
+export async function deleteAsset(id: string): Promise<ServiceStatus> {
   const res = await apiFetch(`${BASE_URL}/api/assets/${id}`, { method: 'DELETE' });
   return res.json();
 }
@@ -285,7 +260,7 @@ export async function repairSpriteApi(params: {
   return res.json();
 }
 
-export async function fetchCriticMetrics(): Promise<any> {
+export async function fetchCriticMetrics(): Promise<CriticMetrics> {
   const res = await apiFetch(`${BASE_URL}/api/critic/metrics`);
   return res.json();
 }
@@ -338,7 +313,7 @@ export async function regenerateFrameApi(params: {
   return res.json();
 }
 
-export async function fetchAnimationMetrics(): Promise<any> {
+export async function fetchAnimationMetrics(): Promise<AnimationMetrics> {
   const res = await apiFetch(`${BASE_URL}/api/animation/metrics`);
   return res.json();
 }
@@ -352,7 +327,7 @@ export async function planActionSetApi(params: {
   palette?: string;
   actions?: string[];
   seed?: number;
-}): Promise<any> {
+}): Promise<ActionPlanResponse> {
   const res = await apiFetch(`${BASE_URL}/api/action_set/plan`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -378,7 +353,7 @@ export async function generateActionSetApi(params: {
   max_actions?: number;
   include_gif?: boolean;
   facing?: 'left' | 'right';
-}): Promise<any> {
+}): Promise<ActionSetResponse> {
   const res = await apiFetch(`${BASE_URL}/api/action_set`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
