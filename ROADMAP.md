@@ -43,7 +43,7 @@ Current baseline (as of `386c060`):
 Today the text prompt only picks a category, style and palette; "blue wizard" and "red wizard"
 give the same distribution. This is the largest quality jump available.
 
-- [ ] **Colour-faithfulness metric** — `S`
+- [x] **Colour-faithfulness metric** — `S` ✓ #9 (`docs/PROMPT_FAITHFULNESS.md`, baseline 6.1%)
   *Why:* no measurement exists for whether the sprite honours colours in the prompt; without it the fix below cannot be validated.
   *How:* parse colour words from the prompt, map to the nearest palette ramp, measure share of silhouette pixels within that ramp; add to `scripts/quality_gate.py` and the benchmark JSON.
   *Done when:* the number is reported and the current baseline (expected: poor) is recorded.
@@ -160,6 +160,7 @@ give the same distribution. This is the largest quality jump available.
 | Visual critic retrained on grammar sprites, calibrated at p=0.72 | #5 |
 | Neural critic verdict surfaced in the Inspector | #6 |
 | Seed determinism + cache-key coverage (`test_pipeline_determinism.py`) | #8 |
+| Colour-faithfulness metric in gate + benchmark (`faithfulness.py`) | #9 |
 
 ---
 

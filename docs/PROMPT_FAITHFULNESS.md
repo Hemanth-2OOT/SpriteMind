@@ -1,0 +1,64 @@
+# Prompt colour faithfulness
+
+The prompt currently reaches the model only as `category`, `style` and `pose`, so
+"A blue wizard" and "A red wizard" condition the decoder identically. Colour words
+are honest casualties of that design. This metric makes the gap measurable before
+we change the architecture.
+
+## Definition
+
+`backend/spritemind/assets/faithfulness.py` scans the prompt for colour names,
+then classifies every opaque sprite pixel in HSV:
+
+- chromatic names (`blue`, `crimson`, `emerald`, ...) match when the pixel is
+  saturated, bright enough, and within ±24° of the name's hue;
+- `brown` additionally requires a darker value, `tan` a lighter one;
+- achromatic names (`black`, `gray`, `silver`, `white`) match by saturation and
+  value instead of hue.
+
+`score` is the percentage of opaque pixels drawn in **any** requested colour.
+`missing` lists the requested colours covering less than 3% of the silhouette,
+which is the failure a human notices immediately. Prompts without a colour name
+return `None` so they are excluded from averages rather than scored.
+
+## Baseline (main, 2026-11-07)
+
+| Engine | Colour faithfulness | Prompts that get their colour |
+| --- | --- | --- |
+| Procedural baseline | 10.1% | 30.4% |
+| Untrained SVAN | 0.9% | 4.3% |
+| Trained SVAN | 6.1% | 30.4% |
+
+The trained model is *worse* than the rule-based baseline on colour, because the
+DSL's per-category default materials (grey armour, green slime) occasionally land
+on a requested colour by accident, while the neural decoder samples whatever its
+category prior prefers. Any prompt-driven colour work — a text encoder, a colour
+token in the conditioning, or a post-hoc palette remap — should be judged by
+moving the trained row above the procedural row.
+
+## How to run
+
+```bash
+# Gate (per-sample detail + gateable rate)
+PATH=/tmp/sm-venv/bin:$PATH python scripts/quality_gate.py --limit 40 --min-colour 0
+
+# Full 100-prompt benchmark, writes data/benchmarks/benchmark_results.json
+PATH=/tmp/sm-venv/bin:$PATH python -c \
+  "import sys; sys.path.insert(0,'backend'); \
+   from spritemind.ml.benchmark import GeneralizationBenchmark; \
+   GeneralizationBenchmark().run_benchmark()"
+```
+
+`--min-colour` is the share of colour prompts that must contain every requested
+colour. It defaults to `0` so the gate records the number without failing the
+build until the encoder work lands; raise it once the trained model clears the
+procedural baseline.
+
+## Known limits
+
+- Only ~30% of the benchmark prompts name a colour, so per-run averages rest on
+  ~30 samples. Use the full benchmark before quoting a delta.
+- Hue matching is deliberately generous; a "blue" sprite painted navy and cyan
+  both count. It measures *did the colour arrive*, not art direction.
+- Compound colours (`blue-green`, `rose gold`) are not understood; the metric
+  sees only the first matching name.

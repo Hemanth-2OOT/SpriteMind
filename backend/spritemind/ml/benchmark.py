@@ -1,10 +1,15 @@
 """Generalization Benchmark Suite evaluating Procedural Baseline, Untrained SVAN, and Trained SVAN."""
+import base64
+import io
 import json
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import numpy as np
 
+from PIL import Image
+
+from spritemind.assets.faithfulness import colour_faithfulness
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.utils.palettes import PALETTES
 
@@ -130,6 +135,16 @@ BENCHMARK_PROMPTS: List[Dict[str, Any]] = [
     {"id": "bench_099", "prompt": "A chronomancer bending time ripples with golden hourglass", "category": "wizard", "style": "cyberpunk", "pose": "walk", "palette": "cyberpunk"},
     {"id": "bench_100", "prompt": "An 8-bit wizard apprentice reciting beginner magic spells", "category": "wizard", "style": "retro_8bit", "pose": "idle", "palette": "pico8"},
 ]
+
+
+def decode_rgba(image_base64: str) -> Optional[np.ndarray]:
+    if not image_base64:
+        return None
+    payload = image_base64.split(",", 1)[-1]
+    try:
+        return np.array(Image.open(io.BytesIO(base64.b64decode(payload))).convert("RGBA"))
+    except Exception:
+        return None
 
 
 def compute_metrics(
@@ -279,6 +294,10 @@ class GeneralizationBenchmark:
                 dummy_prog = type("Prog", (), {"actions": [1] * actions_count})()
 
                 m = compute_metrics(r_dict, dummy_prog, palette, t_ms)
+                rgba = decode_rgba(frame.get("image_base64", ""))
+                colour = colour_faithfulness(p_text, rgba) if rgba is not None else None
+                m["colour_faithfulness"] = colour["score"] if colour else None
+                m["colours_missing"] = colour["missing"] if colour else []
 
                 if eng == "procedural_baseline":
                     procedural_metrics.append(m)
@@ -301,6 +320,7 @@ class GeneralizationBenchmark:
             if not metrics_list:
                 return {}
             n = len(metrics_list)
+            colour_rows = [m for m in metrics_list if m.get("colour_faithfulness") is not None]
             return {
                 "avg_valid_action_rate": round(sum(m["valid_action_rate"] for m in metrics_list) / n, 2),
                 "avg_palette_adherence": round(sum(m["palette_adherence"] for m in metrics_list) / n, 2),
@@ -308,6 +328,16 @@ class GeneralizationBenchmark:
                 "avg_structural_consistency": round(sum(m["structural_consistency"] for m in metrics_list) / n, 2),
                 "avg_latency_ms": round(sum(m["latency_ms"] for m in metrics_list) / n, 2),
                 "avg_pixels_filled": round(sum(m["pixel_fill_count"] for m in metrics_list) / n, 1),
+                "avg_colour_faithfulness": (
+                    round(sum(m["colour_faithfulness"] for m in colour_rows) / len(colour_rows), 1)
+                    if colour_rows
+                    else None
+                ),
+                "colours_present_rate": (
+                    round(sum(1 for m in colour_rows if not m["colours_missing"]) / len(colour_rows) * 100.0, 1)
+                    if colour_rows
+                    else None
+                ),
             }
 
         summary = {
