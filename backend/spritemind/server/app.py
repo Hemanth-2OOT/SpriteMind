@@ -472,6 +472,20 @@ def get_benchmark_gallery(limit: int = 100) -> Dict[str, Any]:
     }
 
 
+@app.get("/api/benchmarks/report_card")
+def get_benchmark_report_card(engine: str = "trained_model") -> Dict[str, Any]:
+    """Per-category aggregation of the stored benchmark gallery."""
+    from spritemind.ml.report_card import summarise_gallery
+
+    results_path = Path("data/benchmarks/benchmark_results.json")
+    if not results_path.exists():
+        raise HTTPException(status_code=404, detail="No benchmark results yet; run a benchmark first")
+    data = json.loads(results_path.read_text(encoding="utf-8"))
+    card = summarise_gallery(data.get("gallery", []), engine=engine)
+    card["timestamp"] = data.get("summary", {}).get("timestamp")
+    return card
+
+
 @app.post("/api/benchmarks/run")
 def run_benchmark_endpoint(limit: int = 20) -> Dict[str, Any]:
     from spritemind.ml.benchmark import GeneralizationBenchmark

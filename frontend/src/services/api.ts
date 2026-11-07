@@ -182,6 +182,11 @@ export async function fetchTrainingHistory(): Promise<any> {
   return res.json();
 }
 
+export async function fetchBenchmarkReportCard(engine = 'trained_model'): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/benchmarks/report_card?engine=${engine}`);
+  return res.json();
+}
+
 export async function fetchBenchmarkGallery(limit = 100): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/benchmarks/gallery?limit=${limit}`);
   return res.json();
