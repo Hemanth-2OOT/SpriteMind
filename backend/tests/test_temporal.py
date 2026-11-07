@@ -1,4 +1,6 @@
 """Tests for Temporal Intelligence Network (TemporalSVAN), TemporalAnimator, and Animation APIs."""
+from pathlib import Path
+
 import pytest
 import torch
 import numpy as np
@@ -152,3 +154,13 @@ def test_action_articulation_and_frame_motion():
                 f2_arr = PixelScriptEngine.execute(res["frames"][i + 1]["script_text"]).composite_array
                 diff = int(np.sum(np.abs(f1_arr.astype(int) - f2_arr.astype(int)) > 0))
                 assert diff > 0, f"Frame {i} to {i+1} in {anim} with {engine} was completely static (diff=0)!"
+
+
+def test_shipped_temporal_checkpoint_matches_current_model():
+    ckpt = Path(__file__).resolve().parents[2] / "models" / "checkpoints" / "temporal_svan_best.pt"
+    if not ckpt.exists():
+        return
+    payload = torch.load(ckpt, map_location="cpu", weights_only=False)
+    state = payload.get("model_state_dict", payload)
+    model = TemporalSVAN(d_model=128)
+    model.load_state_dict(state)
