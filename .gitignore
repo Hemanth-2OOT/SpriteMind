@@ -42,6 +42,7 @@ data/datasets/gv2_synthetic_25k/
 data/datasets/gv2_synthetic_25k_mixed/
 data/gv2_synthetic_dataset.json
 data/temporal_dataset_4k/
+data/temporal_dataset_gv2/
 
 # Local secrets and editor/OS noise
 .env
