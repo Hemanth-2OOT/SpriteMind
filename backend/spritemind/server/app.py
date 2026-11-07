@@ -1,79 +1,95 @@
-"""FastAPI server application for SpriteMind."""
-import os
-import io
-import json
-import base64
+"""FastAPI application wiring: middleware, router mounting and static hosting.
+
+Route handlers live in :mod:`spritemind.server.routers`; shared state lives in
+:mod:`spritemind.server.runtime`. The handler names are re-exported here because the
+test-suite and a few scripts import them from this module.
+"""
 import hmac
-import time
+import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict
 
-import torch
-import numpy as np
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-from spritemind.server.metrics import LATENCY, LatencyMeter, record_generation
-from spritemind.server import history
-from spritemind.server.schemas import (
-    GenerateRequest,
-    ActionSetRequest,
-    RefineRequest,
-    RenderRequest,
-    ExportRequest,
-    DatasetGenerateRequest,
-    TrainingStartRequest,
-    CheckpointLoadRequest,
-    AssetSaveRequest,
-    InspectRequest,
-    CriticRepairRequest,
-    AnimationGenerateRequest,
-    RegenerateFrameRequest,
-    CompositionRequest,
-    CompositionAnimationRequest,
-    AssetPackExportRequest,
-    TrashAssetRequest,
-    RestoreAssetRequest,
-    PermanentDeleteRequest,
-    EmptyTrashRequest,
-    CleanupExecuteRequest,
-    BackupCreateRequest,
+from spritemind.server import runtime
+from spritemind.server.routers import (
+    animation as routers_animation,
+    assets as routers_assets,
+    core as routers_core,
+    critic as routers_critic,
+    sprites as routers_sprites,
+    training as routers_training,
 )
-from spritemind.critic.repair_engine import AutonomousRepairEngine
-from spritemind.critic.model import DEFECT_CLASSES
-from spritemind.ml.pipeline import SpriteMindPipeline
-from spritemind.ml.temporal import TemporalAnimator, ANIMATION_CATEGORIES, CATEGORIES
-from spritemind.actions import ActionSetBuilder, ActionSetPlanner
-from spritemind.ml.checkpoint_manifest import (
-    list_entries as list_checkpoint_entries,
-    verify as verify_checkpoint,
-)
-from spritemind.assets.library import AssetLibrary, ASSET_CATEGORIES
-from spritemind.assets.composer import AssetComposer
-from spritemind.assets.pack import AssetPack
-from spritemind.storage.database import StorageDatabase
-from spritemind.storage.lifecycle import AssetLifecycleManager
-from spritemind.storage.cleanup import StorageCleaner
-from spritemind.storage.backup import BackupManager
-from spritemind.storage.classification import ProtectedResourceException
-from spritemind.ml.training import ModelTrainer
-from spritemind.ml.evaluation import ModelEvaluator
-from spritemind.dataset.storage import DatasetManager
-from spritemind.dataset.assets import AssetManager
-from spritemind.renderer.engine import PixelScriptEngine
-from spritemind.renderer.export import (
-    array_to_png_bytes,
-    array_to_base64,
-    export_gif,
-    export_spritesheet,
-    compose_onion_skin,
-)
-from spritemind.pixelscript.serializer import PixelScriptSerializer
-from spritemind.pixelscript.parser import PixelScriptParser
 
-# Initialize FastAPI
+from spritemind.server.routers.core import (  # noqa: F401  (re-exported for tests)
+    get_health,
+    get_models,
+    load_checkpoint,
+    get_metrics,
+    generate,
+    get_history,
+    delete_history_run,
+    clear_history,
+)
+from spritemind.server.routers.sprites import (  # noqa: F401  (re-exported for tests)
+    action_set_plan,
+    action_set,
+    refine,
+    render,
+    export_assets,
+)
+from spritemind.server.routers.training import (  # noqa: F401  (re-exported for tests)
+    get_dataset_stats,
+    get_dataset_samples,
+    generate_dataset,
+    start_training,
+    stop_training,
+    get_training_status,
+    get_training_metrics,
+    get_training_history,
+    get_benchmark_gallery,
+    get_benchmark_report_card,
+    run_benchmark_endpoint,
+    get_evaluation_results,
+)
+from spritemind.server.routers.critic import (  # noqa: F401  (re-exported for tests)
+    inspect_sprite,
+    repair_sprite,
+    get_critic_metrics,
+)
+from spritemind.server.routers.animation import (  # noqa: F401  (re-exported for tests)
+    generate_animation,
+    regenerate_frame,
+    get_animation_metrics,
+)
+from spritemind.server.routers.assets import (  # noqa: F401  (re-exported for tests)
+    get_asset_catalog,
+    compose_asset,
+    animate_composition,
+    export_asset_pack,
+    get_composition_metrics,
+    list_assets,
+    get_asset,
+    save_asset,
+    delete_asset,
+    get_storage_dashboard,
+    get_storage_records,
+    get_storage_orphans,
+    sync_storage_registry,
+    list_trash,
+    trash_asset_endpoint,
+    restore_asset_endpoint,
+    permanent_delete_endpoint,
+    empty_trash_endpoint,
+    storage_cleanup_scan,
+    storage_cleanup_execute,
+    create_backup_endpoint,
+    list_backups_endpoint,
+)
+
 app = FastAPI(
     title="SpriteMind API",
     description="Local AI Pixel Art Generator & Research Platform",
@@ -93,6 +109,17 @@ CORS_ORIGINS = [
 
 API_KEY_ENV = "SPRITEMIND_API_KEY"
 API_KEY_EXEMPT = {"/api/health", "/docs", "/openapi.json", "/redoc"}
+
+# The routers and the tests both reach for these names directly.
+pipeline = runtime.pipeline
+trainer = runtime.trainer
+dataset_mgr = runtime.dataset_mgr
+asset_mgr = runtime.asset_mgr
+repair_engine = runtime.repair_engine
+storage_db = runtime.storage_db
+lifecycle_mgr = runtime.lifecycle_mgr
+cleaner = runtime.cleaner
+backup_mgr = runtime.backup_mgr
 
 
 @app.middleware("http")
@@ -119,830 +146,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Core singletons
-pipeline = SpriteMindPipeline()
-trainer = ModelTrainer()
-dataset_mgr = DatasetManager()
-asset_mgr = AssetManager()
-repair_engine = AutonomousRepairEngine()
-storage_db = StorageDatabase()
-lifecycle_mgr = AssetLifecycleManager(db=storage_db)
-cleaner = StorageCleaner(db=storage_db)
-backup_mgr = BackupManager(db=storage_db)
-
-
-@app.get("/api/health")
-def get_health() -> Dict[str, Any]:
-    cuda_available = torch.cuda.is_available()
-    device_name = torch.cuda.get_device_name(0) if cuda_available else "CPU"
-    device_memory = {}
-    if cuda_available:
-        device_memory = {
-            "allocated_mb": round(torch.cuda.memory_allocated(0) / 1024 / 1024, 2),
-            "reserved_mb": round(torch.cuda.memory_reserved(0) / 1024 / 1024, 2),
-            "total_mb": round(torch.cuda.get_device_properties(0).total_memory / 1024 / 1024, 2),
-        }
-
-    return {
-        "status": "healthy",
-        "version": "0.1.0",
-        "torch_version": torch.__version__,
-        "cuda_available": cuda_available,
-        "device": device_name,
-        "device_memory": device_memory,
-        "training_active": trainer.is_training,
-        "result_cache": pipeline.cache_stats(),
-    }
-
-
-@app.get("/api/models")
-def get_models() -> Dict[str, Any]:
-    checkpoints = [p.name for p in pipeline.checkpoints_dir.glob("*.pt")]
-    model_info = pipeline.get_loaded_model_info()
-    recorded = {entry["file"]: entry for entry in list_checkpoint_entries(pipeline.checkpoints_dir)}
-    integrity = {
-        name: verify_checkpoint(pipeline.checkpoints_dir, name) for name in checkpoints
-    }
-    return {
-        "available_checkpoints": checkpoints,
-        "loaded_model": model_info,
-        "supported_engines": ["procedural_baseline", "untrained_model", "trained_model"],
-        "checkpoints": [
-            {
-                "file": name,
-                "recorded": name in recorded,
-                "parameter_count": recorded.get(name, {}).get("parameter_count"),
-                "trained_animations": recorded.get(name, {}).get("trained_animations"),
-                "integrity": integrity[name]["reason"],
-                "ok": integrity[name]["ok"],
-            }
-            for name in checkpoints
-        ],
-        "temporal_checkpoint_status": TemporalAnimator.last_load_status,
-    }
-
-
-@app.post("/api/checkpoints/load")
-def load_checkpoint(req: CheckpointLoadRequest) -> Dict[str, Any]:
-    success = pipeline.load_checkpoint(req.checkpoint_name)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Checkpoint '{req.checkpoint_name}' not found")
-    return {
-        "status": "success",
-        "loaded_checkpoint": req.checkpoint_name,
-        "model_info": pipeline.get_loaded_model_info(),
-    }
-
-
-@app.get("/api/metrics")
-def get_metrics() -> Dict[str, Any]:
-    """In-process latency percentiles plus pipeline cache counters."""
-    return {
-        "latency": LATENCY.to_dict(),
-        "cache": {
-            "hits": pipeline.cache_hits,
-            "misses": pipeline.cache_misses,
-            "size": pipeline._result_cache_size,
-        },
-    }
-
-
-@app.post("/api/generate")
-def generate(req: GenerateRequest) -> Dict[str, Any]:
-    result = pipeline.generate(
-        prompt=req.prompt or "",
-        category=req.category,
-        style=req.style,
-        pose=req.pose,
-        palette_name=req.palette,
-        width=req.width,
-        height=req.height,
-        num_frames=req.num_frames,
-        engine_mode=req.engine,
-        seed=req.seed,
-        max_actions=req.max_actions,
-        best_of=req.best_of,
-        temperature=req.temperature,
-        top_k=req.top_k,
-    )
-    record_generation(result, req.engine)
-    try:
-        history.record_run(req.model_dump(), result)
-    except Exception:  # history must never fail a generation
-        pass
-    return result
-
-
-@app.get("/api/history")
-def get_history(limit: int = 50) -> Dict[str, Any]:
-    runs = history.list_runs(limit=limit)
-    return {"runs": runs, "total": len(runs)}
-
-
-@app.delete("/api/history/{run_id}")
-def delete_history_run(run_id: int) -> Dict[str, Any]:
-    return {"deleted": history.delete_run(run_id), "id": run_id}
-
-
-@app.delete("/api/history")
-def clear_history() -> Dict[str, Any]:
-    return {"deleted": history.clear_runs()}
-
-
-@app.post("/api/action_set/plan")
-def action_set_plan(req: ActionSetRequest) -> Dict[str, Any]:
-    """Cheap prompt interpretation: which animations the prompt implies."""
-    plan = ActionSetPlanner.plan(
-        prompt=req.prompt,
-        category=req.category,
-        style=req.style,
-        palette=req.palette,
-        width=req.width,
-        height=req.height,
-        requested_actions=req.actions,
-        max_actions=req.max_actions,
-        seed=req.seed,
-    )
-    return {"status": "success", "plan": plan.to_dict()}
-
-
-@app.post("/api/action_set")
-def action_set(req: ActionSetRequest) -> Dict[str, Any]:
-    """Builds a coherent, game-ready animation set from a single prompt."""
-    try:
-        return ActionSetBuilder.build(
-            prompt=req.prompt,
-            category=req.category,
-            style=req.style,
-            palette=req.palette,
-            width=req.width,
-            height=req.height,
-            engine=req.engine,
-            seed=req.seed,
-            actions=req.actions,
-            max_actions=req.max_actions,
-            include_gif=req.include_gif,
-            facing=req.facing,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@app.post("/api/refine")
-def refine(req: RefineRequest) -> Dict[str, Any]:
-    """Applies suggested fix or appends action, then re-renders."""
-    script = req.script_text
-    if req.suggested_fix:
-        script = repair_engine.apply_patch_to_script(script, req.suggested_fix)
-
-    res = PixelScriptEngine.execute(script, width=req.width, height=req.height, palette_name=req.palette)
-    frame_dict = res.to_dict(include_passes=True)
-    frame_dict["script_text"] = script
-    prog = PixelScriptParser.parse_text(script)
-    critic = repair_engine.inspect(res, category="knight", palette_name=req.palette, prog=prog)
-
-    return {
-        "status": "refined",
-        "frame": frame_dict,
-        "critic": critic,
-    }
-
-
-@app.post("/api/render")
-def render(req: RenderRequest) -> Dict[str, Any]:
-    try:
-        res = PixelScriptEngine.execute(
-            req.script_text,
-            width=req.width,
-            height=req.height,
-            palette_name=req.palette,
-        )
-        return res.to_dict(include_passes=True, scale=req.scale)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/api/export")
-def export_assets(req: ExportRequest):
-    frames_arr = []
-    for s in req.frames_scripts:
-        res = PixelScriptEngine.execute(s, width=req.width, height=req.height, palette_name=req.palette)
-        frames_arr.append(res.composite_array)
-
-    if not frames_arr:
-        raise HTTPException(status_code=400, detail="No valid frames provided for export")
-
-    if req.format == "spritesheet":
-        png_bytes, meta = export_spritesheet(frames_arr, cols=req.cols, scale=req.scale)
-        b64 = base64.b64encode(png_bytes).decode("utf-8")
-        return {
-            "format": "spritesheet",
-            "image_base64": f"data:image/png;base64,{b64}",
-            "metadata": meta,
-        }
-    elif req.format == "gif":
-        gif_bytes = export_gif(frames_arr, fps=req.fps, scale=max(1, req.scale))
-        b64 = base64.b64encode(gif_bytes).decode("utf-8")
-        return {
-            "format": "gif",
-            "image_base64": f"data:image/gif;base64,{b64}",
-            "fps": req.fps,
-        }
-    elif req.format == "onion":
-        ghost = compose_onion_skin(frames_arr, req.frame_index, scale=max(1, req.scale))
-        buf = io.BytesIO()
-        ghost.save(buf, format="PNG")
-        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-        return {
-            "format": "onion",
-            "image_base64": f"data:image/png;base64,{b64}",
-            "frame_index": max(0, min(req.frame_index, len(frames_arr) - 1)),
-            "total_frames": len(frames_arr),
-        }
-    elif req.format == "png":
-        png_bytes = array_to_png_bytes(frames_arr[0], scale=req.scale)
-        b64 = base64.b64encode(png_bytes).decode("utf-8")
-        return {
-            "format": "png",
-            "image_base64": f"data:image/png;base64,{b64}",
-        }
-    else:
-        # JSON
-        return {
-            "format": "json",
-            "frames_scripts": req.frames_scripts,
-            "width": req.width,
-            "height": req.height,
-        }
-
-
-# --- Dataset Endpoints ---
-@app.get("/api/dataset/stats")
-def get_dataset_stats(name: str = "default_synth") -> Dict[str, Any]:
-    stats = dataset_mgr.get_dataset_stats(name)
-    if stats is None:
-        return {
-            "exists": False,
-            "name": name,
-            "total_samples": 0,
-            "splits": {"train": 0, "val": 0, "test": 0},
-            "category_distribution": {},
-            "defect_distribution": {},
-        }
-    return {**stats, "exists": True}
-
-
-@app.get("/api/dataset/samples")
-def get_dataset_samples(name: str = "default_synth", limit: int = 24, offset: int = 0) -> List[Dict[str, Any]]:
-    return dataset_mgr.list_samples(name=name, limit=limit, offset=offset)
-
-
-@app.post("/api/dataset/generate")
-def generate_dataset(req: DatasetGenerateRequest, background_tasks: BackgroundTasks) -> Dict[str, Any]:
-    summary = dataset_mgr.generate_dataset(
-        name=req.name,
-        total_samples=req.total_samples,
-        defect_rate=req.defect_rate,
-        seed=req.seed,
-    )
-    return {"status": "success", "summary": summary}
-
-
-# --- Training Endpoints ---
-@app.post("/api/training/start")
-def start_training(req: TrainingStartRequest) -> Dict[str, Any]:
-    res = trainer.start_training(
-        dataset_name=req.dataset_name,
-        epochs=req.epochs,
-        batch_size=req.batch_size,
-        learning_rate=req.learning_rate,
-        optimizer_name=req.optimizer,
-        save_checkpoint_name=req.checkpoint_name,
-    )
-    return res
-
-
-@app.post("/api/training/stop")
-def stop_training() -> Dict[str, Any]:
-    return trainer.stop_training()
-
-
-@app.get("/api/training/status")
-def get_training_status() -> Dict[str, Any]:
-    status = trainer.get_status()
-    cuda_available = torch.cuda.is_available()
-    status["device"] = torch.cuda.get_device_name(0) if cuda_available else "CPU"
-    return status
-
-
-@app.get("/api/training/metrics")
-def get_training_metrics() -> Dict[str, Any]:
-    status = trainer.get_status()
-    return {
-        "loss_history": status.get("loss_history", []),
-        "val_loss_history": status.get("val_loss_history", []),
-        "current_loss": status.get("loss", 0.0),
-        "current_val_loss": status.get("val_loss", 0.0),
-        "epoch": status.get("epoch", 0),
-        "total_epochs": status.get("total_epochs", 0),
-    }
-
-
-# --- Evaluation Endpoints ---
-@app.get("/api/training/history")
-def get_training_history() -> Dict[str, Any]:
-    history_file = Path("data/training_history.json")
-    if history_file.exists():
-        try:
-            with open(history_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    status = trainer.get_status()
-    return {
-        "dataset_name": status.get("dataset_name", "generalization_10k"),
-        "total_epochs": status.get("total_epochs", 4),
-        "completed_epochs": status.get("epoch", 0),
-        "best_epoch": status.get("best_epoch", 0),
-        "best_val_loss": status.get("best_val_loss", 0.0),
-        "loss_history": status.get("loss_history", []),
-        "val_loss_history": status.get("val_loss_history", []),
-        "token_accuracy_history": status.get("token_accuracy_history", []),
-    }
-
-
-@app.get("/api/benchmarks/gallery")
-def get_benchmark_gallery(limit: int = 100) -> Dict[str, Any]:
-    results_path = Path("data/benchmarks/benchmark_results.json")
-    if results_path.exists():
-        try:
-            with open(results_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                gallery = data.get("gallery", [])[:limit]
-                return {
-                    "summary": data.get("summary", {}),
-                    "gallery": gallery,
-                    "total": len(gallery),
-                }
-        except Exception:
-            pass
-    from spritemind.ml.benchmark import BENCHMARK_PROMPTS
-    return {
-        "summary": {},
-        "gallery": BENCHMARK_PROMPTS[:limit],
-        "total": len(BENCHMARK_PROMPTS[:limit]),
-    }
-
-
-@app.get("/api/benchmarks/report_card")
-def get_benchmark_report_card(engine: str = "trained_model") -> Dict[str, Any]:
-    """Per-category aggregation of the stored benchmark gallery."""
-    from spritemind.ml.report_card import summarise_gallery
-
-    results_path = Path("data/benchmarks/benchmark_results.json")
-    if not results_path.exists():
-        raise HTTPException(status_code=404, detail="No benchmark results yet; run a benchmark first")
-    data = json.loads(results_path.read_text(encoding="utf-8"))
-    card = summarise_gallery(data.get("gallery", []), engine=engine)
-    card["timestamp"] = data.get("summary", {}).get("timestamp")
-    return card
-
-
-@app.post("/api/benchmarks/run")
-def run_benchmark_endpoint(limit: int = 20) -> Dict[str, Any]:
-    from spritemind.ml.benchmark import GeneralizationBenchmark
-    bm = GeneralizationBenchmark()
-    results = bm.run_benchmark(limit=limit)
-    return {"status": "success", "summary": results.get("summary", {})}
-
-
-@app.get("/api/evaluation/results")
-def get_evaluation_results(num_samples: int = 5) -> Dict[str, Any]:
-    return ModelEvaluator.compare_all(pipeline, num_samples=num_samples)
-
-
-# --- Visual Critic & Autonomous Repair Endpoints ---
-@app.post("/api/critic/inspect")
-def inspect_sprite(req: InspectRequest) -> Dict[str, Any]:
-    try:
-        pal = req.palette_name or req.palette
-        res = PixelScriptEngine.execute(
-            req.script_text,
-            width=req.width,
-            height=req.height,
-            palette_name=pal,
-        )
-        prog = PixelScriptParser.parse_text(req.script_text)
-        report = repair_engine.inspect(res, category=req.category, palette_name=pal, prog=prog)
-        report["image_base64"] = res.to_dict()["image_base64"]
-        return report
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/api/critic/repair")
-def repair_sprite(req: CriticRepairRequest) -> Dict[str, Any]:
-    try:
-        pal = req.palette_name or req.palette
-        if req.auto_refine:
-            res = repair_engine.refine_closed_loop(
-                req.script_text,
-                category=req.category,
-                palette_name=pal,
-                width=req.width,
-                height=req.height,
-                max_iterations=req.max_iterations,
-            )
-            return {
-                "initial_quality": res["initial_quality"],
-                "final_quality": res["final_quality"],
-                "quality_gain": res["quality_gain"],
-                "initial_defects": res["initial_defects"],
-                "final_defects": res["final_defects"],
-                "resolved_defects": res["resolved_defects"],
-                "iterations_completed": res["iterations_completed"],
-                "applied_repairs": res["applied_repairs"],
-                "repaired_script": res["final_frame"]["script_text"],
-                "image_base64": res["final_frame"]["image_base64"],
-                "history": res["history"],
-                "final_critic": res["final_critic"],
-                "elapsed_ms": res["elapsed_ms"],
-            }
-        elif req.action_patch:
-            # Single patch application
-            candidate_script = repair_engine.apply_patch_to_script(req.script_text, req.action_patch)
-            cand_res = PixelScriptEngine.execute(candidate_script, width=req.width, height=req.height, palette_name=pal)
-            cand_prog = PixelScriptParser.parse_text(candidate_script)
-            cand_report = repair_engine.inspect(cand_res, category=req.category, palette_name=pal, prog=cand_prog)
-            return {
-                "repaired_script": candidate_script,
-                "image_base64": cand_res.to_dict()["image_base64"],
-                "final_critic": cand_report,
-                "quality_score": cand_report["quality_score"],
-                "defects_count": cand_report["defects_count"],
-            }
-        else:
-            raise HTTPException(status_code=400, detail="Either auto_refine=True or action_patch must be provided.")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/api/critic/metrics")
-def get_critic_metrics() -> Dict[str, Any]:
-    res = {
-        "status": "ready",
-        "model_architecture": "NeuralVisualCritic (Residual2D + Heatmap Decoder)",
-        "parameter_count": 368044,
-        "classes": DEFECT_CLASSES,
-    }
-    metrics_path = Path("data/critic_metrics.json")
-    if metrics_path.exists():
-        try:
-            with open(metrics_path, "r", encoding="utf-8") as f:
-                res.update(json.load(f))
-        except Exception:
-            pass
-
-    eval_path = Path("data/benchmarks/critic_eval_results.json")
-    if eval_path.exists():
-        try:
-            with open(eval_path, "r", encoding="utf-8") as f:
-                res["evaluation_summary"] = json.load(f).get("summary", {})
-        except Exception:
-            pass
-
-    return res
-
-
-# --- Animation & Temporal Intelligence Endpoints ---
-@app.post("/api/animation/generate")
-def generate_animation(req: AnimationGenerateRequest) -> Dict[str, Any]:
-    try:
-        result = TemporalAnimator.generate_animation(
-            base_script_or_prompt=req.base_script or req.prompt or "",
-            category=req.category or "knight",
-            style=req.style or "classic_16bit",
-            anim_category=req.animation_category,
-            palette_name=req.palette or "pico8",
-            width=req.width,
-            height=req.height,
-            num_frames=req.num_frames,
-            fps=req.fps,
-            engine_mode=req.engine,
-            seed=req.seed,
-        )
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Animation generation failed: {str(e)}")
-
-
-@app.post("/api/animation/regenerate_frame")
-def regenerate_frame(req: RegenerateFrameRequest) -> Dict[str, Any]:
-    try:
-        full_anim = TemporalAnimator.generate_animation(
-            base_script_or_prompt=req.base_script,
-            category=req.category or "knight",
-            anim_category=req.animation_category,
-            palette_name=req.palette or "pico8",
-            num_frames=req.total_frames,
-            engine_mode=req.engine,
-            seed=req.seed,
-        )
-        frames = full_anim.get("frames", [])
-        if 0 <= req.frame_index < len(frames):
-            target_frame = frames[req.frame_index]
-        else:
-            target_frame = frames[0] if frames else {}
-
-        return {
-            "status": "success",
-            "frame_index": req.frame_index,
-            "engine_used": full_anim.get("engine_used"),
-            "frame": target_frame,
-            "animation_category": req.animation_category,
-            "identity_confidence": full_anim.get("identity_confidence"),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Frame regeneration failed: {str(e)}")
-
-
-@app.get("/api/animation/metrics")
-def get_animation_metrics() -> Dict[str, Any]:
-    res = {
-        "status": "ready",
-        "model_architecture": "TemporalSVAN (Visual Residual + Category/Anim Embeddings + GRU Recurrent Core)",
-        "parameter_count": 426395,
-        "supported_animation_categories": ANIMATION_CATEGORIES,
-        "supported_character_categories": CATEGORIES,
-    }
-    metrics_path = Path("data/temporal_metrics.json")
-    if metrics_path.exists():
-        try:
-            with open(metrics_path, "r", encoding="utf-8") as f:
-                res["training_metrics"] = json.load(f)
-        except Exception:
-            pass
-
-    benchmarks_path = Path("data/benchmarks/temporal_benchmark_results.json")
-    if benchmarks_path.exists():
-        try:
-            with open(benchmarks_path, "r", encoding="utf-8") as f:
-                res["benchmark_results"] = json.load(f)
-        except Exception:
-            pass
-
-    return res
-
-
-# --- Stage 5: Asset Catalog, Composition & Packaging Endpoints ---
-@app.get("/api/asset_catalog")
-def get_asset_catalog(category: Optional[str] = None) -> List[Dict[str, Any]]:
-    assets = AssetLibrary.list_all(category=category)
-    return [a.to_dict() for a in assets]
-
-
-@app.post("/api/composition/compose")
-def compose_asset(req: CompositionRequest) -> Dict[str, Any]:
-    try:
-        res = AssetComposer.compose(
-            character_asset_or_script=req.character_script or req.character_id or "character_player_soldier",
-            weapon_id=req.weapon_id,
-            helmet_id=req.helmet_id,
-            backpack_id=req.backpack_id,
-            fx_id=req.fx_id,
-            engine_mode=req.engine,
-            palette_name=req.palette,
-            width=req.width,
-            height=req.height,
-        )
-        return res
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Composition failed: {str(e)}")
-
-
-@app.post("/api/composition/animate")
-def animate_composition(req: CompositionAnimationRequest) -> Dict[str, Any]:
-    try:
-        res = AssetComposer.compose_animation(
-            character_asset_or_script=req.character_script or req.character_id or "character_zombie_walker",
-            animation_category=req.animation_category,
-            num_frames=req.num_frames,
-            fps=req.fps,
-            weapon_id=req.weapon_id,
-            helmet_id=req.helmet_id,
-            backpack_id=req.backpack_id,
-            fx_id=req.fx_id,
-            engine_mode=req.engine,
-            palette_name=req.palette,
-            width=req.width,
-            height=req.height,
-        )
-        return res
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Animated composition failed: {str(e)}")
-
-
-@app.post("/api/asset_pack/export_zip")
-def export_asset_pack(req: AssetPackExportRequest) -> Dict[str, Any]:
-    try:
-        if req.pack_type == "deadzone":
-            pack = AssetPack.create_deadzone_starter_pack()
-        else:
-            pack = AssetPack(
-                pack_id="pack_custom",
-                name=req.pack_name or "Custom Asset Pack",
-            )
-            for aid in req.asset_ids:
-                a = AssetLibrary.get(aid)
-                if a:
-                    pack.add_asset(a)
-
-        zip_bytes = pack.export_zip()
-        b64_zip = base64.b64encode(zip_bytes).decode("utf-8")
-        filename = f"{pack.pack_id}.zip"
-
-        return {
-            "status": "success",
-            "filename": filename,
-            "pack_name": pack.name,
-            "total_assets": len(pack.assets),
-            "zip_base64": f"data:application/zip;base64,{b64_zip}",
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Asset pack export failed: {str(e)}")
-
-
-@app.get("/api/composition/metrics")
-def get_composition_metrics() -> Dict[str, Any]:
-    res = {
-        "status": "ready",
-        "model_architecture": "SocketPredictor (Residual2D + Sigmoid Regressor)",
-        "parameter_count": 619432,
-        "supported_categories": ASSET_CATEGORIES,
-    }
-    metrics_path = Path("data/composition_metrics.json")
-    if metrics_path.exists():
-        try:
-            with open(metrics_path, "r", encoding="utf-8") as f:
-                res["training_metrics"] = json.load(f)
-        except Exception:
-            pass
-
-    benchmarks_path = Path("data/benchmarks/composition_benchmark_results.json")
-    if benchmarks_path.exists():
-        try:
-            with open(benchmarks_path, "r", encoding="utf-8") as f:
-                res["benchmark_results"] = json.load(f)
-        except Exception:
-            pass
-
-    return res
-
-
-# --- Asset Library Endpoints ---
-@app.get("/api/assets")
-def list_assets(query: Optional[str] = None) -> List[Dict[str, Any]]:
-    return asset_mgr.list_assets(query=query)
-
-
-@app.get("/api/assets/{asset_id}")
-def get_asset(asset_id: str) -> Dict[str, Any]:
-    asset = asset_mgr.get_asset(asset_id)
-    if not asset:
-        raise HTTPException(status_code=404, detail="Asset not found")
-    return asset
-
-
-@app.post("/api/assets")
-def save_asset(req: AssetSaveRequest) -> Dict[str, Any]:
-    return asset_mgr.save_asset(req.model_dump())
-
-
-@app.delete("/api/assets/{asset_id}")
-def delete_asset(asset_id: str) -> Dict[str, Any]:
-    try:
-        res = lifecycle_mgr.trash_asset(asset_id)
-        return {"status": "trashed", "id": asset_id, "trash_id": res["trash_id"]}
-    except FileNotFoundError:
-        success = asset_mgr.delete_asset(asset_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Asset not found")
-        return {"status": "deleted", "id": asset_id}
-    except ProtectedResourceException as e:
-        raise HTTPException(status_code=403, detail=str(e))
-
-
-# --- Storage Management & Lifecycle Endpoints ---
-@app.get("/api/storage/dashboard")
-def get_storage_dashboard() -> Dict[str, Any]:
-    """Returns storage dashboard statistics, classification breakdown, and health."""
-    return storage_db.get_storage_dashboard()
-
-
-@app.get("/api/storage/records")
-def get_storage_records(table: str = "storage_registry", query: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
-    """Inspects records in the database with optional search query."""
-    allowed_tables = ["storage_registry", "assets", "checkpoints", "datasets", "benchmarks", "trash", "audit_log"]
-    if table not in allowed_tables:
-        raise HTTPException(status_code=400, detail=f"Table must be one of {allowed_tables}")
-    records = storage_db.list_table_records(table_name=table, search_query=query, limit=limit)
-    return {
-        "table": table,
-        "count": len(records),
-        "records": records,
-    }
-
-
-@app.get("/api/storage/orphans")
-def get_storage_orphans() -> Dict[str, Any]:
-    """Identifies missing files and unindexed files on disk."""
-    return storage_db.find_orphans_and_missing()
-
-
-@app.post("/api/storage/sync")
-def sync_storage_registry() -> Dict[str, Any]:
-    """Rescans filesystem and synchronizes SQLite storage catalog."""
-    count = storage_db.sync_from_disk()
-    return {"status": "synced", "files_indexed": count}
-
-
-@app.get("/api/storage/trash")
-def list_trash() -> List[Dict[str, Any]]:
-    """Lists all items currently in the trash bin."""
-    return lifecycle_mgr.list_trash()
-
-
-@app.post("/api/storage/trash")
-def trash_asset_endpoint(req: TrashAssetRequest) -> Dict[str, Any]:
-    """Safely moves a user-generated asset to trash. Rejects protected resources."""
-    try:
-        return lifecycle_mgr.trash_asset(asset_id=req.asset_id, reason=req.reason)
-    except ProtectedResourceException as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-@app.post("/api/storage/restore")
-def restore_asset_endpoint(req: RestoreAssetRequest) -> Dict[str, Any]:
-    """Restores an item from trash back to active storage."""
-    try:
-        return lifecycle_mgr.restore_asset(trash_id=req.trash_id)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-@app.post("/api/storage/permanent_delete")
-def permanent_delete_endpoint(req: PermanentDeleteRequest) -> Dict[str, Any]:
-    """Permanently deletes an item from trash. Strictly requires confirm=True."""
-    try:
-        return lifecycle_mgr.permanent_delete(trash_id=req.trash_id, confirm=req.confirm)
-    except ProtectedResourceException as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except (FileNotFoundError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/api/storage/empty_trash")
-def empty_trash_endpoint(req: EmptyTrashRequest) -> Dict[str, Any]:
-    """Empties all eligible items from trash bin. Requires confirm=True."""
-    try:
-        return lifecycle_mgr.empty_trash(confirm=req.confirm)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/api/storage/cleanup_scan")
-def storage_cleanup_scan() -> Dict[str, Any]:
-    """Performs a non-destructive dry-run scan for disposable temporary files."""
-    return cleaner.scan()
-
-
-@app.post("/api/storage/cleanup_execute")
-def storage_cleanup_execute(req: CleanupExecuteRequest) -> Dict[str, Any]:
-    """Executes safe cleanup of verified temporary files. Requires confirm=True."""
-    try:
-        return cleaner.execute(confirm=req.confirm)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/api/storage/backup")
-def create_backup_endpoint(req: BackupCreateRequest) -> Dict[str, Any]:
-    """Creates a verified ZIP backup containing database catalog and metadata."""
-    return backup_mgr.create_backup(
-        backup_name=req.backup_name,
-        include_db=req.include_db,
-        include_benchmarks=req.include_benchmarks,
-        include_assets_meta=req.include_assets_meta,
-    )
-
-
-@app.get("/api/storage/backups")
-def list_backups_endpoint() -> List[Dict[str, Any]]:
-    """Lists all available ZIP backups."""
-    return backup_mgr.list_backups()
-
+for router in (
+    routers_core.router,
+    routers_sprites.router,
+    routers_training.router,
+    routers_critic.router,
+    routers_animation.router,
+    routers_assets.router,
+):
+    app.include_router(router)
 
 # Mount frontend build if directory exists
 possible_dist_paths = [
