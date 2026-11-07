@@ -51,6 +51,8 @@ class CharacterGenerator:
         proportion: Optional[str] = None,
         weapon: Optional[str] = None,
         accessory: Optional[str] = None,
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
     ) -> PixelScriptProgram:
         if seed is not None:
             rng = random.Random(seed + frame_idx * 1000)
@@ -78,6 +80,8 @@ class CharacterGenerator:
             "proportion": prop,
             "weapon": wep,
             "accessory": acc,
+            "colour": colour,
+            "element": element,
             "seed": seed or 0,
         }
 
@@ -146,6 +150,21 @@ class CharacterGenerator:
 
         cx = width // 2
         cy = height // 2
+
+        # Conditioned colour override: prompt words win over the category default ramp.
+        if colour or element:
+            from spritemind.dataset.conditioning import COLOUR_RGB, ELEMENT_RGB, ramp
+
+            tint = COLOUR_RGB.get(colour or "") or ELEMENT_RGB.get(element or "")
+            if tint is not None:
+                base, hi, shadow = ramp(palette_name, tint)
+                c_skin, c_skin_hi, c_cloth, c_pants = base, hi, base, shadow
+            if element and element in ELEMENT_RGB:
+                e_base, e_hi, _ = ramp(palette_name, ELEMENT_RGB[element])
+                c_eyes = e_hi
+                if not colour:
+                    c_skin, c_skin_hi = e_base, e_hi
+                    c_cloth = c_pants = e_base
 
         # Pose & animation offsets
         bob_y = 0

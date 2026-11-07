@@ -53,10 +53,10 @@ give the same distribution. This is the largest quality jump available.
   *How:* character-level embedding over the prompt → cross-attention (or a 4th memory token) into the decoder; keep a null-embedding path so existing checkpoints still load.
   *Done when:* colour-faithfulness rises materially at the same IoU, and the old checkpoint still runs through the fallback path.
 
-- [ ] **Conditioned corpus generator** — `M`
+- [x] **Conditioned corpus generator** — `M` ✓ #11 (`docs/PROMPT_CONDITIONING.md`, colour present 100%, element visible 100%)
+  *Done when:* a held-out probe shows the corpus itself is >90% faithful to its own prompt tags. **Met.**
   *Why:* the encoder is useless if the training data ignores the prompt.
   *How:* extend `ml/generator.py` so prompts carry colour, element (fire/ice/poison), weapon and armour tags, and the generated PixelScript actually uses them.
-  *Done when:* a held-out probe shows the corpus itself is >90% faithful to its own prompt tags.
 
 - [ ] **Element/weapon vocabulary in the DSL** — `M`
   *Why:* fire vs ice currently differ only by palette, so the model has nothing to learn.
@@ -162,6 +162,7 @@ give the same distribution. This is the largest quality jump available.
 | Seed determinism + cache-key coverage (`test_pipeline_determinism.py`) | #8 |
 | Colour-faithfulness metric in gate + benchmark (`faithfulness.py`) | #9 |
 | Golden-image regression set (10 categories, exact pixel diff) | #10 |
+| Prompt-conditioned corpus (colour/element tags, palette-aware mapping) | #11 |
 
 ---
 

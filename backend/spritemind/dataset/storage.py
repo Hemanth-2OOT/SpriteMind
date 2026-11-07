@@ -13,10 +13,15 @@ from spritemind.dataset.generator import (
     WEAPONS,
     ACCESSORIES,
 )
+from spritemind.dataset.conditioning import ELEMENT_RGB, describe, renderable_colours
 from spritemind.dataset.defects import DefectGenerator
 from spritemind.renderer.engine import PixelScriptEngine
 from spritemind.renderer.export import array_to_base64
 from spritemind.pixelscript.serializer import PixelScriptSerializer
+
+
+COLOUR_NAMES = renderable_colours("pico8")
+ELEMENT_NAMES = sorted(ELEMENT_RGB)
 
 
 class DatasetManager:
@@ -62,6 +67,10 @@ class DatasetManager:
                 prop = rng.choice(PROPORTIONS)
                 wep = rng.choice(WEAPONS)
                 acc = rng.choice(ACCESSORIES)
+                roll = rng.random()
+                colour = rng.choice(COLOUR_NAMES) if roll < 0.6 else None
+                element = rng.choice(ELEMENT_NAMES) if roll >= 0.75 else None
+                prompt = describe(cat, colour=colour, element=element, weapon=wep if wep != "none" else None)
 
                 # Character identity archetype seed (distinct character archetype)
                 # i // 5 groups 5 variations/poses of the same character identity together
@@ -89,6 +98,8 @@ class DatasetManager:
                     proportion=prop,
                     weapon=wep,
                     accessory=acc,
+                    colour=colour,
+                    element=element,
                 )
 
                 # Defect injection
@@ -112,6 +123,9 @@ class DatasetManager:
                     "style": style,
                     "pose": pose,
                     "proportion": prop,
+                    "prompt": prompt,
+                    "colour": colour,
+                    "element": element,
                     "weapon": wep,
                     "accessory": acc,
                     "has_defect": has_defect,
