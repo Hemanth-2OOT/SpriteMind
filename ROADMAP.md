@@ -64,7 +64,11 @@ give the same distribution. This is the largest quality jump available.
   *Why:* the encoder is useless if the training data ignores the prompt.
   *How:* extend `ml/generator.py` so prompts carry colour, element (fire/ice/poison), weapon and armour tags, and the generated PixelScript actually uses them.
 
-- [ ] **Element/weapon vocabulary in the DSL** — `M`
+- [x] **Element vocabulary in the DSL** — `M` ✓ #25 (`docs/PIXELSCRIPT_GRAMMAR.md`, `AURA`)
+  *Done:* the `AURA` primitive (dithered halo, `density` 1–4) is emitted for elemental prompts and
+  tinted from `ELEMENT_RGB`; tokenizer vocab 403 → 404; colour/element ids ride along as SVAN
+  embeddings. Weapon nouns are parsed (`WEAPON_WORDS`) but not yet rendered — see P5.
+- [ ] **Weapon vocabulary in the DSL** — `M`
   *Why:* fire vs ice currently differ only by palette, so the model has nothing to learn.
   *How:* new primitives or a parameterised `AURA`/`WEAPON` action in the grammar, plus tokenizer entries (renumber tokens again — bump `vocab` and retrain; see the grammar-v2 note on incompatibility).
   *Done when:* `docs/PIXELSCRIPT_GRAMMAR.md` documents them and the validator accepts them.
@@ -93,12 +97,17 @@ give the same distribution. This is the largest quality jump available.
 
 ## P3 — Animation and action sets
 
-- [ ] **Retrain TemporalSVAN on grammar-v2 sequences with clean-rate gating** — `M`
+- [x] **Retrain TemporalSVAN on grammar-v2 sequences with clean-rate gating** — `M` ✓ #25 (`docs/MODEL_TUNING.md`)
+  *Done:* `data/temporal_dataset_gv2` (2,400 sequences, 1,931/469) regenerated from the current
+  generator, 80 epochs, best val 3.2831; the previous checkpoint could not load at all (18 vs 20
+  animation classes), so this restores animation quality rather than only improving it.
   *Why:* best val loss 3.1834 means motion is effectively procedural today; attacks and dashes are the weakest visual output.
   *How:* regenerate the temporal dataset from gv2 scripts, train, and accept a checkpoint only if coherence islands stay at zero and the critic clean rate does not fall.
   *Done when:* a side-by-side action-set render shows improved limb continuity versus the current checkpoint at the same seed.
 
-- [ ] **Sprite-sheet / atlas export in Action Sets** — `M`
+- [x] **Sprite-sheet / atlas export in Action Sets** — `M` ✓ #25 (`docs/ACTION_SETS.md`, `POST /api/export/sheet`)
+  *Done:* one animation per row with per-action `row`/`frames` metadata, uniform frame size enforced
+  (HTTP 400 otherwise), PNG + atlas JSON downloaded from the Action Sets page.
   *Why:* game engines want one atlas plus JSON, not four separate downloads.
   *How:* pack frames into a horizontal sheet with uniform padding, emit a JSON frame map (`name`, `x`, `y`, `w`, `h`, `duration`), offer PNG + Aseprite JSON.
   *Done when:* the exported pair loads in Aseprite and in a sample pygame loader script in `docs/`.
@@ -127,7 +136,9 @@ give the same distribution. This is the largest quality jump available.
   **Met:** the Model Lab shows every category weakest first with score bars; on the current 100-prompt run wizard is
   weakest at 64.2 and the mean is 65.38.
 
-- [ ] **Expanded benchmark suite (300 prompts)** — `M`
+- [x] **Expanded benchmark suite (300 prompts)** — `M` ✓ #25 (`data/benchmarks/benchmark_results.json`)
+  *Done:* 100 curated + 200 generated prompts at a fixed seed, mean ± standard error for every
+  metric; the README block reports 0.503 ± 0.002 IoU and colour faithfulness 15.0%.
   *Why:* 100 prompts make a 1-point IoU change statistically meaningless.
   *How:* extend `data/benchmarks/generalization_prompts.json`, report mean ± standard error, keep the runtime under 5 minutes.
   *Done when:* confidence intervals are reported in the README metrics block.
@@ -196,7 +207,11 @@ and UI, latency percentiles, inter-frame continuity, onion-skin export, the per-
 card, prompt history and the docs index. That work is all `S`/`M` items with objective pass
 criteria, and each one shipped with tests.
 
-What is left is deliberately not in that category. Ranked by what would change the product most:
+What is left is deliberately not in that category. Ranked by what would change the product most.
+
+*Status after #25:* items 1, 2 and the temporal half of item 4 are shipped. What remains is the
+prompt-text-encoder retrain (now unblocked — the corpus finally carries colour and element ids),
+the human-rated set, ONNX export and the batch/pack product surface.
 
 1. **Prompt text encoder in SVAN** (`L`, encoder shipped #24, retrain blocked) — the only remaining
    real capability gap. The encoder exists and is measurable now, but a one-epoch retrain changed

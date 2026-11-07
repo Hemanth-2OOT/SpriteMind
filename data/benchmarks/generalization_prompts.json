@@ -798,5 +798,1605 @@
     "style": "retro_8bit",
     "pose": "idle",
     "palette": "pico8"
+  },
+  {
+    "id": "bench_101",
+    "prompt": "A hulking indigo frost-crackling rogue pacing the hall",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_102",
+    "prompt": "A slim red skeleton dashing across the yard",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_103",
+    "prompt": "A tiny gray flame-crackling rogue standing ready",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_104",
+    "prompt": "A tiny crimson goblin slumping backwards",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_105",
+    "prompt": "A stout yellow toxic-crackling zombie lunging forward",
+    "category": "zombie",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_106",
+    "prompt": "A graceful red knight lunging forward",
+    "category": "knight",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_107",
+    "prompt": "A stout yellow fire-crackling fantasy creature patrolling the ruins",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_108",
+    "prompt": "A stout golden wizard falling apart in a heap",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_109",
+    "prompt": "A towering orange poison-crackling rogue unleashing a strike",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_110",
+    "prompt": "A stout scarlet fantasy creature charging downhill",
+    "category": "fantasy_creature",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_111",
+    "prompt": "A stout black ice-crackling fantasy creature falling apart in a heap",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_112",
+    "prompt": "A slim lime rogue watching the horizon",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_113",
+    "prompt": "A towering brown fire-crackling skeleton charging downhill",
+    "category": "skeleton",
+    "style": "retro_8bit",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_114",
+    "prompt": "A hulking magenta knight lunging forward",
+    "category": "knight",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_115",
+    "prompt": "A lean magenta flame-crackling fantasy creature dashing across the yard",
+    "category": "fantasy_creature",
+    "style": "retro_8bit",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_116",
+    "prompt": "A graceful gold knight patrolling the ruins",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_117",
+    "prompt": "A towering indigo toxic-crackling goblin dashing across the yard",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_118",
+    "prompt": "A stout teal skeleton lunging forward",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_119",
+    "prompt": "A graceful indigo lightning-crackling knight guarding a narrow pass",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_120",
+    "prompt": "A stout lime fantasy creature lunging forward",
+    "category": "fantasy_creature",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_121",
+    "prompt": "A towering tan lightning-crackling wizard slumping backwards",
+    "category": "wizard",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_122",
+    "prompt": "A hulking white rogue standing ready",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_123",
+    "prompt": "A lean yellow thunder-crackling slime collapsing to its knees",
+    "category": "slime",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_124",
+    "prompt": "A lean grey wizard patrolling the ruins",
+    "category": "wizard",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_125",
+    "prompt": "A towering gray poison-crackling goblin trudging down a wet road",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_126",
+    "prompt": "A stout white goblin dashing across the yard",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_127",
+    "prompt": "A hulking purple lightning-crackling fantasy creature charging downhill",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_128",
+    "prompt": "A lean red animal mid-swing of a heavy blow",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_129",
+    "prompt": "A graceful brown lightning-crackling skeleton slumping backwards",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_130",
+    "prompt": "A slim indigo goblin lunging forward",
+    "category": "goblin",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_131",
+    "prompt": "A slim cyan ice-crackling robot falling apart in a heap",
+    "category": "robot",
+    "style": "flat",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_132",
+    "prompt": "A slim purple wizard pacing the hall",
+    "category": "wizard",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_133",
+    "prompt": "A towering teal flame-crackling animal unleashing a strike",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_134",
+    "prompt": "A stout lime wizard dashing across the yard",
+    "category": "wizard",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_135",
+    "prompt": "A stout azure flame-crackling animal guarding a narrow pass",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_136",
+    "prompt": "A tiny magenta robot standing ready",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_137",
+    "prompt": "A graceful teal frost-crackling slime collapsing to its knees",
+    "category": "slime",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_138",
+    "prompt": "A hulking indigo fantasy creature mid-swing of a heavy blow",
+    "category": "fantasy_creature",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_139",
+    "prompt": "A graceful golden flame-crackling goblin mid-swing of a heavy blow",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_140",
+    "prompt": "A slim purple skeleton mid-swing of a heavy blow",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_141",
+    "prompt": "A hulking brown flame-crackling wizard slumping backwards",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "death",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_142",
+    "prompt": "A slim turquoise robot sprinting from danger",
+    "category": "robot",
+    "style": "flat",
+    "pose": "run",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_143",
+    "prompt": "A slim black lightning-crackling wizard pacing the hall",
+    "category": "wizard",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_144",
+    "prompt": "A graceful pink goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_145",
+    "prompt": "A slim tan toxic-crackling animal unleashing a strike",
+    "category": "animal",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_146",
+    "prompt": "A slim azure wizard watching the horizon",
+    "category": "wizard",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_147",
+    "prompt": "A slim violet thunder-crackling slime standing ready",
+    "category": "slime",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_148",
+    "prompt": "A lean magenta wizard unleashing a strike",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_149",
+    "prompt": "A lean orange frost-crackling rogue mid-swing of a heavy blow",
+    "category": "rogue",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_150",
+    "prompt": "A hulking blue fantasy creature watching the horizon",
+    "category": "fantasy_creature",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_151",
+    "prompt": "A slim white ice-crackling rogue guarding a narrow pass",
+    "category": "rogue",
+    "style": "classic_16bit",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_152",
+    "prompt": "A slim lime wizard guarding a narrow pass",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_153",
+    "prompt": "A stout emerald thunder-crackling knight patrolling the ruins",
+    "category": "knight",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_154",
+    "prompt": "A tiny brown skeleton pacing the hall",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_155",
+    "prompt": "A hulking azure toxic-crackling rogue pacing the hall",
+    "category": "rogue",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_156",
+    "prompt": "A graceful brown rogue collapsing to its knees",
+    "category": "rogue",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_157",
+    "prompt": "A tiny turquoise thunder-crackling robot trudging down a wet road",
+    "category": "robot",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_158",
+    "prompt": "A hulking scarlet rogue slumping backwards",
+    "category": "rogue",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_159",
+    "prompt": "A tiny cyan flame-crackling slime slumping backwards",
+    "category": "slime",
+    "style": "dark_fantasy",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_160",
+    "prompt": "A stout lime fantasy creature watching the horizon",
+    "category": "fantasy_creature",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_161",
+    "prompt": "A slim brown flame-crackling knight lunging forward",
+    "category": "knight",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_162",
+    "prompt": "A lean silver knight unleashing a strike",
+    "category": "knight",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_163",
+    "prompt": "A stout magenta toxic-crackling zombie pacing the hall",
+    "category": "zombie",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_164",
+    "prompt": "A towering magenta goblin sprinting from danger",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_165",
+    "prompt": "A slim yellow toxic-crackling rogue charging downhill",
+    "category": "rogue",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_166",
+    "prompt": "A towering indigo fantasy creature patrolling the ruins",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_167",
+    "prompt": "A slim gold frost-crackling skeleton lunging forward",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_168",
+    "prompt": "A stout white animal pacing the hall",
+    "category": "animal",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_169",
+    "prompt": "A graceful gray ice-crackling zombie watching the horizon",
+    "category": "zombie",
+    "style": "retro_8bit",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_170",
+    "prompt": "A towering yellow fantasy creature sprinting from danger",
+    "category": "fantasy_creature",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_171",
+    "prompt": "A tiny amber flame-crackling knight sprinting from danger",
+    "category": "knight",
+    "style": "flat",
+    "pose": "run",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_172",
+    "prompt": "A hulking pink zombie lunging forward",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_173",
+    "prompt": "A tiny lime thunder-crackling goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_174",
+    "prompt": "A graceful black animal patrolling the ruins",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_175",
+    "prompt": "A hulking emerald fire-crackling knight trudging down a wet road",
+    "category": "knight",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_176",
+    "prompt": "A lean purple robot trudging down a wet road",
+    "category": "robot",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_177",
+    "prompt": "A lean emerald poison-crackling animal trudging down a wet road",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_178",
+    "prompt": "A slim blue skeleton mid-swing of a heavy blow",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_179",
+    "prompt": "A towering grey frost-crackling zombie falling apart in a heap",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_180",
+    "prompt": "A lean magenta fantasy creature lunging forward",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_181",
+    "prompt": "A tiny pink ice-crackling rogue trudging down a wet road",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_182",
+    "prompt": "A lean tan knight watching the horizon",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_183",
+    "prompt": "A slim brown frost-crackling goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_184",
+    "prompt": "A hulking purple wizard trudging down a wet road",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_185",
+    "prompt": "A stout silver frost-crackling goblin sprinting from danger",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_186",
+    "prompt": "A hulking gold animal mid-swing of a heavy blow",
+    "category": "animal",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_187",
+    "prompt": "A graceful amber ice-crackling wizard falling apart in a heap",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_188",
+    "prompt": "A graceful magenta rogue guarding a narrow pass",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_189",
+    "prompt": "A hulking pink ice-crackling skeleton trudging down a wet road",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_190",
+    "prompt": "A hulking crimson rogue pacing the hall",
+    "category": "rogue",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_191",
+    "prompt": "A tiny grey thunder-crackling rogue standing ready",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_192",
+    "prompt": "A tiny cyan goblin mid-swing of a heavy blow",
+    "category": "goblin",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_193",
+    "prompt": "A tiny white lightning-crackling zombie sprinting from danger",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_194",
+    "prompt": "A tiny golden wizard mid-swing of a heavy blow",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_195",
+    "prompt": "A graceful gold ice-crackling knight falling apart in a heap",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_196",
+    "prompt": "A graceful violet goblin slumping backwards",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_197",
+    "prompt": "A towering green poison-crackling skeleton charging downhill",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_198",
+    "prompt": "A slim lime knight watching the horizon",
+    "category": "knight",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_199",
+    "prompt": "A slim black flame-crackling knight mid-swing of a heavy blow",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_200",
+    "prompt": "A lean tan skeleton sprinting from danger",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_201",
+    "prompt": "A stout emerald poison-crackling rogue mid-swing of a heavy blow",
+    "category": "rogue",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_202",
+    "prompt": "A graceful magenta skeleton slumping backwards",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_203",
+    "prompt": "A tiny gold ice-crackling slime collapsing to its knees",
+    "category": "slime",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_204",
+    "prompt": "A slim turquoise wizard guarding a narrow pass",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_205",
+    "prompt": "A hulking gray poison-crackling knight patrolling the ruins",
+    "category": "knight",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_206",
+    "prompt": "A hulking emerald wizard charging downhill",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_207",
+    "prompt": "A hulking green flame-crackling zombie pacing the hall",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_208",
+    "prompt": "A lean black wizard falling apart in a heap",
+    "category": "wizard",
+    "style": "flat",
+    "pose": "death",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_209",
+    "prompt": "A hulking magenta poison-crackling skeleton trudging down a wet road",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_210",
+    "prompt": "A tiny green robot mid-swing of a heavy blow",
+    "category": "robot",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_211",
+    "prompt": "A slim orange flame-crackling fantasy creature slumping backwards",
+    "category": "fantasy_creature",
+    "style": "classic_16bit",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_212",
+    "prompt": "A lean emerald skeleton collapsing to its knees",
+    "category": "skeleton",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_213",
+    "prompt": "A hulking gray thunder-crackling zombie trudging down a wet road",
+    "category": "zombie",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_214",
+    "prompt": "A hulking green wizard standing ready",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_215",
+    "prompt": "A stout lime thunder-crackling animal slumping backwards",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_216",
+    "prompt": "A towering blue goblin standing ready",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_217",
+    "prompt": "A tiny crimson poison-crackling rogue unleashing a strike",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_218",
+    "prompt": "A tiny indigo knight mid-swing of a heavy blow",
+    "category": "knight",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_219",
+    "prompt": "A lean grey toxic-crackling slime standing ready",
+    "category": "slime",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_220",
+    "prompt": "A lean teal rogue sprinting from danger",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_221",
+    "prompt": "A hulking violet lightning-crackling zombie mid-swing of a heavy blow",
+    "category": "zombie",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_222",
+    "prompt": "A hulking amber animal lunging forward",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_223",
+    "prompt": "A stout orange thunder-crackling zombie unleashing a strike",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_224",
+    "prompt": "A graceful magenta rogue falling apart in a heap",
+    "category": "rogue",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_225",
+    "prompt": "A lean cyan fire-crackling rogue pacing the hall",
+    "category": "rogue",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_226",
+    "prompt": "A hulking teal animal trudging down a wet road",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_227",
+    "prompt": "A slim gold frost-crackling robot charging downhill",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_228",
+    "prompt": "A stout blue zombie unleashing a strike",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_229",
+    "prompt": "A towering green lightning-crackling fantasy creature collapsing to its knees",
+    "category": "fantasy_creature",
+    "style": "flat",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_230",
+    "prompt": "A hulking brown robot standing ready",
+    "category": "robot",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_231",
+    "prompt": "A tiny emerald toxic-crackling wizard charging downhill",
+    "category": "wizard",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_232",
+    "prompt": "A tiny emerald skeleton collapsing to its knees",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "death",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_233",
+    "prompt": "A tiny yellow frost-crackling animal unleashing a strike",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_234",
+    "prompt": "A tiny tan skeleton standing ready",
+    "category": "skeleton",
+    "style": "retro_8bit",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_235",
+    "prompt": "A hulking black toxic-crackling animal collapsing to its knees",
+    "category": "animal",
+    "style": "dark_fantasy",
+    "pose": "death",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_236",
+    "prompt": "A hulking black robot standing ready",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_237",
+    "prompt": "A towering green fire-crackling goblin pacing the hall",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_238",
+    "prompt": "A graceful azure goblin watching the horizon",
+    "category": "goblin",
+    "style": "classic_16bit",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_239",
+    "prompt": "A slim gray frost-crackling wizard mid-swing of a heavy blow",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_240",
+    "prompt": "A graceful orange knight standing ready",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_241",
+    "prompt": "A graceful turquoise frost-crackling skeleton watching the horizon",
+    "category": "skeleton",
+    "style": "retro_8bit",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_242",
+    "prompt": "A graceful black zombie guarding a narrow pass",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_243",
+    "prompt": "A lean teal toxic-crackling wizard patrolling the ruins",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_244",
+    "prompt": "A graceful purple fantasy creature charging downhill",
+    "category": "fantasy_creature",
+    "style": "retro_8bit",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_245",
+    "prompt": "A slim emerald toxic-crackling fantasy creature sprinting from danger",
+    "category": "fantasy_creature",
+    "style": "flat",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_246",
+    "prompt": "A slim white skeleton dashing across the yard",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_247",
+    "prompt": "A hulking black flame-crackling skeleton dashing across the yard",
+    "category": "skeleton",
+    "style": "flat",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_248",
+    "prompt": "A slim lime goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_249",
+    "prompt": "A slim brown flame-crackling rogue sprinting from danger",
+    "category": "rogue",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_250",
+    "prompt": "A towering emerald animal dashing across the yard",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_251",
+    "prompt": "A graceful green thunder-crackling robot pacing the hall",
+    "category": "robot",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_252",
+    "prompt": "A stout blue zombie dashing across the yard",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_253",
+    "prompt": "A slim brown lightning-crackling goblin slumping backwards",
+    "category": "goblin",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_254",
+    "prompt": "A slim azure wizard lunging forward",
+    "category": "wizard",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_255",
+    "prompt": "A hulking amber thunder-crackling goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_256",
+    "prompt": "A towering orange slime unleashing a strike",
+    "category": "slime",
+    "style": "retro_8bit",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_257",
+    "prompt": "A slim white poison-crackling animal trudging down a wet road",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_258",
+    "prompt": "A lean black slime charging downhill",
+    "category": "slime",
+    "style": "flat",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_259",
+    "prompt": "A stout white frost-crackling skeleton sprinting from danger",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_260",
+    "prompt": "A towering tan knight dashing across the yard",
+    "category": "knight",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_261",
+    "prompt": "A towering tan lightning-crackling slime mid-swing of a heavy blow",
+    "category": "slime",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_262",
+    "prompt": "A lean turquoise robot charging downhill",
+    "category": "robot",
+    "style": "flat",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_263",
+    "prompt": "A stout lime poison-crackling animal lunging forward",
+    "category": "animal",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_264",
+    "prompt": "A tiny white robot watching the horizon",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_265",
+    "prompt": "A lean gold ice-crackling goblin collapsing to its knees",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_266",
+    "prompt": "A tiny blue robot sprinting from danger",
+    "category": "robot",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_267",
+    "prompt": "A slim teal ice-crackling robot standing ready",
+    "category": "robot",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_268",
+    "prompt": "A lean white knight unleashing a strike",
+    "category": "knight",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_269",
+    "prompt": "A lean golden frost-crackling knight slumping backwards",
+    "category": "knight",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_270",
+    "prompt": "A lean lime zombie watching the horizon",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_271",
+    "prompt": "A slim yellow flame-crackling zombie falling apart in a heap",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "dawnbringer16"
+  },
+  {
+    "id": "bench_272",
+    "prompt": "A stout teal wizard dashing across the yard",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_273",
+    "prompt": "A stout blue ice-crackling animal sprinting from danger",
+    "category": "animal",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_274",
+    "prompt": "A graceful cyan zombie patrolling the ruins",
+    "category": "zombie",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_275",
+    "prompt": "A lean yellow ice-crackling skeleton collapsing to its knees",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_276",
+    "prompt": "A hulking azure goblin charging downhill",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "run",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_277",
+    "prompt": "A lean scarlet thunder-crackling zombie sprinting from danger",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_278",
+    "prompt": "A hulking gray robot watching the horizon",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_279",
+    "prompt": "A slim blue poison-crackling fantasy creature falling apart in a heap",
+    "category": "fantasy_creature",
+    "style": "cyberpunk",
+    "pose": "death",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_280",
+    "prompt": "A tiny gold robot sprinting from danger",
+    "category": "robot",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_281",
+    "prompt": "A slim gold thunder-crackling wizard guarding a narrow pass",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_282",
+    "prompt": "A graceful turquoise zombie standing ready",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_283",
+    "prompt": "A hulking indigo thunder-crackling zombie falling apart in a heap",
+    "category": "zombie",
+    "style": "flat",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_284",
+    "prompt": "A graceful magenta goblin patrolling the ruins",
+    "category": "goblin",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_285",
+    "prompt": "A towering amber lightning-crackling rogue unleashing a strike",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_286",
+    "prompt": "A hulking brown skeleton pacing the hall",
+    "category": "skeleton",
+    "style": "dark_fantasy",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_287",
+    "prompt": "A lean indigo flame-crackling wizard charging downhill",
+    "category": "wizard",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_288",
+    "prompt": "A lean teal slime sprinting from danger",
+    "category": "slime",
+    "style": "classic_16bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_289",
+    "prompt": "A tiny magenta fire-crackling skeleton unleashing a strike",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_290",
+    "prompt": "A tiny grey robot standing ready",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_291",
+    "prompt": "A stout pink lightning-crackling skeleton charging downhill",
+    "category": "skeleton",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_292",
+    "prompt": "A stout brown animal falling apart in a heap",
+    "category": "animal",
+    "style": "retro_8bit",
+    "pose": "death",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_293",
+    "prompt": "A stout azure lightning-crackling slime mid-swing of a heavy blow",
+    "category": "slime",
+    "style": "flat",
+    "pose": "attack",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_294",
+    "prompt": "A hulking black skeleton mid-swing of a heavy blow",
+    "category": "skeleton",
+    "style": "dark_fantasy",
+    "pose": "attack",
+    "palette": "pico8"
+  },
+  {
+    "id": "bench_295",
+    "prompt": "A slim grey poison-crackling goblin pacing the hall",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_296",
+    "prompt": "A tiny blue slime charging downhill",
+    "category": "slime",
+    "style": "cyberpunk",
+    "pose": "run",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_297",
+    "prompt": "A tiny lime ice-crackling knight trudging down a wet road",
+    "category": "knight",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "endesga32"
+  },
+  {
+    "id": "bench_298",
+    "prompt": "A lean pink wizard charging downhill",
+    "category": "wizard",
+    "style": "retro_8bit",
+    "pose": "run",
+    "palette": "gameboy"
+  },
+  {
+    "id": "bench_299",
+    "prompt": "A stout amber ice-crackling zombie pacing the hall",
+    "category": "zombie",
+    "style": "flat",
+    "pose": "walk",
+    "palette": "cyberpunk"
+  },
+  {
+    "id": "bench_300",
+    "prompt": "A towering yellow knight watching the horizon",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "idle",
+    "palette": "cyberpunk"
   }
 ]

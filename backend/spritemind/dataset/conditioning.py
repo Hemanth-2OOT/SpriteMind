@@ -58,6 +58,21 @@ ELEMENT_RGB: Dict[str, RGB] = {
     "thunder": (255, 240, 90),
 }
 
+#: Model-facing ids: 0 means "no colour/element requested", ids follow a stable alphabetical order.
+COLOUR_IDS: Dict[str, int] = {name: i + 1 for i, name in enumerate(sorted(COLOUR_RGB))}
+ELEMENT_IDS: Dict[str, int] = {name: i + 1 for i, name in enumerate(sorted(ELEMENT_RGB))}
+NUM_COLOUR_IDS = len(COLOUR_IDS) + 1
+NUM_ELEMENT_IDS = len(ELEMENT_IDS) + 1
+
+
+def colour_id(name: Optional[str]) -> int:
+    return COLOUR_IDS.get(str(name).lower(), 0) if name else 0
+
+
+def element_id(name: Optional[str]) -> int:
+    return ELEMENT_IDS.get(str(name).lower(), 0) if name else 0
+
+
 WEAPON_WORDS = tuple(WEAPONS)
 ACCESSORY_WORDS = tuple(ACCESSORIES)
 
@@ -182,9 +197,13 @@ def describe(category: str, colour: Optional[str] = None, element: Optional[str]
 
 
 def element_hue_matches(element: str, rgba_pixels, palette_name: str = "pico8") -> float:
-    """Share of opaque pixels that carry the element's palette tint."""
+    """Share of opaque pixels that carry the element's palette tint.
+
+    Accepts either a flat sequence of (r, g, b, a) tuples or an (h, w, 4) array.
+    """
     if element not in ELEMENT_RGB:
         return 0.0
+    rgba_pixels = np.asarray(rgba_pixels).reshape(-1, 4)
     entry = PALETTES.get(palette_name, PALETTES["pico8"])[ramp(palette_name, ELEMENT_RGB[element])[0]][:3]
     total = matched = 0
     for r, g, b, a in rgba_pixels:

@@ -32,17 +32,22 @@ def test_batch_sampling_is_deterministic_for_a_seed(pipeline):
     assert _candidates(pipeline, 4, seed=23) == _candidates(pipeline, 4, seed=23)
 
 
-def test_best_of_never_scores_worse_than_a_single_candidate(pipeline):
-    def best_score(best_of):
-        scores = []
-        for tokens in _candidates(pipeline, best_of, seed=31):
-            from spritemind.pixelscript.ast import PixelScriptProgram
+def _best_score(pipeline, best_of, seed):
+    from spritemind.pixelscript.ast import PixelScriptProgram
 
-            prog = PixelScriptProgram(actions=pipeline.tokenizer.decode_tokens(tokens))
-            scores.append(pipeline._score_candidate(prog, "pico8", 32, 32))
-        return max(scores)
+    scores = [
+        pipeline._score_candidate(PixelScriptProgram(actions=pipeline.tokenizer.decode_tokens(tokens)), "pico8", 32, 32)
+        for tokens in _candidates(pipeline, best_of, seed=seed)
+    ]
+    return max(scores)
 
-    assert best_score(4) >= best_score(1)
+
+def test_best_of_raises_the_score_a_single_candidate_reaches(pipeline):
+    # Batched decoding is not bit-identical to a batch of one, so compare means over seeds.
+    seeds = (31, 32, 33, 34, 35)
+    mean_four = sum(_best_score(pipeline, 4, s) for s in seeds) / len(seeds)
+    mean_one = sum(_best_score(pipeline, 1, s) for s in seeds) / len(seeds)
+    assert mean_four > mean_one
 
 
 def test_trained_generation_accepts_best_of(pipeline):

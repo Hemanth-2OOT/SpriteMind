@@ -138,3 +138,63 @@ def compose_onion_skin(
         canvas.alpha_composite(Image.fromarray(_with_alpha(frames[index + 1], next_alpha), mode="RGBA"))
     canvas.alpha_composite(Image.fromarray(frames[index], mode="RGBA"))
     return array_to_image(np.array(canvas), scale)
+
+
+def export_action_sheet(
+    actions: Dict[str, List[np.ndarray]],
+    scale: int = 1,
+    padding: int = 1,
+    max_columns: int = 12,
+) -> Tuple[bytes, Dict[str, Any]]:
+    """Packs one row per animation into a single sprite-sheet PNG plus atlas metadata.
+
+    `actions` maps an animation name to its ordered frames. Each row is left-aligned and
+    padded to the widest animation, so an engine can slice the sheet with the returned
+    `frame_width`/`frame_height` and the per-action `row`/`frames` pair alone.
+    """
+    rows = [(name, frames) for name, frames in actions.items() if frames]
+    if not rows:
+        raise ValueError("No frames provided for action sheet export")
+
+    heights = {frames[0].shape[0] for _, frames in rows}
+    widths = {frames[0].shape[1] for _, frames in rows}
+    if len(heights) != 1 or len(widths) != 1:
+        raise ValueError("All frames in an action sheet must share one frame size")
+    frame_h = heights.pop() * scale
+    frame_w = widths.pop() * scale
+
+    columns = min(max_columns, max(len(frames) for _, frames in rows))
+    sheet_w = columns * frame_w + (columns - 1) * padding
+    sheet_h = len(rows) * frame_h + (len(rows) - 1) * padding
+    sheet = Image.new("RGBA", (sheet_w, sheet_h), (0, 0, 0, 0))
+
+    action_meta: List[Dict[str, Any]] = []
+    for row_index, (name, frames) in enumerate(rows):
+        if len(frames) > columns:
+            raise ValueError(f"Animation '{name}' has {len(frames)} frames, more than {columns} columns")
+        y = row_index * (frame_h + padding)
+        for column, frame in enumerate(frames):
+            sheet.paste(array_to_image(frame, scale), (column * (frame_w + padding), y))
+        action_meta.append({
+            "name": name,
+            "row": row_index,
+            "y": y,
+            "frames": len(frames),
+            "x": 0,
+            "width": len(frames) * (frame_w + padding) - padding,
+            "height": frame_h,
+        })
+
+    buffer = io.BytesIO()
+    sheet.save(buffer, format="PNG")
+    metadata = {
+        "width": sheet_w,
+        "height": sheet_h,
+        "frame_width": frame_w,
+        "frame_height": frame_h,
+        "padding": padding,
+        "columns": columns,
+        "scale": scale,
+        "actions": action_meta,
+    }
+    return buffer.getvalue(), metadata

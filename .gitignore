@@ -42,6 +42,7 @@ data/datasets/gv2_synthetic_25k/
 data/datasets/gv2_synthetic_25k_mixed/
 data/gv2_synthetic_dataset.json
 data/temporal_dataset_4k/
+data/temporal_dataset_gv2/
 
 # Local secrets and editor/OS noise
 .env
@@ -55,3 +56,5 @@ start.local.ps1
 # Agent workspace notes
 .openhands/
 data/datasets/gv2_critic/
+data/datasets/element_synthetic_20k/
+data/element_synthetic_dataset.json

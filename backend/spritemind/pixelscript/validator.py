@@ -131,7 +131,7 @@ class PixelScriptValidator:
                 elif target_part not in defined_parts:
                     warnings.append(f"{line_ref}: TRANSFORM target part '{target_part}' not yet defined")
 
-            elif action.action_type in (ActionType.OUTLINE, ActionType.SHADE):
+            elif action.action_type in (ActionType.OUTLINE, ActionType.SHADE, ActionType.AURA):
                 x, y, w, h = p.get("x"), p.get("y"), p.get("w"), p.get("h")
                 if any(v is None for v in (x, y, w, h)):
                     errors.append(f"{line_ref}: {action.action_type.value} missing region params")
@@ -146,6 +146,9 @@ class PixelScriptValidator:
                     has_error = True
                 if action.action_type == ActionType.SHADE and p.get("direction") not in (0, 1, 2, 3):
                     errors.append(f"{line_ref}: SHADE direction must be 0..3")
+                    has_error = True
+                if action.action_type == ActionType.AURA and p.get("density", 2) not in (1, 2, 3, 4):
+                    errors.append(f"{line_ref}: AURA density must be 1..4")
                     has_error = True
 
             if has_error:

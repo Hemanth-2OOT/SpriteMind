@@ -169,6 +169,16 @@ class PixelScriptEngine:
                 direction=int(p.get("direction", 1)),
             )
 
+        elif t == ActionType.AURA:
+            canvas.aura_rect(
+                int(p["x"]),
+                int(p["y"]),
+                int(p["w"]),
+                int(p["h"]),
+                p["color"],
+                density=int(p.get("density", 2)),
+            )
+
         elif t == ActionType.END:
             if p.get("target") == "PART":
                 canvas.end_part()

@@ -27,3 +27,23 @@ def test_dataset_jsonl_loading():
         assert "input_ids" in sample
         assert "target_ids" in sample
         assert sample["input_ids"].shape[0] == 127
+
+
+def test_benchmark_suite_is_300_prompts():
+    from spritemind.ml.benchmark import BENCHMARK_SUITE_SIZE
+
+    assert BENCHMARK_SUITE_SIZE == 300
+    assert len(BENCHMARK_PROMPTS) == 300
+    ids = [p["id"] for p in BENCHMARK_PROMPTS]
+    assert len(set(ids)) == 300
+    element_prompts = [p for p in BENCHMARK_PROMPTS[100:] if "-crackling" in p["prompt"]]
+    assert element_prompts, "generated prompts should exercise the element/aura path"
+
+
+def test_generated_prompts_are_deterministic():
+    from spritemind.ml.benchmark import generated_prompts
+
+    first = generated_prompts(5)
+    second = generated_prompts(5)
+    assert first == second
+    assert all(p["id"].startswith("bench_") for p in first)

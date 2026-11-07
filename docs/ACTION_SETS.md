@@ -51,11 +51,33 @@ another build of the same prompt.
 Every action in the response carries `key`, `label`, `frames` (each with `image_base64`,
 `script_text`, `pixel_count`), `num_frames`, `fps`, `loop`, `effects` and `gif_base64`.
 
+### Whole-set sprite sheet
+
+```bash
+curl -s localhost:7861/api/export/sheet -H 'Content-Type: application/json' \
+  -d '{"actions":{"idle":["<script>"],"walk":["<script>","<script>"]},"palette":"pico8","scale":2}' \
+  | jq '.metadata'
+```
+
+`POST /api/export/sheet` takes `actions` (animation name → list of `script_text` frames),
+`width`, `height`, `palette`, `scale`, `padding` and `max_columns` (default 12). It returns a
+data URL PNG plus atlas metadata:
+
+```
+{"width":..., "height":..., "frame_width":..., "frame_height":..., "padding":..., "columns":...,
+ "actions":[{"name":"walk","row":0,"x":0,"y":0,"frames":4,"width":...,"height":...}]}
+```
+
+One row per animation, left-aligned, every frame the same `frame_width`×`frame_height` cell, so
+an engine slices cell `(row, column)` without any further math. Frame sizes must match across
+the set; a mismatch is a `400`.
+
 ## In the UI
 
 **Action Sets** tab: type a prompt → *Read prompt* shows the inferred archetype/element/weapon
 and the planned clips → toggle clips off if you don't want them → *Generate Set* → each clip
-plays inline with per-clip GIF download.
+plays inline with per-clip GIF download, and *Sprite Sheet* downloads the whole set as one PNG
+plus its `atlas.json`.
 
 ## Python
 

@@ -21,6 +21,8 @@ class ProceduralBaseline:
         width: int = 32,
         height: int = 32,
         seed: int = 42,
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
     ) -> PixelScriptProgram:
         return CharacterGenerator.generate_character(
             category=category,
@@ -32,4 +34,6 @@ class ProceduralBaseline:
             frame_idx=0,
             total_frames=1,
             seed=seed,
+            colour=colour,
+            element=element,
         )

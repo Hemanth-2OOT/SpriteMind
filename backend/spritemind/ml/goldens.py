@@ -63,7 +63,9 @@ def render(category: str, prompt: str, pipeline: SpriteMindPipeline | None = Non
 
 
 def golden_prompt(category: str) -> str:
-    return f"golden reference sprite for {category.replace('_', ' ')}"
+    # Deliberately free of colour/element words: conditioning words (e.g. "golden")
+    # would tint the render and turn this regression check into a moving target.
+    return f"reference sprite for {category.replace('_', ' ')}"
 
 
 def generate_all() -> Dict[str, dict]:

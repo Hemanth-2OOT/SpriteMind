@@ -155,6 +155,20 @@ class PixelScriptParser:
             direction = int(args[5]) % 4
             return PixelAction(ActionType.SHADE, {"x": x, "y": y, "w": w, "h": h, "color": color, "direction": direction}, raw_text, line_no)
 
+        elif cmd == ActionType.AURA.value:
+            # AURA <x> <y> <w> <h> <color> [density]
+            if len(args) < 5:
+                raise ValueError("AURA requires <x> <y> <w> <h> <color> [density]")
+            params = {
+                "x": int(args[0]),
+                "y": int(args[1]),
+                "w": int(args[2]),
+                "h": int(args[3]),
+                "color": int(args[4]) if args[4].isdigit() else args[4],
+                "density": int(args[5]) if len(args) > 5 else 2,
+            }
+            return PixelAction(ActionType.AURA, params, raw_text, line_no)
+
         elif cmd == ActionType.END.value:
             # END [target]
             target = args[0] if len(args) > 0 else "PROGRAM"

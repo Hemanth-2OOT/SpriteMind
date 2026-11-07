@@ -207,3 +207,55 @@ python -c "import sys; sys.path.insert(0,'backend'); \
 from spritemind.critic.trainer import VisualCriticTrainer; \
 print(VisualCriticTrainer().train(dataset_path='data/datasets/gv2_critic/records.jsonl', epochs=6, lr=0.0008, save_name='visual_critic_gv2.pt'))"
 ```
+
+## Grammar v2.1 retrain — colour/element conditioning (SVAN v3)
+
+`element_synthetic_20k` (20,000 records: 12,062 carry a colour, 4,918 an element) is the first
+corpus whose scripts contain `AURA`, and the first whose records carry `colour`/`element` ids.
+`svan_checkpoint_best.pt` was replaced with that run — the previous checkpoint had vocab 403 and
+no `colour`/`element` embeddings, and the pipeline refuses a checkpoint whose vocab does not match
+the tokenizer (404 after `AURA`), so the old file could not be loaded at all any more.
+
+| run | data | epochs | val loss | token acc | clean rate |
+| --- | --- | --- | --- | --- | --- |
+| v2 (previous, shipped before) | `gv2_synthetic_25k` | 2 | 0.3482 | 98.68% | 100% |
+| **v3 (shipped)** | `element_synthetic_20k` | 2 | **0.3474** | **98.94%** | 100% (epoch 1) |
+
+Reproduce:
+
+```bash
+python scripts/build_expanded_dataset.py --name element_synthetic_20k --samples 20000 --seed 7 --json-out ""
+python scripts/finetune_svan.py --dataset element_synthetic_20k --from-scratch \
+  --epochs 2 --lr 0.0006 --batch-size 16 --threads 4 --save-name svan_v3 --min-clean 87
+python scripts/build_checkpoint_manifest.py
+```
+
+The shipped weights are the lowest-val-loss epoch. Two caveats worth knowing:
+
+- Its 16-sample critic probe during training reported a 62.5% clean rate even though val loss fell,
+  which is why a further epoch was attempted; that run was killed by the workspace's 4 GiB memory
+  limit before it saved. Structure is therefore better judged end to end than from the probe: on the
+  300-prompt benchmark the trained engine's valid-action rate is 100.0% and structural consistency
+  94.9%, and a 25-prompt spot check accepted the neural candidate over the procedural guard 25/25.
+- A checkpoint whose vocabulary or conditioning tables do not match the current tokenizer is
+  refused by `SpriteMindPipeline.load_checkpoint`, and generation falls back to the procedural
+  guard. Always rerun `scripts/build_checkpoint_manifest.py` after replacing a checkpoint file.
+
+## TemporalSVAN on grammar-v2 sequences
+
+The old temporal checkpoint was trained on 18 animation classes; `TemporalSVAN` now has 20, so it
+could not be loaded (shape mismatch on `animation_embed.weight`). `data/temporal_dataset_gv2`
+(2,400 sequences, 1,931 train / 469 val, leakage-free split by character) is regenerated from the
+current generator, so its frames carry `SHADE`, `OUTLINE` and `AURA`, and it trains the current
+class set.
+
+```bash
+python scripts/build_temporal_dataset.py --name temporal_dataset_gv2 --sequences 2400
+python scripts/train_temporal.py --train data/temporal_dataset_gv2/train_sequences.jsonl \
+  --val data/temporal_dataset_gv2/val_sequences.jsonl --epochs 80 --batch-size 32 --lr 0.002
+python scripts/build_checkpoint_manifest.py
+```
+
+Best val loss 3.2831 at epoch 80 (trajectory MSE only). `backend/tests/test_temporal.py`
+now asserts that the shipped checkpoint loads into the current `TemporalSVAN`, so a class-list
+change can no longer silently break animation quality.

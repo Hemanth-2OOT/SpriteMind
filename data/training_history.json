@@ -1,46 +1,32 @@
 {
-  "dataset_name": "gv2_synthetic_25k_mixed",
-  "train_samples": 21925,
-  "val_samples": 2735,
+  "dataset_name": "element_synthetic_20k",
+  "train_samples": 16000,
+  "val_samples": 2000,
   "total_epochs": 2,
   "completed_epochs": 2,
   "best_epoch": 2,
-  "best_val_loss": 0.3482,
+  "best_val_loss": 0.3474,
   "device": "cpu",
-  "parameters": 2351639,
-  "vocab_size": 403,
-  "learning_rate": 0.0006,
-  "elapsed_seconds": 5921.2,
+  "parameters": 2361304,
+  "vocab_size": 404,
   "loss_history": [
     {
-      "epoch": 1,
-      "loss": 87.43
-    },
-    {
       "epoch": 2,
-      "loss": 98.27
+      "loss": 0.372
     }
   ],
   "val_loss_history": [
     {
-      "epoch": 1,
-      "val_loss": 0.3639
-    },
-    {
       "epoch": 2,
-      "val_loss": 0.3482
+      "val_loss": 0.3474
     }
   ],
   "token_accuracy_history": [
     {
-      "epoch": 1,
-      "train_accuracy": 87.43,
-      "val_accuracy": 98.48
-    },
-    {
       "epoch": 2,
-      "train_accuracy": 98.27,
-      "val_accuracy": 98.68
+      "train_accuracy": 0.372,
+      "val_accuracy": 98.94
     }
-  ]
+  ],
+  "source": "checkpoint metadata; per-epoch history not retained for this run"
 }

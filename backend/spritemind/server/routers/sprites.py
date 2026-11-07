@@ -1,5 +1,5 @@
 """Single-sprite actions: action-set planning, refine, render, export."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException
 
 from spritemind.actions import ActionSetBuilder
@@ -8,9 +8,11 @@ from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.renderer.engine import PixelScriptEngine
 from spritemind.renderer.export import array_to_png_bytes
 from spritemind.renderer.export import compose_onion_skin
+from spritemind.renderer.export import export_action_sheet
 from spritemind.renderer.export import export_gif
 from spritemind.renderer.export import export_spritesheet
 from spritemind.server.schemas import ActionSetRequest
+from spritemind.server.schemas import ActionSheetRequest
 from spritemind.server.schemas import ExportRequest
 from spritemind.server.schemas import RefineRequest
 from spritemind.server.schemas import RenderRequest
@@ -57,6 +59,38 @@ def action_set(req: ActionSetRequest) -> Dict[str, Any]:
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@router.post("/api/export/sheet")
+def export_action_sheet_route(req: ActionSheetRequest) -> Dict[str, Any]:
+    """One sprite-sheet PNG plus atlas metadata for a whole animation set."""
+    rendered: Dict[str, List[Any]] = {}
+    for name, scripts in req.actions.items():
+        frames = []
+        for script in scripts:
+            res = PixelScriptEngine.execute(
+                script, width=req.width, height=req.height, palette_name=req.palette
+            )
+            frames.append(res.composite_array)
+        if frames:
+            rendered[name] = frames
+
+    if not rendered:
+        raise HTTPException(status_code=400, detail="No valid frames provided for sheet export")
+
+    try:
+        png_bytes, meta = export_action_sheet(
+            rendered, scale=max(1, req.scale), padding=max(0, req.padding), max_columns=max(1, req.max_columns)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "status": "success",
+        "format": "sheet",
+        "image_base64": "data:image/png;base64," + base64.b64encode(png_bytes).decode("utf-8"),
+        "metadata": meta,
+    }
+
 
 @router.post("/api/refine")
 def refine(req: RefineRequest) -> Dict[str, Any]:

@@ -3,7 +3,7 @@
     "hash": "0000000000000000000000110010001100110011000101100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for animal",
+    "prompt": "reference sprite for animal",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -11,7 +11,7 @@
     "hash": "0001010000010110000101110001011100101011000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for fantasy creature",
+    "prompt": "reference sprite for fantasy creature",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -19,7 +19,7 @@
     "hash": "0000000000001100000101110001011100101011000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for goblin",
+    "prompt": "reference sprite for goblin",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -27,7 +27,7 @@
     "hash": "0000000000001100000001110001010100101011000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for knight",
+    "prompt": "reference sprite for knight",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -35,7 +35,7 @@
     "hash": "0000000000001100000001110001011100101111000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for robot",
+    "prompt": "reference sprite for robot",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -43,7 +43,7 @@
     "hash": "0000000000000110000101110001011100100111000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for rogue",
+    "prompt": "reference sprite for rogue",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -51,7 +51,7 @@
     "hash": "0000000000001100000101110001011100101111000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for skeleton",
+    "prompt": "reference sprite for skeleton",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -59,7 +59,7 @@
     "hash": "0000000000000000000001100000001000010010000011100000011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for slime",
+    "prompt": "reference sprite for slime",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -67,7 +67,7 @@
     "hash": "0000100000001110000101110001011100101111000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for wizard",
+    "prompt": "reference sprite for wizard",
     "seed": 20240101,
     "style": "classic_16bit"
   },
@@ -75,7 +75,7 @@
     "hash": "0000000000001100000101110001011100101111000011100001011000000000",
     "palette": "pico8",
     "pose": "idle",
-    "prompt": "golden reference sprite for zombie",
+    "prompt": "reference sprite for zombie",
     "seed": 20240101,
     "style": "classic_16bit"
   }
