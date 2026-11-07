@@ -182,6 +182,21 @@ export async function fetchTrainingHistory(): Promise<any> {
   return res.json();
 }
 
+export async function fetchHistory(limit = 20): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/history?limit=${limit}`);
+  return res.json();
+}
+
+export async function deleteHistoryRun(id: number): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/history/${id}`, { method: 'DELETE' });
+  return res.json();
+}
+
+export async function clearHistory(): Promise<any> {
+  const res = await apiFetch(`${BASE_URL}/api/history`, { method: 'DELETE' });
+  return res.json();
+}
+
 export async function fetchBenchmarkReportCard(engine = 'trained_model'): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/benchmarks/report_card?engine=${engine}`);
   return res.json();

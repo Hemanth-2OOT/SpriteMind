@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from spritemind.server.metrics import LATENCY, LatencyMeter, record_generation
+from spritemind.server import history
 from spritemind.server.schemas import (
     GenerateRequest,
     ActionSetRequest,
@@ -225,7 +226,28 @@ def generate(req: GenerateRequest) -> Dict[str, Any]:
         top_k=req.top_k,
     )
     record_generation(result, req.engine)
+    try:
+        history.record_run(req.model_dump(), result)
+    except Exception:  # history must never fail a generation
+        pass
     return result
+
+
+@app.get("/api/history")
+def get_history(limit: int = 50) -> Dict[str, Any]:
+    runs = history.list_runs(limit=limit)
+    return {"runs": runs, "total": len(runs)}
+
+
+@app.delete("/api/history/{run_id}")
+def delete_history_run(run_id: int) -> Dict[str, Any]:
+    return {"deleted": history.delete_run(run_id), "id": run_id}
+
+
+@app.delete("/api/history")
+def clear_history() -> Dict[str, Any]:
+    return {"deleted": history.clear_runs()}
+
 
 @app.post("/api/action_set/plan")
 def action_set_plan(req: ActionSetRequest) -> Dict[str, Any]:

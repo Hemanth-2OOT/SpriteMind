@@ -133,10 +133,13 @@ give the same distribution. This is the largest quality jump available.
   *How:* queue prompts, run server-side with a concurrency cap, zip results with a manifest.
   *Done when:* a 32-sprite pack downloads in one click and every file is individually valid.
 
-- [ ] **Prompt history with re-seed** — `S`
+- [x] **Prompt history with re-seed** — `S` ✓ #18 (`server/history.py`, `GET/DELETE /api/history`, sidebar panel)
   *Why:* finding the sprite you liked last week is currently impossible (cache is in-memory only).
   *How:* persist (prompt, params, seed, thumbnail) rows in SQLite and show them in the sidebar; click restores params and regenerates from the seed.
   *Done when:* a restart preserves history.
+  **Met:** rows survive restarts in `data/history.sqlite` (500-row cap, git-ignored). A click restores the prompt, category,
+  style, pose, palette, seed and sampler settings; the dice button re-runs the same prompt with a fresh seed. Thumbnails
+  are deliberately not stored — the file stays small and the seed reproduces the sprite instead.
 
 - [ ] **Style transfer between generated sprites** — `L`
   *Why:* users want the same character in 8-bit and 16-bit without re-prompting.
@@ -172,6 +175,7 @@ give the same distribution. This is the largest quality jump available.
 | Inter-frame continuity metric in the coherence report | #15 |
 | Onion-skin PNG export from the animation timeline | #16 |
 | Per-category report card in the Model Lab | #17 |
+| Prompt history with re-seed (SQLite) | #18 |
 
 ---
 
