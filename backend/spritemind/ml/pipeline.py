@@ -15,6 +15,7 @@ from spritemind.ml.tokenizer import ActionTokenizer
 from spritemind.ml.procedural import ProceduralBaseline
 from spritemind.ml.temporal import TemporalAnimator
 from spritemind.dataset.generator import CATEGORIES, STYLES, POSES
+from spritemind.dataset.conditioning import parse_conditioning, colour_id, element_id
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction, ActionType
 from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.renderer.export import array_to_base64
@@ -140,12 +141,16 @@ class SpriteMindPipeline:
         elif "dawnbringer" in prompt_lower:
             palette = "dawnbringer16"
 
+        conditioning = parse_conditioning(prompt)
+
         return {
             "category": detected_cat,
             "style": detected_style,
             "pose": detected_pose,
             "dimension": dim,
             "palette": palette,
+            "colour": conditioning.get("colour"),
+            "element": conditioning.get("element"),
         }
 
     def generate(
@@ -262,6 +267,8 @@ class SpriteMindPipeline:
         final_pose = pose or parsed.get("pose", "idle")
         final_palette = palette_name or parsed.get("palette", "pico8")
         final_dim = parsed.get("dimension", width)
+        final_colour = parsed.get("colour")
+        final_element = parsed.get("element")
 
         frames_data: List[Dict[str, Any]] = []
         candidate_source = "procedural_baseline"
@@ -313,6 +320,8 @@ class SpriteMindPipeline:
                     width=final_dim,
                     height=final_dim,
                     seed=seed,
+                    colour=final_colour,
+                    element=final_element,
                 )
             else:
                 model = self.trained_model if actual_engine == "trained_model" else SVANModel(self.tokenizer.vocab_size).to(self.device)
@@ -332,6 +341,8 @@ class SpriteMindPipeline:
                     top_k=top_k,
                     procedural_guard=procedural_guard and actual_engine == "trained_model",
                     prompt_text=prompt,
+                    colour=final_colour,
+                    element=final_element,
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -357,6 +368,8 @@ class SpriteMindPipeline:
             "style": final_style,
             "pose": final_pose,
             "palette": final_palette,
+            "colour": final_colour,
+            "element": final_element,
             "dimensions": {"width": final_dim, "height": final_dim},
             "num_frames": len(frames_data),
             "frames": frames_data,
@@ -383,6 +396,8 @@ class SpriteMindPipeline:
         top_k: int = 0,
         procedural_guard: bool = False,
         prompt_text: str = "",
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
     ) -> Tuple[PixelScriptProgram, str]:
         """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
 
@@ -393,12 +408,14 @@ class SpriteMindPipeline:
         n = max(1, best_of)
         candidates = (
             self._sample_batch(
-                model, category, style, pose, max_actions, seed, temperature, n, top_k, prompt_text
+                model, category, style, pose, max_actions, seed, temperature, n, top_k,
+                prompt_text, colour, element,
             )
             if n > 1
             else [
                 self._sample_tokens(
-                    model, category, style, pose, max_actions, seed, temperature, top_k, prompt_text
+                    model, category, style, pose, max_actions, seed, temperature, top_k,
+                    prompt_text, colour, element,
                 )
             ]
         )
@@ -427,6 +444,8 @@ class SpriteMindPipeline:
             width=width,
             height=height,
             seed=seed,
+            colour=colour,
+            element=element,
         )
         if self._score_candidate(guard_program, palette, width, height) > best_score:
             return guard_program, "procedural_guard"
@@ -477,6 +496,15 @@ class SpriteMindPipeline:
         ids = encode_prompt(prompt_text)
         return torch.tensor([ids], dtype=torch.long, device=self.device)
 
+    def _conditioning_kwargs(self, colour: Optional[str], element: Optional[str]) -> Dict[str, torch.Tensor]:
+        """Colour/element ids for the semantic encoder; skipped when the realm is unknown."""
+        kwargs: Dict[str, torch.Tensor] = {}
+        if colour:
+            kwargs["colour_idx"] = torch.tensor([colour_id(colour)], device=self.device)
+        if element:
+            kwargs["element_idx"] = torch.tensor([element_id(element)], device=self.device)
+        return kwargs
+
     def _sample_tokens(
         self,
         model: SVANModel,
@@ -488,6 +516,8 @@ class SpriteMindPipeline:
         temperature: float = 0.9,
         top_k: int = 0,
         prompt_text: str = "",
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
     ) -> List[int]:
         """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
@@ -498,7 +528,12 @@ class SpriteMindPipeline:
 
         with torch.inference_mode():
             memory = model.memory_tokens(
-                cat_idx, style_idx, pose_idx, pal_idx, self._prompt_tensor(model, prompt_text)
+                cat_idx,
+                style_idx,
+                pose_idx,
+                pal_idx,
+                self._prompt_tensor(model, prompt_text),
+                **self._conditioning_kwargs(colour, element),
             )
 
             curr_tokens = [self.tokenizer.sos_id]
@@ -553,6 +588,8 @@ class SpriteMindPipeline:
         num_candidates: int,
         top_k: int = 0,
         prompt_text: str = "",
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
     ) -> List[List[int]]:
         """Samples several candidate programs in one batched decode pass.
 
@@ -572,7 +609,11 @@ class SpriteMindPipeline:
         sos, eos, pad = self.tokenizer.sos_id, self.tokenizer.eos_id, self.tokenizer.pad_id
 
         with torch.inference_mode():
-            sem_cond = model.semantic_encoder(cat_idx, style_idx, pose_idx, pal_idx)
+            sem_cond = model.semantic_encoder(
+                cat_idx, style_idx, pose_idx, pal_idx,
+                colour_idx=torch.tensor([colour_id(colour)], device=self.device) if colour else None,
+                element_idx=torch.tensor([element_id(element)], device=self.device) if element else None,
+            )
             memory = torch.stack(
                 [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)]
                 + ([model.prompt_encoder(self._prompt_tensor(model, prompt_text))] if model.prompt_encoder is not None else []),

@@ -26,8 +26,18 @@ class CharacterGenerator:
     """Generates complete structured PixelScript programs for characters, animals, and fantasy creatures."""
 
     @classmethod
-    def _finishing_pass(cls, actions: List[PixelAction], c_outline: int, width: int, height: int):
-        """Returns to the base layer, then adds a rim shadow and a 1px silhouette outline."""
+    def _finishing_pass(
+        cls,
+        actions: List[PixelAction],
+        c_outline: int,
+        width: int,
+        height: int,
+        element: Optional[str] = None,
+        palette_name: str = "pico8",
+        seed: Optional[int] = None,
+    ):
+        """Returns to the base layer, then adds a rim shadow, a 1px silhouette outline and,
+        for elemental characters, a dithered aura in the element's hue."""
         actions.append(PixelAction(ActionType.LAYER, {"id": 0, "name": "base", "opacity": 1.0}))
         actions.append(PixelAction(ActionType.SHADE, {
             "x": 0, "y": 0, "w": width, "h": height, "color": c_outline, "direction": 1,
@@ -35,6 +45,17 @@ class CharacterGenerator:
         actions.append(PixelAction(ActionType.OUTLINE, {
             "x": 0, "y": 0, "w": width, "h": height, "color": c_outline,
         }))
+        if element:
+            from spritemind.dataset.conditioning import ELEMENT_RGB, ramp
+
+            tint = ELEMENT_RGB.get(element)
+            if tint is not None:
+                _base, highlight, _shadow = ramp(palette_name, tint)
+                actions.append(PixelAction(ActionType.AURA, {
+                    "x": 0, "y": 0, "w": width, "h": height,
+                    "color": highlight,
+                    "density": 2 if (seed or 0) % 2 == 0 else 3,
+                }))
 
     @classmethod
     def generate_character(
@@ -254,7 +275,7 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.RECT, {"x": bx + body_w - 3 + leg_r_dx, "y": by + body_h, "w": 2, "h": leg_h, "color": c_skin, "filled": True}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
-            cls._finishing_pass(actions, c_outline, width, height)
+            cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
             return PixelScriptProgram(actions=actions, metadata=meta)
 
@@ -282,7 +303,7 @@ class CharacterGenerator:
                 actions.append(PixelAction(ActionType.LINE, {"x0": cx + r, "y0": cy + 2, "x1": cx + r, "y1": cy - 4, "color": 7}))
                 actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
-            cls._finishing_pass(actions, c_outline, width, height)
+            cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
             return PixelScriptProgram(actions=actions, metadata=meta)
 
@@ -476,6 +497,6 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.LINE, {"x0": ar_x + arm_w, "y0": ar_y + 1, "x1": ar_x + arm_w, "y1": ar_y + 2, "color": c_outline}))
             actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
-        cls._finishing_pass(actions, c_outline, width, height)
+        cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
         actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
         return PixelScriptProgram(actions=actions, metadata=meta)

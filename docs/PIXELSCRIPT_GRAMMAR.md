@@ -19,6 +19,7 @@ REUSE   <part_name> <x> <y>
 TRANSFORM <part_name> <dx> <dy> <rot_deg>
 SHADE   <x> <y> <w> <h> <color> <direction>   # v2
 OUTLINE <x> <y> <w> <h> <color>               # v2
+AURA    <x> <y> <w> <h> <color> [density]     # v2.1
 END PART | END PROGRAM
 ```
 
@@ -36,7 +37,29 @@ mask comes from the **composite** canvas, not the active layer, so a multi-layer
 (torso + arms + weapon on separate layers) gets a single connected silhouette border rather
 than a border around each part.
 
-Both primitives are region-scoped: nothing outside `<x> <y> <w> <h>` changes.
+### AURA
+
+Paints a dithered halo in the transparent ring just outside the silhouette, tinted with the
+prompt's element colour (`fire` -> ember orange, `ice` -> glacier blue, `lightning` -> violet,
+`poison` -> acid green). The mask uses the same composite-based 4-neighbour `OUTLINE` ring, so
+the halo hugs the whole character rather than each part, and it never writes inside the body.
+
+`density` is `1`..`4`: `1` is a solid ring, `2` a checkerboard, `3` and `4` progressively
+sparser sparks. It defaults to `2`. Like `SHADE` and `OUTLINE`, the region is
+region-scoped: nothing outside `<x> <y> <w> <h>` changes.
+
+### Metadata and conditioning
+
+The leading `# META: colour=blue element=ice` comment line carries the prompt's colour and
+element into the program. `CharacterGenerator` emits `AURA` from its finishing pass only when
+an element was requested, using the element's palette tint for the halo; the parser, validator,
+serializer and tokenizer all round-trip it. `AURA` costs 7 tokens
+(`CMD_AURA NUM_x NUM_y NUM_w NUM_h COL_c NUM_density`).
+
+Both colour and element also reach SVAN numerically: the semantic encoder takes extra
+`colour`/`element` embedding slots (`0` = none, then alphabetical ids from
+`dataset/conditioning.py::COLOUR_IDS`/`ELEMENT_IDS`), so the network can learn the tint from
+the prompt instead of relying on the procedural fallback.
 
 ## Finishing pass
 
@@ -60,14 +83,15 @@ sprite. Before that change, idle frames lost their outline consistency whenever 
 | --- | --- | --- |
 | v1 (11 primitives) | 292 | 364 |
 | v2 (13 primitives, with finishing pass) | 308 | 380 |
+| v2.1 (14 primitives, AURA on elemental prompts) | 315 | 387 |
 
 The decoder sequence budget is therefore 448 (see `SVAN.max_seq_len`), leaving headroom above
 the observed max of 407.
 
 ## Compatibility
 
-Adding primitives changes the vocabulary (401 → 403 tokens), so **a checkpoint trained on v1
-cannot emit SHADE/OUTLINE**. `GenerationPipeline.load_checkpoint` compares the checkpoint's
+Adding primitives changes the vocabulary (401 → 403 for v2, 403 → 404 with `AURA`), so **an
+older checkpoint cannot emit newer primitives**. `GenerationPipeline.load_checkpoint` compares the checkpoint's
 `model_config.vocab_size` with the live tokenizer and refuses a mismatch with a clear
 `checkpoint_error` instead of indexing out of bounds; callers fall back to the procedural
 engine until a v2 checkpoint is trained.

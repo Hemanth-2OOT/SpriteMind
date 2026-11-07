@@ -51,9 +51,29 @@ silhouette share is expected: the outline, eyes and metal details are legitimate
 colour. Element share is measured against the palette entry the element resolves to, not against a
 nominal RGB target, because pico8 cannot show a true poison green.
 
-## Still open (P1)
+## Numeric conditioning in SVAN
 
-The corpus now contains the signal; SVAN does not read it yet. The remaining P1 work is the prompt
-text encoder (character embedding → cross-attention, with a null-embedding fallback so the current
-checkpoint keeps loading), then a retrain and a re-run of the benchmark to see whether the 6.1%
-colour-faithfulness figure moves.
+A text encoder on these short prompts did not move the metrics (see
+[`MODEL_TUNING.md`](MODEL_TUNING.md)), so the signal reaches the model the
+cheap way: as embedding ids. `conditioning.py` exposes `COLOUR_IDS`/`ELEMENT_IDS` and
+`colour_id()`/`element_id()` (0 = none, otherwise stable alphabetical ids), and
+`SemanticEncoder` concatenates `colour`/`element` embeddings onto its conditioning vector next to
+category, style, pose and palette. `SVANModel` stores `num_colours=29` and `num_elements=9` in its
+config, so a checkpoint carries the embedding table it was trained with, and
+`PixelScriptDataset`/`training.py` feed both ids into the train and validation loops while
+`pipeline.py` supplies them at sampling time from the same prompt parser.
+
+The corpus adds the matching supervision: `element_synthetic_20k` (20k records) tags 60% colour
+(12,062) and 25% element (4,918), and the generator's finishing pass emits an `AURA` halo tinted
+from `ELEMENT_RGB` whenever an element is set, so the network can learn the halo as well as the
+body tint. Regenerate with the same builder to change those rates.
+
+## Still open
+
+Element coverage is deliberately the smaller slice (25% of records), which keeps the body-tint
+branch dominant; if the element/AURA branch needs more data, raise the element rate in the corpus
+builder and retrain rather than oversampling the existing records.
+
+The prompt text encoder still exists behind `prompt_text=False` with a null-embedding fallback;
+with numeric ids carrying colour and element, it is only worth enabling if a future prompt carries
+structure the ids cannot express.

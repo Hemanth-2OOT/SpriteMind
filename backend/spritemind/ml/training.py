@@ -15,6 +15,7 @@ from spritemind.ml.prompt_encoder import PROMPT_MAX_LEN, describe_record, encode
 from spritemind.ml.svan import SVANModel
 from spritemind.ml.tokenizer import ActionTokenizer
 from spritemind.dataset.generator import CATEGORIES, STYLES, POSES
+from spritemind.dataset.conditioning import colour_id, element_id
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction
 
 
@@ -49,6 +50,8 @@ class PixelScriptDataset(Dataset):
         style_list = []
         pose_list = []
         palette_list = []
+        colour_list = []
+        element_list = []
         prompt_list = []
 
         # Find records.jsonl either at dataset_path or its parent
@@ -83,6 +86,8 @@ class PixelScriptDataset(Dataset):
                     style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                     pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
                     palette_list.append(0)
+                    colour_list.append(colour_id(item.get("colour")))
+                    element_list.append(element_id(item.get("element")))
                     prompt_list.append(encode_prompt(describe_record(item)))
 
                     if max_samples and len(input_list) >= max_samples:
@@ -112,6 +117,8 @@ class PixelScriptDataset(Dataset):
                             style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                             pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
                             palette_list.append(0)
+                            colour_list.append(colour_id(data.get("colour")))
+                            element_list.append(element_id(data.get("element")))
                             prompt_list.append(encode_prompt(describe_record(data)))
 
                             if max_samples and len(input_list) >= max_samples:
@@ -126,6 +133,8 @@ class PixelScriptDataset(Dataset):
             self.style_idx = torch.tensor(style_list, dtype=torch.long)
             self.pose_idx = torch.tensor(pose_list, dtype=torch.long)
             self.palette_idx = torch.tensor(palette_list, dtype=torch.long)
+            self.colour_idx = torch.tensor(colour_list, dtype=torch.long)
+            self.element_idx = torch.tensor(element_list, dtype=torch.long)
             self.prompt_tokens = torch.tensor(prompt_list, dtype=torch.long)
         else:
             self.input_ids = torch.empty((0, max_seq_len - 1), dtype=torch.long)
@@ -134,6 +143,8 @@ class PixelScriptDataset(Dataset):
             self.style_idx = torch.empty(0, dtype=torch.long)
             self.pose_idx = torch.empty(0, dtype=torch.long)
             self.palette_idx = torch.empty(0, dtype=torch.long)
+            self.colour_idx = torch.empty(0, dtype=torch.long)
+            self.element_idx = torch.empty(0, dtype=torch.long)
             self.prompt_tokens = torch.empty((0, PROMPT_MAX_LEN), dtype=torch.long)
 
     def __len__(self) -> int:
@@ -147,6 +158,8 @@ class PixelScriptDataset(Dataset):
             "style_idx": self.style_idx[idx],
             "pose_idx": self.pose_idx[idx],
             "palette_idx": self.palette_idx[idx],
+            "colour_idx": self.colour_idx[idx],
+            "element_idx": self.element_idx[idx],
             "prompt_tokens": self.prompt_tokens[idx],
         }
 
@@ -391,6 +404,8 @@ class ModelTrainer:
                     s_idx = batch["style_idx"].to(self.device)
                     p_idx = batch["pose_idx"].to(self.device)
                     pal_idx = batch["palette_idx"].to(self.device)
+                    col_idx = batch["colour_idx"].to(self.device)
+                    el_idx = batch["element_idx"].to(self.device)
 
                     # Padding key mask for transformer decoder
                     padding_mask = (inp == self.tokenizer.pad_id)
@@ -405,6 +420,8 @@ class ModelTrainer:
                         palette_idx=pal_idx,
                         tgt_key_padding_mask=padding_mask,
                         prompt_tokens=prompt_tokens,
+                        colour_idx=col_idx,
+                        element_idx=el_idx,
                     )
 
                     loss = criterion(logits.reshape(-1, logits.size(-1)), tgt.view(-1))
@@ -455,6 +472,8 @@ class ModelTrainer:
                                 style_idx=val_batch["style_idx"].to(self.device),
                                 pose_idx=val_batch["pose_idx"].to(self.device),
                                 palette_idx=val_batch["palette_idx"].to(self.device),
+                                colour_idx=val_batch["colour_idx"].to(self.device),
+                                element_idx=val_batch["element_idx"].to(self.device),
                                 tgt_key_padding_mask=v_mask,
                                 prompt_tokens=(
                                     val_batch["prompt_tokens"].to(self.device)

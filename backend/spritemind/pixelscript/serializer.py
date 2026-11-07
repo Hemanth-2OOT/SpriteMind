@@ -47,6 +47,11 @@ class PixelScriptSerializer:
                 f"SHADE {p.get('x', 0)} {p.get('y', 0)} {p.get('w', 1)} {p.get('h', 1)} "
                 f"{p.get('color', 1)} {p.get('direction', 1)}"
             )
+        elif t == ActionType.AURA:
+            return (
+                f"AURA {p.get('x', 0)} {p.get('y', 0)} {p.get('w', 1)} {p.get('h', 1)} "
+                f"{p.get('color', 1)} {p.get('density', 2)}"
+            )
         elif t == ActionType.END:
             return f"END {p.get('target', 'PROGRAM')}"
         return f"# UNKNOWN {t}"

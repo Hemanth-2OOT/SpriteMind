@@ -225,6 +225,31 @@ class PixelCanvas:
         for yy, xx in zip(*np.nonzero(target)):
             self.active_layer.set_pixel(x0 + int(xx), y0 + int(yy), rgba)
 
+    def aura_rect(self, x: int, y: int, w: int, h: int, color: Any, density: int = 2):
+        """Dithers a halo of `color` just outside the silhouette inside the region.
+
+        `density` 1 paints a solid ring, 2 every other pixel (checkerboard), 3-4 sparser,
+        so an elemental aura reads as sparks instead of a second outline.
+        """
+        region = self._region_window(x, y, w, h)
+        if region is None:
+            return
+        x0, y0, rw, rh, inside, window = region
+        neighbours = (
+            window[0:rh, 1 : rw + 1]
+            | window[2 : rh + 2, 1 : rw + 1]
+            | window[1 : rh + 1, 0:rw]
+            | window[1 : rh + 1, 2 : rw + 2]
+        )
+        target = (~inside) & neighbours
+        step = max(1, int(density))
+        rgba = self.resolve_color(color)
+        for yy, xx in zip(*np.nonzero(target)):
+            gx, gy = x0 + int(xx), y0 + int(yy)
+            if step > 1 and (gx + gy) % step != 0:
+                continue
+            self.active_layer.set_pixel(gx, gy, rgba)
+
     def flood_fill(self, start_x: int, start_y: int, color: Any):
         """Deterministic 4-way flood fill."""
         if not (0 <= start_x < self.width and 0 <= start_y < self.height):

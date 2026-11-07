@@ -14,10 +14,12 @@ import torch.nn.functional as F
 from typing import Dict, Any, Optional, Tuple, List
 
 from spritemind.ml.prompt_encoder import PROMPT_MAX_LEN, PromptTextEncoder
+from spritemind.dataset.conditioning import NUM_COLOUR_IDS, NUM_ELEMENT_IDS
 
 
 class SemanticEncoder(nn.Module):
-    """Encodes character metadata (category, style, pose, palette) into conditioning vectors."""
+    """Encodes character metadata (category, style, pose, palette) plus the requested
+    colour and element into a single conditioning vector."""
 
     def __init__(
         self,
@@ -26,6 +28,8 @@ class SemanticEncoder(nn.Module):
         num_styles: int = 8,
         num_poses: int = 8,
         num_palettes: int = 8,
+        num_colours: int = NUM_COLOUR_IDS,
+        num_elements: int = NUM_ELEMENT_IDS,
     ):
         super().__init__()
         self.d_model = d_model
@@ -33,9 +37,11 @@ class SemanticEncoder(nn.Module):
         self.style_embed = nn.Embedding(num_styles, 32)
         self.pose_embed = nn.Embedding(num_poses, 32)
         self.palette_embed = nn.Embedding(num_palettes, 32)
+        self.colour_embed = nn.Embedding(num_colours, 32)
+        self.element_embed = nn.Embedding(num_elements, 32)
 
         self.projection = nn.Sequential(
-            nn.Linear(128, d_model),
+            nn.Linear(192, d_model),
             nn.LayerNorm(d_model),
             nn.ReLU(),
             nn.Linear(d_model, d_model),
@@ -47,13 +53,17 @@ class SemanticEncoder(nn.Module):
         style_idx: torch.Tensor,
         pose_idx: torch.Tensor,
         palette_idx: torch.Tensor,
+        colour_idx: Optional[torch.Tensor] = None,
+        element_idx: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        # Each input tensor: (batch_size,)
+        # Each input tensor: (batch_size,); colour/element default to the "none" slot.
         c = self.cat_embed(category_idx)
         s = self.style_embed(style_idx)
         p = self.pose_embed(pose_idx)
         pal = self.palette_embed(palette_idx)
-        cat_all = torch.cat([c, s, p, pal], dim=-1)
+        col = self.colour_embed(colour_idx if colour_idx is not None else torch.zeros_like(category_idx))
+        el = self.element_embed(element_idx if element_idx is not None else torch.zeros_like(category_idx))
+        cat_all = torch.cat([c, s, p, pal, col, el], dim=-1)
         return self.projection(cat_all)  # (batch_size, d_model)
 
 
@@ -340,6 +350,8 @@ class SVANModel(nn.Module):
         dropout: float = 0.1,
         prompt_text: bool = False,
         prompt_max_len: int = PROMPT_MAX_LEN,
+        num_colours: int = NUM_COLOUR_IDS,
+        num_elements: int = NUM_ELEMENT_IDS,
     ):
         super().__init__()
         self.d_model = d_model
@@ -347,6 +359,8 @@ class SVANModel(nn.Module):
         self.model_config = {
             "vocab_size": vocab_size,
             "d_model": d_model,
+            "num_colours": num_colours,
+            "num_elements": num_elements,
             "nhead": nhead,
             "num_layers": num_layers,
             "dim_feedforward": dim_feedforward,
@@ -355,7 +369,9 @@ class SVANModel(nn.Module):
             "prompt_text": prompt_text,
             "prompt_max_len": prompt_max_len,
         }
-        self.semantic_encoder = SemanticEncoder(d_model=d_model)
+        self.semantic_encoder = SemanticEncoder(
+            d_model=d_model, num_colours=num_colours, num_elements=num_elements
+        )
         self.visual_encoder = VisualEncoder(in_channels=4, d_model=d_model)
         self.structure_graph = StructureGraph(d_model=d_model)
         self.action_transformer = DrawingActionTransformer(
@@ -373,8 +389,8 @@ class SVANModel(nn.Module):
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "SVANModel":
         keys = (
-            "vocab_size", "d_model", "nhead", "num_layers", "dim_feedforward", "max_seq_len",
-            "dropout", "prompt_text", "prompt_max_len",
+            "vocab_size", "d_model", "num_colours", "num_elements", "nhead", "num_layers",
+            "dim_feedforward", "max_seq_len", "dropout", "prompt_text", "prompt_max_len",
         )
         return cls(**{k: config[k] for k in keys if k in config})
 
@@ -385,9 +401,11 @@ class SVANModel(nn.Module):
         pose_idx: torch.Tensor,
         palette_idx: torch.Tensor,
         prompt_tokens: Optional[torch.Tensor] = None,
+        colour_idx: Optional[torch.Tensor] = None,
+        element_idx: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """Builds the decoder memory: semantic, structure, visual and prompt tokens."""
-        sem_cond = self.semantic_encoder(category_idx, style_idx, pose_idx, palette_idx)
+        sem_cond = self.semantic_encoder(category_idx, style_idx, pose_idx, palette_idx, colour_idx, element_idx)
         tokens = [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)]
         if self.prompt_encoder is not None and prompt_tokens is not None:
             tokens.append(self.prompt_encoder(prompt_tokens))
@@ -407,9 +425,13 @@ class SVANModel(nn.Module):
         canvas_images: Optional[torch.Tensor] = None,
         tgt_key_padding_mask: Optional[torch.Tensor] = None,
         prompt_tokens: Optional[torch.Tensor] = None,
+        colour_idx: Optional[torch.Tensor] = None,
+        element_idx: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         # 1. Semantic conditioning
-        sem_cond = self.semantic_encoder(category_idx, style_idx, pose_idx, palette_idx) # (B, d_model)
+        sem_cond = self.semantic_encoder(
+            category_idx, style_idx, pose_idx, palette_idx, colour_idx, element_idx
+        )  # (B, d_model)
 
         # 2. Structure conditioning (if available)
         if part_indices is not None:
