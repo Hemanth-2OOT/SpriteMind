@@ -9,8 +9,19 @@ license = { text = "MIT" }
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
 pythonpath = ["backend"]
-addopts = "-q"
+addopts = "-q --cov=spritemind --cov-report=term-missing:skip-covered"
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["backend/spritemind"]
+branch = true
+
+[tool.coverage.report]
+# Measured 71.9% (statement+branch) when this gate was added; the floor sits just
+# below it so a small refactor does not block, but a real regression does.
+fail_under = 71
+skip_covered = true
+show_missing = true
 
 [tool.ruff]
 line-length = 100
