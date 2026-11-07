@@ -62,6 +62,12 @@ def parse_args():
     parser.add_argument("--clean-samples", type=int, default=16)
     parser.add_argument("--min-clean", type=float, default=90.0, help="clean-rate floor for adoption")
     parser.add_argument("--clean-patience", type=int, default=1)
+    parser.add_argument("--max-samples", type=int, default=0, help="cap on records per split")
+    parser.add_argument(
+        "--prompt-text",
+        action="store_true",
+        help="train the character-level prompt encoder as a fourth memory token",
+    )
     return parser.parse_args()
 
 
@@ -134,6 +140,8 @@ def main():
         learning_rate=args.lr,
         batch_size=args.batch_size,
         threads=args.threads,
+        prompt_text=args.prompt_text,
+        max_samples=args.max_samples or None,
     )
 
     dataset = build_mixed_dataset(args.dataset, args.replay, args.replay_fraction)

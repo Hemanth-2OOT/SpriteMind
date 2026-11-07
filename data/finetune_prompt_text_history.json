@@ -1,0 +1,17 @@
+{
+  "dataset": "expanded_synthetic_25k",
+  "replay": [],
+  "from_scratch": false,
+  "epochs": [
+    {
+      "epoch": 1,
+      "checkpoint": "svan_prompt_text.ep1.pt",
+      "val_loss": 0.3455,
+      "token_accuracy": 98.53,
+      "val_token_accuracy": 98.83,
+      "clean_rate": 93.8,
+      "elapsed_seconds": 643.1
+    }
+  ],
+  "best_clean_rate": 93.8
+}

@@ -54,6 +54,36 @@ colour. It defaults to `0` so the gate records the number without failing the
 build until the encoder work lands; raise it once the trained model clears the
 procedural baseline.
 
+## Prompt text encoder (experiment, #24)
+
+`ml/prompt_encoder.py` adds a character-level encoder over the request text and
+feeds its pooled embedding into the decoder as a fourth memory token. Training
+turns it on with `scripts/finetune_svan.py --prompt-text`; at inference the
+checkpoint's own `model_config.prompt_text` decides, so older checkpoints keep
+the three-token memory and behave exactly as before.
+
+Measured on 2026-11-07, fine-tuning the shipped checkpoint for one epoch on the
+first 6,000 records of `expanded_synthetic_25k` (643 s) against the current
+`svan_checkpoint_best.pt`:
+
+| Metric | Shipped | With text encoder |
+| --- | --- | --- |
+| Critic clean rate (16 prompts) | 93.8% | 93.8% |
+| Outline coverage / islands (16 prompts) | 1.0 / 0 | 1.0 / 0 |
+| Animation continuity (4 anims, IoU) | 0.8206 | 0.8206 |
+| Lost pixels across transitions | 311 | 311 |
+
+The encoder is *live* (two different prompts shift the next-token logits by up
+to 0.54) but the grammar-guided decoder masks nearly every choice, and the
+training text is rebuilt from the same attributes the categorical encoders
+already receive, so the extra token carries no new information. Nothing is
+turned on by default.
+
+**What unblocks it:** a corpus whose records carry `colour` and `element` tags,
+and a DSL that renders them (the "Element/weapon vocabulary" item). Once
+`describe_record()` sees those fields it already puts them in the text; the
+faithfulness number then has something to move against.
+
 ## Known limits
 
 - Only ~30% of the benchmark prompts name a colour, so per-run averages rest on
