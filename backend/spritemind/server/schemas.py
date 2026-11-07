@@ -16,6 +16,9 @@ class GenerateRequest(BaseModel):
     engine: str = Field(default="procedural_baseline")  # procedural_baseline | trained_model | untrained_model
     seed: int = 42
     max_actions: int = Field(default=64, ge=8, le=256)
+    best_of: int = Field(default=4, ge=1, le=8, description="Candidates sampled per request; the best rerank wins")
+    temperature: float = Field(default=0.9, ge=0.1, le=2.0, description="Sampling temperature")
+    top_k: int = Field(default=0, ge=0, le=200, description="Restrict sampling to the k most likely tokens (0 = off)")
 
 
 class ActionSetRequest(BaseModel):

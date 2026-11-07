@@ -161,6 +161,8 @@ class SpriteMindPipeline:
         seed: int = 42,
         max_actions: int = 64,
         best_of: int = 4,
+        temperature: float = 0.9,
+        top_k: int = 0,
     ) -> Dict[str, Any]:
         """Generates a sprite, replaying a previous identical request from cache."""
         key = (
@@ -176,6 +178,8 @@ class SpriteMindPipeline:
             seed,
             max_actions,
             best_of,
+            round(float(temperature), 3),
+            int(top_k),
         )
         if self._result_cache_size <= 0:
             result = self._generate_uncached(
@@ -219,6 +223,8 @@ class SpriteMindPipeline:
             seed=seed,
             max_actions=max_actions,
             best_of=best_of,
+            temperature=temperature,
+            top_k=top_k,
         )
         result["cache_hit"] = False
         self._result_cache[key] = copy.deepcopy(result)
@@ -241,6 +247,8 @@ class SpriteMindPipeline:
         seed: int = 42,
         max_actions: int = 64,
         best_of: int = 4,
+        temperature: float = 0.9,
+        top_k: int = 0,
         procedural_guard: bool = True,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
@@ -319,6 +327,8 @@ class SpriteMindPipeline:
                     width=final_dim,
                     height=final_dim,
                     best_of=best_of,
+                    temperature=temperature,
+                    top_k=top_k,
                     procedural_guard=procedural_guard and actual_engine == "trained_model",
                 )
             prog_frames = [prog]
@@ -368,6 +378,7 @@ class SpriteMindPipeline:
         height: int = 32,
         best_of: int = 1,
         temperature: float = 0.9,
+        top_k: int = 0,
         procedural_guard: bool = False,
     ) -> Tuple[PixelScriptProgram, str]:
         """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
@@ -378,9 +389,9 @@ class SpriteMindPipeline:
         """
         n = max(1, best_of)
         candidates = (
-            self._sample_batch(model, category, style, pose, max_actions, seed, temperature, n)
+            self._sample_batch(model, category, style, pose, max_actions, seed, temperature, n, top_k)
             if n > 1
-            else [self._sample_tokens(model, category, style, pose, max_actions, seed, temperature)]
+            else [self._sample_tokens(model, category, style, pose, max_actions, seed, temperature, top_k)]
         )
 
         best_tokens: Optional[List[int]] = None
@@ -459,6 +470,7 @@ class SpriteMindPipeline:
         max_actions: int,
         seed: int,
         temperature: float = 0.9,
+        top_k: int = 0,
     ) -> List[int]:
         """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
@@ -499,6 +511,11 @@ class SpriteMindPipeline:
 
                 # Sample next token
                 probs = torch.softmax(next_token_logits / max(1e-5, temperature), dim=-1)
+                if top_k > 0:
+                    top = torch.topk(probs, min(top_k, probs.numel()))
+                    keep = torch.zeros_like(probs)
+                    keep[top.indices] = probs[top.indices]
+                    probs = keep
                 next_tok = int(torch.multinomial(probs, num_samples=1).item())
                 curr_tokens.append(next_tok)
                 grammar_state = self.tokenizer.advance_grammar(grammar_state, next_tok)
@@ -518,6 +535,7 @@ class SpriteMindPipeline:
         seed: int,
         temperature: float,
         num_candidates: int,
+        top_k: int = 0,
     ) -> List[List[int]]:
         """Samples several candidate programs in one batched decode pass.
 
@@ -566,6 +584,9 @@ class SpriteMindPipeline:
                         row[torch.tensor(legal, device=self.device)] = 0.0
                         mask[i] = row
                 probs = torch.softmax((logits + mask) / max(1e-5, temperature), dim=-1)
+                if top_k > 0:
+                    cutoff = torch.topk(probs, min(top_k, probs.shape[-1]), dim=-1).values[:, -1:]
+                    probs = torch.where(probs < cutoff, torch.zeros_like(probs), probs)
                 next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1).tolist()
 
                 for i, tok in enumerate(next_tokens):

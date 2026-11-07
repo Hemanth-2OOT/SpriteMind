@@ -46,6 +46,11 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const [numFrames, setNumFrames] = useState<number>(1);
   const [seed, setSeed] = useState<number>(42);
   const [maxActions, setMaxActions] = useState<number>(64);
+  const [bestOf, setBestOf] = useState<number>(4);
+  const [temperature, setTemperature] = useState<number>(0.9);
+  const [topK, setTopK] = useState<number>(0);
+
+  const samplingDisabled = selectedEngine === 'procedural_baseline';
 
   const handleRollDice = () => {
     setSeed(Math.floor(Math.random() * 999999));
@@ -70,6 +75,9 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
       engine: selectedEngine,
       seed,
       max_actions: maxActions,
+      best_of: bestOf,
+      temperature,
+      top_k: topK,
     });
   };
 
@@ -267,6 +275,64 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
               step="8"
               value={maxActions}
               onChange={(e) => setMaxActions(parseInt(e.target.value))}
+              className="w-full accent-purple-500 h-1.5 bg-dark-800 rounded cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Sampler Quality */}
+        <div className={`space-y-2 pt-1 border-t border-dark-750/60 ${samplingDisabled ? 'opacity-40 pointer-events-none' : ''}`}>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-300">Sampler</label>
+            <span className="text-[10px] text-slate-500">
+              {samplingDisabled ? 'neural engines only' : 'trade speed for quality'}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Best of</span>
+              <span className="text-slate-300 font-mono">{bestOf}</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="8"
+              step="1"
+              value={bestOf}
+              onChange={(e) => setBestOf(parseInt(e.target.value))}
+              className="w-full accent-purple-500 h-1.5 bg-dark-800 rounded cursor-pointer"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Temperature</span>
+              <span className="text-slate-300 font-mono">{temperature.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="2"
+              step="0.05"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full accent-purple-500 h-1.5 bg-dark-800 rounded cursor-pointer"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Top-k</span>
+              <span className="text-slate-300 font-mono">{topK === 0 ? 'off' : topK}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="80"
+              step="5"
+              value={topK}
+              onChange={(e) => setTopK(parseInt(e.target.value))}
               className="w-full accent-purple-500 h-1.5 bg-dark-800 rounded cursor-pointer"
             />
           </div>

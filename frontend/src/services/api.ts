@@ -53,6 +53,9 @@ export async function generateSprite(params: {
   engine?: string;
   seed?: number;
   max_actions?: number;
+  best_of?: number;
+  temperature?: number;
+  top_k?: number;
 }): Promise<GenerationResult> {
   const res = await apiFetch(`${BASE_URL}/api/generate`, {
     method: 'POST',

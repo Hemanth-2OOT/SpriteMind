@@ -24,6 +24,19 @@ def test_api_health_endpoint():
     assert "device" in data
 
 
+def test_api_generate_accepts_sampler_controls():
+    req = GenerateRequest(category="wizard", engine="trained_model", seed=3, best_of=2, temperature=1.4, top_k=20)
+    data = generate(req)
+    assert data["frames"], "sampler controls should still render a frame"
+
+    with pytest.raises(Exception):
+        GenerateRequest(temperature=9.0)
+    with pytest.raises(Exception):
+        GenerateRequest(best_of=0)
+    with pytest.raises(Exception):
+        GenerateRequest(top_k=-1)
+
+
 def test_api_models_endpoint():
     data = get_models()
     assert "available_checkpoints" in data
