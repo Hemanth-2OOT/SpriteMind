@@ -138,6 +138,7 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 
 - **Roadmap & TODO (next work, sizes, acceptance criteria):** [`ROADMAP.md`](ROADMAP.md)
 - **Prompt colour faithfulness (metric definition + baseline):** [`docs/PROMPT_FAITHFULNESS.md`](docs/PROMPT_FAITHFULNESS.md)
+- **Prompt conditioning in the corpus (colour/element tags, palette mapping, probe):** [`docs/PROMPT_CONDITIONING.md`](docs/PROMPT_CONDITIONING.md)
 - **Action Sets (prompt → animation package):** [`docs/ACTION_SETS.md`](docs/ACTION_SETS.md)
 - **PixelScript Grammar (v2 primitives: SHADE / OUTLINE):** [`docs/PIXELSCRIPT_GRAMMAR.md`](docs/PIXELSCRIPT_GRAMMAR.md)
 - **Model Tuning & Generation Performance:** [`docs/MODEL_TUNING.md`](docs/MODEL_TUNING.md)
