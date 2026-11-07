@@ -113,10 +113,11 @@ export async function exportAsset(params: {
   width: number;
   height: number;
   palette: string;
-  format: 'png' | 'spritesheet' | 'gif' | 'json';
+  format: 'png' | 'spritesheet' | 'gif' | 'json' | 'onion';
   scale?: number;
   fps?: number;
   cols?: number;
+  frame_index?: number;
 }): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/export`, {
     method: 'POST',

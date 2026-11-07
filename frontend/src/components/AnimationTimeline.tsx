@@ -21,7 +21,7 @@ interface AnimationTimelineProps {
   onAddFrame: () => void;
   onDuplicateFrame: (index: number) => void;
   onDeleteFrame: (index: number) => void;
-  onExport: (format: 'png' | 'spritesheet' | 'gif' | 'json') => void;
+  onExport: (format: 'png' | 'spritesheet' | 'gif' | 'json' | 'onion') => void;
   onionSkinEnabled: boolean;
   setOnionSkinEnabled: (enabled: boolean) => void;
 }
@@ -183,6 +183,13 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({
                   className="w-full text-left px-2.5 py-1.5 hover:bg-dark-800 text-slate-200 rounded"
                 >
                   Animated GIF
+                </button>
+                <button
+                  onClick={() => { onExport('onion'); setShowExportModal(false); }}
+                  className="w-full text-left px-2.5 py-1.5 hover:bg-dark-800 text-slate-200 rounded"
+                  title="Current frame plus faint ghosts of the neighbouring frames"
+                >
+                  Onion Skin PNG
                 </button>
                 <button
                   onClick={() => { onExport('json'); setShowExportModal(false); }}

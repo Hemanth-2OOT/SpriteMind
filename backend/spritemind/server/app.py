@@ -67,6 +67,7 @@ from spritemind.renderer.export import (
     array_to_base64,
     export_gif,
     export_spritesheet,
+    compose_onion_skin,
 )
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
@@ -324,6 +325,17 @@ def export_assets(req: ExportRequest):
             "format": "gif",
             "image_base64": f"data:image/gif;base64,{b64}",
             "fps": req.fps,
+        }
+    elif req.format == "onion":
+        ghost = compose_onion_skin(frames_arr, req.frame_index, scale=max(1, req.scale))
+        buf = io.BytesIO()
+        ghost.save(buf, format="PNG")
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return {
+            "format": "onion",
+            "image_base64": f"data:image/png;base64,{b64}",
+            "frame_index": max(0, min(req.frame_index, len(frames_arr) - 1)),
+            "total_frames": len(frames_arr),
         }
     elif req.format == "png":
         png_bytes = array_to_png_bytes(frames_arr[0], scale=req.scale)
