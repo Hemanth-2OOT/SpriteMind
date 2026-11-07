@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from spritemind.assets.faithfulness import colour_faithfulness  # noqa: E402
 from spritemind.ml.pipeline import SpriteMindPipeline  # noqa: E402
 
 PROMPTS_PATH = Path("data/benchmarks/generalization_prompts.json")
@@ -48,6 +49,7 @@ def evaluate(pipeline: SpriteMindPipeline, prompts: List[Dict[str, Any]], engine
         stray = len(used - allowed)
         fill = float(opaque.sum())
         validation = frame.get("validation", {})
+        colour = colour_faithfulness(prompt, rgba)
 
         rows.append(
             {
@@ -59,6 +61,9 @@ def evaluate(pipeline: SpriteMindPipeline, prompts: List[Dict[str, Any]], engine
                 "pixels": fill,
                 "fill_ratio": round(fill / (rgba.shape[0] * rgba.shape[1]) * 100.0, 2),
                 "defects": int(result.get("critic", {}).get("defects_count", 0)),
+                "colour_faithfulness": colour["score"] if colour else None,
+                "colours_requested": colour["requested"] if colour else [],
+                "colours_missing": colour["missing"] if colour else [],
                 "latency_ms": round(elapsed, 1),
             }
         )
@@ -67,6 +72,7 @@ def evaluate(pipeline: SpriteMindPipeline, prompts: List[Dict[str, Any]], engine
 
 def summarize(rows: List[Dict[str, Any]], engine: str) -> Dict[str, Any]:
     n = len(rows) or 1
+    colour_rows = [r for r in rows if r["colour_faithfulness"] is not None]
     return {
         "samples": len(rows),
         "engine_requested": engine,
@@ -76,6 +82,15 @@ def summarize(rows: List[Dict[str, Any]], engine: str) -> Dict[str, Any]:
         "avg_fill_ratio": round(sum(r["fill_ratio"] for r in rows) / n, 2),
         "clean_rate": round(sum(1 for r in rows if r["defects"] == 0) / n * 100.0, 1),
         "avg_latency_ms": round(sum(r["latency_ms"] for r in rows) / n, 1),
+        "colour_samples": len(colour_rows),
+        "avg_colour_faithfulness": (
+            round(sum(r["colour_faithfulness"] for r in colour_rows) / len(colour_rows), 1) if colour_rows else None
+        ),
+        "colours_present_rate": (
+            round(sum(1 for r in colour_rows if not r["colours_missing"]) / len(colour_rows) * 100.0, 1)
+            if colour_rows
+            else None
+        ),
     }
 
 
@@ -90,6 +105,12 @@ def main() -> int:
     parser.add_argument("--max-fill", type=float, default=70.0)
     parser.add_argument("--min-engine-honoured", type=float, default=100.0)
     parser.add_argument("--min-clean", type=float, default=0.0, help="share of samples with zero critic defects")
+    parser.add_argument(
+        "--min-colour",
+        type=float,
+        default=0.0,
+        help="share of prompt colours that must actually appear in the sprite",
+    )
     parser.add_argument("--json", default="")
     args = parser.parse_args()
 
@@ -112,11 +133,16 @@ def main() -> int:
         failures.append(f"engine_honoured {summary['engine_honoured']}% < {args.min_engine_honoured}%")
     if summary["clean_rate"] < args.min_clean:
         failures.append(f"clean_rate {summary['clean_rate']}% < {args.min_clean}%")
+    present = summary["colours_present_rate"]
+    if present is not None and present < args.min_colour:
+        failures.append(f"colours_present_rate {present}% < {args.min_colour}%")
     if not args.min_fill <= summary["avg_fill_ratio"] <= args.max_fill:
         failures.append(f"avg_fill_ratio {summary['avg_fill_ratio']}% outside {args.min_fill}-{args.max_fill}%")
 
     print(json.dumps(summary, indent=2))
     for row in rows:
+        if row["colours_missing"]:
+            print(f"  COLOUR {row['prompt'][:50]}: missing {row['colours_missing']} (score {row['colour_faithfulness']}%)")
         if not row["valid"] or row["off_palette_colors"]:
             print(f"  FAIL {row['prompt'][:60]}: valid={row['valid']} off_palette={row['off_palette_colors']}")
 

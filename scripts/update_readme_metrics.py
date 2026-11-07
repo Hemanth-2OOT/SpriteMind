@@ -88,6 +88,8 @@ def build_table() -> str:
             f"IoU {trained.get('avg_silhouette_iou')}, "
             f"valid actions {trained.get('avg_valid_action_rate')}%, "
             f"palette adherence {trained.get('avg_palette_adherence')}%, "
+            f"colour faithfulness {trained.get('avg_colour_faithfulness')}% "
+            f"({trained.get('colours_present_rate')}% of prompts get their colour), "
             f"latency {trained.get('avg_latency_ms')} ms.",
         ]
     lines.append(END)
