@@ -1,5 +1,5 @@
 """Single-sprite actions: action-set planning, refine, render, export."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException
 
 from spritemind.actions import ActionSetBuilder
