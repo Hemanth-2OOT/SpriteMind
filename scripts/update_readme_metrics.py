@@ -61,7 +61,8 @@ def build_table() -> str:
          f"{critic.get('calibrated_precision', 'n/a')}% precision @ {critic.get('calibrated_false_positive_rate', 'n/a')}% FP)",
          f"{critic.get('train_samples', 'n/a')} train / {critic.get('total_epochs', 'n/a')} epochs"),
         ("TemporalSVAN", temporal.get("parameter_count"),
-         f"best val loss {temporal.get('best_val_loss', 'n/a')}",
+         f"best val loss {temporal.get('best_val_loss', 'n/a')}"
+         + (f" (epoch {temporal['best_epoch']})" if temporal.get("best_epoch") else ""),
          f"{temporal.get('train_samples', 'n/a')} train / {temporal.get('epochs', 'n/a')} epochs"),
         ("SocketPredictor", composition.get("parameter_count"),
          f"final pixel error {composition.get('final_pixel_error', 'n/a')}",
