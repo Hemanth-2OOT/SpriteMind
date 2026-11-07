@@ -33,7 +33,7 @@ Current baseline (as of `386c060`):
   *How:* assert every request field that changes output is part of the cache key, with a test that two different `best_of` values do not share an entry.
   *Done when:* key is derived from the validated request model, not a hand-written tuple.
 
-- [ ] **Golden-image regression set** — `M`
+- [x] **Golden-image regression set** — `M` ✓ #10
   *Why:* renderer and grammar changes today are validated only by aggregate metrics; a visual regression can hide inside a stable clean rate.
   *How:* commit 10 reference sprites (one per category) as PNGs with a stored perceptual hash; fail CI when Hamming distance exceeds tolerance. Regenerate deliberately with `--update-goldens`.
   *Done when:* a deliberate `SHADE` bug makes the suite fail.
@@ -161,6 +161,7 @@ give the same distribution. This is the largest quality jump available.
 | Neural critic verdict surfaced in the Inspector | #6 |
 | Seed determinism + cache-key coverage (`test_pipeline_determinism.py`) | #8 |
 | Colour-faithfulness metric in gate + benchmark (`faithfulness.py`) | #9 |
+| Golden-image regression set (10 categories, exact pixel diff) | #10 |
 
 ---
 
