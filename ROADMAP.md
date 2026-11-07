@@ -54,10 +54,10 @@ give the same distribution. This is the largest quality jump available.
   *How:* parse colour words from the prompt, map to the nearest palette ramp, measure share of silhouette pixels within that ramp; add to `scripts/quality_gate.py` and the benchmark JSON.
   *Done when:* the number is reported and the current baseline (expected: poor) is recorded.
 
-- [ ] **Prompt text encoder in SVAN** — `L`
+- [x] **Prompt text encoder in SVAN** — `L` ✓ #24 (`docs/PROMPT_FAITHFULNESS.md`)
   *Why:* gives the model a conditioning signal it currently lacks entirely.
   *How:* character-level embedding over the prompt → cross-attention (or a 4th memory token) into the decoder; keep a null-embedding path so existing checkpoints still load.
-  *Done when:* colour-faithfulness rises materially at the same IoU, and the old checkpoint still runs through the fallback path.
+  *Done:* `ml/prompt_encoder.py`, opt-in via `--prompt-text`, legacy checkpoints unchanged. **No measurable win yet** (clean rate 93.8% both, IoU 0.8206 both): the reconstruction text repeats the categorical labels and the corpus has no colour tags, so the token adds no information. Prerequisite is the colour/element corpus below.
 
 - [x] **Conditioned corpus generator** — `M` ✓ #11 (`docs/PROMPT_CONDITIONING.md`, colour present 100%, element visible 100%)
   *Done when:* a held-out probe shows the corpus itself is >90% faithful to its own prompt tags. **Met.**
@@ -198,10 +198,11 @@ criteria, and each one shipped with tests.
 
 What is left is deliberately not in that category. Ranked by what would change the product most:
 
-1. **Prompt text encoder in SVAN** (`L`) — the only remaining real capability gap. Without it the
-   model still sees the prompt only through `category` / `style` / `pose`, so colour faithfulness
-   stays near 6% and "purple zombie" renders a zombie that is not purple. Needs a text encoder,
-   a retrain, and a benchmark comparison against the current checkpoint before it can ship.
+1. **Prompt text encoder in SVAN** (`L`, encoder shipped #24, retrain blocked) — the only remaining
+   real capability gap. The encoder exists and is measurable now, but a one-epoch retrain changed
+   nothing (93.8% clean rate and 0.8206 IoU on both checkpoints) because the corpus carries no
+   colour or element tags to learn from. Order of work: colour/element vocabulary in the DSL, a
+   corpus that uses it, then the retrain and the benchmark comparison.
 2. **Expanded 300-prompt benchmark** (`M`) — 100 prompts make a 1-point IoU change statistically
    meaningless, and the report card explicitly shows category gaps. Bigger suite first means every
    later model change can be judged. Cheap in compute, but it needs the prompts written.

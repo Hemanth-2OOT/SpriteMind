@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
+from spritemind.ml.prompt_encoder import encode_prompt
 from spritemind.ml.svan import SVANModel
 from spritemind.ml.tokenizer import ActionTokenizer
 from spritemind.ml.procedural import ProceduralBaseline
@@ -330,6 +331,7 @@ class SpriteMindPipeline:
                     temperature=temperature,
                     top_k=top_k,
                     procedural_guard=procedural_guard and actual_engine == "trained_model",
+                    prompt_text=prompt,
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -380,6 +382,7 @@ class SpriteMindPipeline:
         temperature: float = 0.9,
         top_k: int = 0,
         procedural_guard: bool = False,
+        prompt_text: str = "",
     ) -> Tuple[PixelScriptProgram, str]:
         """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
 
@@ -389,9 +392,15 @@ class SpriteMindPipeline:
         """
         n = max(1, best_of)
         candidates = (
-            self._sample_batch(model, category, style, pose, max_actions, seed, temperature, n, top_k)
+            self._sample_batch(
+                model, category, style, pose, max_actions, seed, temperature, n, top_k, prompt_text
+            )
             if n > 1
-            else [self._sample_tokens(model, category, style, pose, max_actions, seed, temperature, top_k)]
+            else [
+                self._sample_tokens(
+                    model, category, style, pose, max_actions, seed, temperature, top_k, prompt_text
+                )
+            ]
         )
 
         best_tokens: Optional[List[int]] = None
@@ -461,6 +470,13 @@ class SpriteMindPipeline:
             score -= 10.0
         return score
 
+    def _prompt_tensor(self, model: SVANModel, prompt_text: str) -> Optional[torch.Tensor]:
+        """Character ids for the request, or None when the checkpoint has no text encoder."""
+        if getattr(model, "prompt_encoder", None) is None:
+            return None
+        ids = encode_prompt(prompt_text)
+        return torch.tensor([ids], dtype=torch.long, device=self.device)
+
     def _sample_tokens(
         self,
         model: SVANModel,
@@ -471,6 +487,7 @@ class SpriteMindPipeline:
         seed: int,
         temperature: float = 0.9,
         top_k: int = 0,
+        prompt_text: str = "",
     ) -> List[int]:
         """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
@@ -480,10 +497,9 @@ class SpriteMindPipeline:
         pal_idx = torch.tensor([0], device=self.device)
 
         with torch.inference_mode():
-            sem_cond = model.semantic_encoder(cat_idx, style_idx, pose_idx, pal_idx)
-            struct_cond = torch.zeros_like(sem_cond)
-            vis_cond = torch.zeros_like(sem_cond)
-            memory = torch.stack([sem_cond, struct_cond, vis_cond], dim=1)
+            memory = model.memory_tokens(
+                cat_idx, style_idx, pose_idx, pal_idx, self._prompt_tensor(model, prompt_text)
+            )
 
             curr_tokens = [self.tokenizer.sos_id]
             grammar_state = self.tokenizer.grammar_start_state()
@@ -536,6 +552,7 @@ class SpriteMindPipeline:
         temperature: float,
         num_candidates: int,
         top_k: int = 0,
+        prompt_text: str = "",
     ) -> List[List[int]]:
         """Samples several candidate programs in one batched decode pass.
 
@@ -557,7 +574,9 @@ class SpriteMindPipeline:
         with torch.inference_mode():
             sem_cond = model.semantic_encoder(cat_idx, style_idx, pose_idx, pal_idx)
             memory = torch.stack(
-                [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)], dim=1
+                [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)]
+                + ([model.prompt_encoder(self._prompt_tensor(model, prompt_text))] if model.prompt_encoder is not None else []),
+                dim=1
             ).expand(num_candidates, -1, -1)
             cache = transformer.new_cache(max_len=max_tokens + 1, batch_size=num_candidates)
 

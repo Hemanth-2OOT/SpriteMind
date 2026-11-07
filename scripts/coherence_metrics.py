@@ -87,12 +87,13 @@ def main() -> None:
     ap.add_argument("--out", default="data/benchmarks/coherence_metrics.json")
     ap.add_argument("--anim-frames", type=int, default=4, help="frames per animation used for continuity")
     ap.add_argument("--skip-continuity", action="store_true")
+    ap.add_argument("--checkpoint", default="svan_checkpoint_best.pt")
     args = ap.parse_args()
 
     prompts = json.loads(PROMPTS_PATH.read_text()) if PROMPTS_PATH.exists() else []
     prompts = prompts[: args.limit]
     pipeline = SpriteMindPipeline()
-    if not pipeline.load_checkpoint("svan_checkpoint_best.pt"):
+    if not pipeline.load_checkpoint(args.checkpoint):
         raise SystemExit(pipeline.checkpoint_error or "no usable checkpoint")
 
     continuity_rows = []

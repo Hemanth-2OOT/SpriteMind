@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
+from spritemind.ml.prompt_encoder import PROMPT_MAX_LEN, describe_record, encode_prompt
 from spritemind.ml.svan import SVANModel
 from spritemind.ml.tokenizer import ActionTokenizer
 from spritemind.dataset.generator import CATEGORIES, STYLES, POSES
@@ -48,6 +49,7 @@ class PixelScriptDataset(Dataset):
         style_list = []
         pose_list = []
         palette_list = []
+        prompt_list = []
 
         # Find records.jsonl either at dataset_path or its parent
         jsonl_candidates = [
@@ -81,6 +83,7 @@ class PixelScriptDataset(Dataset):
                     style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                     pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
                     palette_list.append(0)
+                    prompt_list.append(encode_prompt(describe_record(item)))
 
                     if max_samples and len(input_list) >= max_samples:
                         break
@@ -109,6 +112,7 @@ class PixelScriptDataset(Dataset):
                             style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                             pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
                             palette_list.append(0)
+                            prompt_list.append(encode_prompt(describe_record(data)))
 
                             if max_samples and len(input_list) >= max_samples:
                                 break
@@ -122,6 +126,7 @@ class PixelScriptDataset(Dataset):
             self.style_idx = torch.tensor(style_list, dtype=torch.long)
             self.pose_idx = torch.tensor(pose_list, dtype=torch.long)
             self.palette_idx = torch.tensor(palette_list, dtype=torch.long)
+            self.prompt_tokens = torch.tensor(prompt_list, dtype=torch.long)
         else:
             self.input_ids = torch.empty((0, max_seq_len - 1), dtype=torch.long)
             self.target_ids = torch.empty((0, max_seq_len - 1), dtype=torch.long)
@@ -129,6 +134,7 @@ class PixelScriptDataset(Dataset):
             self.style_idx = torch.empty(0, dtype=torch.long)
             self.pose_idx = torch.empty(0, dtype=torch.long)
             self.palette_idx = torch.empty(0, dtype=torch.long)
+            self.prompt_tokens = torch.empty((0, PROMPT_MAX_LEN), dtype=torch.long)
 
     def __len__(self) -> int:
         return len(self.input_ids)
@@ -141,6 +147,7 @@ class PixelScriptDataset(Dataset):
             "style_idx": self.style_idx[idx],
             "pose_idx": self.pose_idx[idx],
             "palette_idx": self.palette_idx[idx],
+            "prompt_tokens": self.prompt_tokens[idx],
         }
 
 
@@ -219,6 +226,8 @@ class ModelTrainer:
         dropout: float = 0.1,
         label_smoothing: float = 0.0,
         threads: int = 0,
+        prompt_text: bool = False,
+        max_samples: Optional[int] = None,
     ) -> Dict[str, Any]:
         if self.is_training:
             return {"status": "error", "message": "Training already in progress"}
@@ -228,7 +237,8 @@ class ModelTrainer:
         self._thread = threading.Thread(
             target=self._run_training_loop,
             args=(dataset_name, epochs, batch_size, learning_rate, optimizer_name, save_checkpoint_name, resume, resume_from, patience, seed,
-                  max_seq_len, d_model, nhead, num_layers, dim_feedforward, dropout, label_smoothing, threads),
+                  max_seq_len, d_model, nhead, num_layers, dim_feedforward, dropout, label_smoothing, threads,
+                  prompt_text, max_samples),
             daemon=True,
         )
         self._thread.start()
@@ -267,6 +277,8 @@ class ModelTrainer:
         dropout: float = 0.1,
         label_smoothing: float = 0.0,
         threads: int = 0,
+        prompt_text: bool = False,
+        max_samples: Optional[int] = None,
     ):
         start_time = time.time()
         if threads > 0:
@@ -280,8 +292,12 @@ class ModelTrainer:
 
         try:
             dataset_dir = Path("data/datasets") / dataset_name
-            train_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="train")
-            val_dataset = PixelScriptDataset(dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="val")
+            train_dataset = PixelScriptDataset(
+                dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="train", max_samples=max_samples
+            )
+            val_dataset = PixelScriptDataset(
+                dataset_dir, self.tokenizer, max_seq_len=max_seq_len, split="val", max_samples=max_samples
+            )
 
             if len(train_dataset) == 0:
                 self.current_run_status["state"] = "error"
@@ -300,6 +316,7 @@ class ModelTrainer:
                 dim_feedforward=dim_feedforward,
                 max_seq_len=max_seq_len,
                 dropout=dropout,
+                prompt_text=prompt_text,
             ).to(self.device)
 
             # Optional resume from previous checkpoint
@@ -308,11 +325,16 @@ class ModelTrainer:
                 resume_file = self.checkpoints_dir / (resume_from or save_name)
                 if resume_file.exists():
                     loaded = torch.load(resume_file, map_location=self.device)
-                    if isinstance(loaded, dict) and "model_state_dict" in loaded:
-                        model.load_state_dict(loaded["model_state_dict"])
-                        start_epoch = loaded.get("metadata", {}).get("epoch", 0) + 1
+                    state = loaded["model_state_dict"] if isinstance(loaded, dict) and "model_state_dict" in loaded else loaded
+                    if prompt_text:
+                        # Older checkpoints predate the text encoder, so its weights
+                        # start fresh while everything else resumes.
+                        state = {k: v for k, v in state.items() if not k.startswith("prompt_encoder.")}
+                        model.load_state_dict(state, strict=False)
                     else:
-                        model.load_state_dict(loaded)
+                        model.load_state_dict(state)
+                    if isinstance(loaded, dict):
+                        start_epoch = loaded.get("metadata", {}).get("epoch", 0) + 1
 
             if optimizer_name.lower() == "adam":
                 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -372,6 +394,7 @@ class ModelTrainer:
 
                     # Padding key mask for transformer decoder
                     padding_mask = (inp == self.tokenizer.pad_id)
+                    prompt_tokens = batch["prompt_tokens"].to(self.device) if model.prompt_encoder is not None else None
 
                     optimizer.zero_grad()
                     logits = model(
@@ -381,6 +404,7 @@ class ModelTrainer:
                         pose_idx=p_idx,
                         palette_idx=pal_idx,
                         tgt_key_padding_mask=padding_mask,
+                        prompt_tokens=prompt_tokens,
                     )
 
                     loss = criterion(logits.reshape(-1, logits.size(-1)), tgt.view(-1))
@@ -432,6 +456,11 @@ class ModelTrainer:
                                 pose_idx=val_batch["pose_idx"].to(self.device),
                                 palette_idx=val_batch["palette_idx"].to(self.device),
                                 tgt_key_padding_mask=v_mask,
+                                prompt_tokens=(
+                                    val_batch["prompt_tokens"].to(self.device)
+                                    if model.prompt_encoder is not None
+                                    else None
+                                ),
                             )
                             v_loss = criterion(v_logits.reshape(-1, v_logits.size(-1)), v_tgt.view(-1))
                             val_running_loss += v_loss.item()

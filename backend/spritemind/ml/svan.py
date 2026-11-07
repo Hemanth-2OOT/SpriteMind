@@ -13,6 +13,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, Any, Optional, Tuple, List
 
+from spritemind.ml.prompt_encoder import PROMPT_MAX_LEN, PromptTextEncoder
+
 
 class SemanticEncoder(nn.Module):
     """Encodes character metadata (category, style, pose, palette) into conditioning vectors."""
@@ -336,6 +338,8 @@ class SVANModel(nn.Module):
         dim_feedforward: int = 512,
         max_seq_len: int = 448,
         dropout: float = 0.1,
+        prompt_text: bool = False,
+        prompt_max_len: int = PROMPT_MAX_LEN,
     ):
         super().__init__()
         self.d_model = d_model
@@ -348,6 +352,8 @@ class SVANModel(nn.Module):
             "dim_feedforward": dim_feedforward,
             "max_seq_len": max_seq_len,
             "dropout": dropout,
+            "prompt_text": prompt_text,
+            "prompt_max_len": prompt_max_len,
         }
         self.semantic_encoder = SemanticEncoder(d_model=d_model)
         self.visual_encoder = VisualEncoder(in_channels=4, d_model=d_model)
@@ -362,11 +368,30 @@ class SVANModel(nn.Module):
             dropout=dropout,
         )
         self.critic = VisualCritic(in_channels=4)
+        self.prompt_encoder = PromptTextEncoder(d_model=d_model, dropout=dropout) if prompt_text else None
 
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "SVANModel":
-        keys = ("vocab_size", "d_model", "nhead", "num_layers", "dim_feedforward", "max_seq_len", "dropout")
+        keys = (
+            "vocab_size", "d_model", "nhead", "num_layers", "dim_feedforward", "max_seq_len",
+            "dropout", "prompt_text", "prompt_max_len",
+        )
         return cls(**{k: config[k] for k in keys if k in config})
+
+    def memory_tokens(
+        self,
+        category_idx: torch.Tensor,
+        style_idx: torch.Tensor,
+        pose_idx: torch.Tensor,
+        palette_idx: torch.Tensor,
+        prompt_tokens: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Builds the decoder memory: semantic, structure, visual and prompt tokens."""
+        sem_cond = self.semantic_encoder(category_idx, style_idx, pose_idx, palette_idx)
+        tokens = [sem_cond, torch.zeros_like(sem_cond), torch.zeros_like(sem_cond)]
+        if self.prompt_encoder is not None and prompt_tokens is not None:
+            tokens.append(self.prompt_encoder(prompt_tokens))
+        return torch.stack(tokens, dim=1)
 
     def count_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
@@ -381,6 +406,7 @@ class SVANModel(nn.Module):
         part_indices: Optional[torch.Tensor] = None,
         canvas_images: Optional[torch.Tensor] = None,
         tgt_key_padding_mask: Optional[torch.Tensor] = None,
+        prompt_tokens: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         # 1. Semantic conditioning
         sem_cond = self.semantic_encoder(category_idx, style_idx, pose_idx, palette_idx) # (B, d_model)
@@ -397,8 +423,11 @@ class SVANModel(nn.Module):
         else:
             vis_cond = torch.zeros_like(sem_cond)
 
-        # Combine memory tokens: (B, 3, d_model)
-        memory = torch.stack([sem_cond, struct_cond, vis_cond], dim=1)
+        # Combine memory tokens: (B, 3, d_model) plus the prompt token when present
+        memory_tokens = [sem_cond, struct_cond, vis_cond]
+        if self.prompt_encoder is not None and prompt_tokens is not None:
+            memory_tokens.append(self.prompt_encoder(prompt_tokens))
+        memory = torch.stack(memory_tokens, dim=1)
 
         # 4. Action generation
         logits = self.action_transformer(tgt_tokens, memory, tgt_key_padding_mask=tgt_key_padding_mask)
