@@ -30,6 +30,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
   const [showPixelGrid, setShowPixelGrid] = useState(true);
   const [showDefectOverlay, setShowDefectOverlay] = useState(true);
   const [onionSkinEnabled, setOnionSkinEnabled] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInspecting, setIsInspecting] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
@@ -68,6 +69,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       setBeforeScriptText(null);
       setViewingBefore(false);
       setRepairHistory([]);
+      setHistoryVersion((version) => version + 1);
     } catch (e: any) {
       alert(`Generation Error: ${e.message}`);
     } finally {
@@ -146,6 +148,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       setBeforeScriptText(null);
       setViewingBefore(false);
       setRepairHistory([]);
+      setHistoryVersion((version) => version + 1);
 
       const rep = await inspectSpriteApi({
         script_text: beforeScriptText,
@@ -310,6 +313,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
           onClear={() => setFrames([])}
           isLoading={isLoading}
           selectedEngine={selectedEngine}
+          historyVersion={historyVersion}
         />
 
         {/* Central Workspace */}

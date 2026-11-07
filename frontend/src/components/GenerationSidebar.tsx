@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Wand2,
   Sparkles,
@@ -8,8 +8,11 @@ import {
   Zap,
   Sliders,
   ChevronDown,
+  History,
+  X,
 } from 'lucide-react';
 import { GenerationResult } from '../types';
+import { fetchHistory, deleteHistoryRun, clearHistory } from '../services/api';
 
 interface GenerationSidebarProps {
   onGenerate: (params: any) => Promise<void>;
@@ -17,6 +20,7 @@ interface GenerationSidebarProps {
   onClear: () => void;
   isLoading: boolean;
   selectedEngine: string;
+  historyVersion?: number;
 }
 
 const PROMPT_PRESETS = [
@@ -34,6 +38,7 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   onClear,
   isLoading,
   selectedEngine,
+  historyVersion = 0,
 }) => {
   const [prompt, setPrompt] = useState('Create a 32x32 green zombie with red eyes, a torn brown shirt, and a front-facing idle pose.');
   const [negativePrompt, setNegativePrompt] = useState('Blurry pixels, inconsistent outlines, excessive colors, disconnected limbs');
@@ -50,7 +55,68 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const [temperature, setTemperature] = useState<number>(0.9);
   const [topK, setTopK] = useState<number>(0);
 
+  const [runs, setRuns] = useState<any[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   const samplingDisabled = selectedEngine === 'procedural_baseline';
+
+  useEffect(() => {
+    fetchHistory(15)
+      .then((data) => setRuns(data.runs || []))
+      .catch(() => setRuns([]));
+  }, [historyVersion]);
+
+  const applyRun = (run: any) => {
+    setPrompt(run.prompt || '');
+    setCategory(run.category || 'knight');
+    setStyle(run.style || 'classic_16bit');
+    setPose(run.pose || 'idle');
+    setPalette(run.palette || 'pico8');
+    setSeed(run.seed ?? 42);
+    setNumFrames(run.num_frames || 1);
+    setBestOf(run.best_of || 4);
+    setTemperature(run.temperature ?? 0.9);
+    setTopK(run.top_k || 0);
+  };
+
+  const reseedRun = (run: any) => {
+    const nextSeed = Math.floor(Math.random() * 999999);
+    applyRun({ ...run, seed: nextSeed });
+    onGenerate({
+      prompt: run.prompt || '',
+      category: run.category || 'knight',
+      style: run.style || 'classic_16bit',
+      pose: run.pose || 'idle',
+      palette: run.palette || 'pico8',
+      width: resolution,
+      height: resolution,
+      num_frames: run.num_frames || 1,
+      engine: selectedEngine,
+      seed: nextSeed,
+      max_actions: maxActions,
+      best_of: run.best_of || 4,
+      temperature: run.temperature ?? 0.9,
+      top_k: run.top_k || 0,
+    });
+  };
+
+  const removeRun = async (id: number) => {
+    setRuns((current) => current.filter((run) => run.id !== id));
+    try {
+      await deleteHistoryRun(id);
+    } catch {
+      /* the row is already gone from the view; nothing else to do */
+    }
+  };
+
+  const clearAllRuns = async () => {
+    setRuns([]);
+    try {
+      await clearHistory();
+    } catch {
+      /* same as above */
+    }
+  };
 
   const handleRollDice = () => {
     setSeed(Math.floor(Math.random() * 999999));
@@ -361,6 +427,73 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
               </>
             )}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((open) => !open)}
+            className="w-full flex items-center justify-between px-2 py-1.5 rounded-md bg-dark-850 hover:bg-dark-800 border border-dark-750 text-[11px] text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-purple-400" />
+              <span>Recent prompts</span>
+              <span className="text-[10px] text-slate-500 font-mono">{runs.length}</span>
+            </span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${historyOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {historyOpen && (
+            <div className="space-y-1">
+              {runs.length === 0 ? (
+                <p className="text-[10px] text-slate-500 px-1">No runs yet — generate a sprite to start the history.</p>
+              ) : (
+                <>
+                  {runs.map((run) => (
+                    <div
+                      key={run.id}
+                      className="group flex items-start gap-1.5 px-2 py-1 rounded border border-dark-750/60 bg-dark-950/60 hover:border-purple-700/50"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => applyRun(run)}
+                        className="flex-1 text-left"
+                        title={run.prompt}
+                      >
+                        <span className="block text-[11px] text-slate-300 truncate">
+                          {run.prompt || '(no prompt)'}
+                        </span>
+                        <span className="block text-[10px] text-slate-500 font-mono">
+                          {run.category} · seed {run.seed} · {run.latency_ms ? `${Math.round(run.latency_ms)} ms` : '—'}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => reseedRun(run)}
+                        className="px-1 py-0.5 rounded text-[10px] text-purple-300 hover:bg-purple-950/60"
+                        title="Re-run with a new seed"
+                      >
+                        <Dice5 className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeRun(run.id)}
+                        className="px-1 py-0.5 rounded text-slate-500 hover:text-rose-400"
+                        title="Remove from history"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={clearAllRuns}
+                    className="text-[10px] text-slate-500 hover:text-rose-400 px-1"
+                  >
+                    Clear history
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <button
