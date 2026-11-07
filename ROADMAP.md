@@ -97,10 +97,10 @@ give the same distribution. This is the largest quality jump available.
   *How:* pack frames into a horizontal sheet with uniform padding, emit a JSON frame map (`name`, `x`, `y`, `w`, `h`, `duration`), offer PNG + Aseprite JSON.
   *Done when:* the exported pair loads in Aseprite and in a sample pygame loader script in `docs/`.
 
-- [ ] **Inter-frame continuity metric** — `S`
+- [x] **Inter-frame continuity metric** — `S` ✓ #15 (`renderer/continuity.py`, 4 walk cycles in the coherence report)
   *Why:* the user-visible complaint was "missing pixels between transitions"; we measure islands but not per-pixel frame deltas.
   *How:* per-frame-pair delta of opaque masks, report mean/median and worst pair; add to the coherence report.
-  *Done when:* a deliberately broken frame ranks worst.
+  **Met:** mean IoU 0.8206, worst pair 0.7688, 311 pixels lost over 12 transitions; the broken-frame test ranks worst.
 
 - [ ] **Onion-skin export** — `S`
   *Why:* animators want to check motion without opening the app.
@@ -166,6 +166,7 @@ give the same distribution. This is the largest quality jump available.
 | Batched `best_of` sampling (`test_best_of.py`, 2.6× faster) | #12 |
 | `best_of` / `temperature` / `top_k` exposed in API, cache key and Generate panel | #13 |
 | `GET /api/metrics` p50/p95 ring buffer + Model Lab card | #14 |
+| Inter-frame continuity metric in the coherence report | #15 |
 
 ---
 

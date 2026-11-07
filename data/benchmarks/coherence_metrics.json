@@ -3,7 +3,13 @@
     "samples": 24,
     "mean_outline_coverage": 1.0,
     "prompts_with_islands": 0,
-    "mean_island_pixels": 0.0
+    "mean_island_pixels": 0.0,
+    "continuity": {
+      "animations": 4,
+      "mean_iou": 0.8206,
+      "worst_iou": 0.7688,
+      "total_lost_pixels": 311
+    }
   },
   "rows": [
     {
@@ -197,6 +203,176 @@
       "islands": 0,
       "island_pixels": 0,
       "outline_coverage": 1.0
+    }
+  ],
+  "continuity": [
+    {
+      "prompt": "A purple zombie wearing a knight helmet",
+      "pairs": 3,
+      "mean_iou": 0.8193,
+      "median_iou": 0.8082,
+      "worst_iou": 0.7943,
+      "worst_pair": {
+        "from_frame": 0,
+        "to_frame": 1
+      },
+      "mean_lost_share": 0.0983,
+      "total_lost_pixels": 84,
+      "per_pair": [
+        {
+          "from_frame": 0,
+          "to_frame": 1,
+          "iou": 0.7943,
+          "lost_pixels": 37,
+          "gained_pixels": 28,
+          "lost_share": 0.1285,
+          "changed_share": 0.2057
+        },
+        {
+          "from_frame": 1,
+          "to_frame": 2,
+          "iou": 0.8553,
+          "lost_pixels": 19,
+          "gained_pixels": 25,
+          "lost_share": 0.0681,
+          "changed_share": 0.1447
+        },
+        {
+          "from_frame": 2,
+          "to_frame": 3,
+          "iou": 0.8082,
+          "lost_pixels": 28,
+          "gained_pixels": 33,
+          "lost_share": 0.0982,
+          "changed_share": 0.1918
+        }
+      ]
+    },
+    {
+      "prompt": "A tiny green slime carrying a sword",
+      "pairs": 3,
+      "mean_iou": 0.8488,
+      "median_iou": 0.8565,
+      "worst_iou": 0.8333,
+      "worst_pair": {
+        "from_frame": 0,
+        "to_frame": 1
+      },
+      "mean_lost_share": 0.0795,
+      "total_lost_pixels": 46,
+      "per_pair": [
+        {
+          "from_frame": 0,
+          "to_frame": 1,
+          "iou": 0.8333,
+          "lost_pixels": 16,
+          "gained_pixels": 19,
+          "lost_share": 0.0838,
+          "changed_share": 0.1667
+        },
+        {
+          "from_frame": 1,
+          "to_frame": 2,
+          "iou": 0.8565,
+          "lost_pixels": 15,
+          "gained_pixels": 15,
+          "lost_share": 0.0773,
+          "changed_share": 0.1435
+        },
+        {
+          "from_frame": 2,
+          "to_frame": 3,
+          "iou": 0.8565,
+          "lost_pixels": 15,
+          "gained_pixels": 15,
+          "lost_share": 0.0773,
+          "changed_share": 0.1435
+        }
+      ]
+    },
+    {
+      "prompt": "A skeleton wearing a red cloak and carrying a staff",
+      "pairs": 3,
+      "mean_iou": 0.8172,
+      "median_iou": 0.8019,
+      "worst_iou": 0.7943,
+      "worst_pair": {
+        "from_frame": 0,
+        "to_frame": 1
+      },
+      "mean_lost_share": 0.1006,
+      "total_lost_pixels": 86,
+      "per_pair": [
+        {
+          "from_frame": 0,
+          "to_frame": 1,
+          "iou": 0.7943,
+          "lost_pixels": 37,
+          "gained_pixels": 28,
+          "lost_share": 0.1285,
+          "changed_share": 0.2057
+        },
+        {
+          "from_frame": 1,
+          "to_frame": 2,
+          "iou": 0.8553,
+          "lost_pixels": 19,
+          "gained_pixels": 25,
+          "lost_share": 0.0681,
+          "changed_share": 0.1447
+        },
+        {
+          "from_frame": 2,
+          "to_frame": 3,
+          "iou": 0.8019,
+          "lost_pixels": 30,
+          "gained_pixels": 33,
+          "lost_share": 0.1053,
+          "changed_share": 0.1981
+        }
+      ]
+    },
+    {
+      "prompt": "A blue cybernetic wolf ready to pounce",
+      "pairs": 3,
+      "mean_iou": 0.7969,
+      "median_iou": 0.7962,
+      "worst_iou": 0.7688,
+      "worst_pair": {
+        "from_frame": 0,
+        "to_frame": 1
+      },
+      "mean_lost_share": 0.1115,
+      "total_lost_pixels": 95,
+      "per_pair": [
+        {
+          "from_frame": 0,
+          "to_frame": 1,
+          "iou": 0.7688,
+          "lost_pixels": 39,
+          "gained_pixels": 35,
+          "lost_share": 0.1368,
+          "changed_share": 0.2313
+        },
+        {
+          "from_frame": 1,
+          "to_frame": 2,
+          "iou": 0.8258,
+          "lost_pixels": 25,
+          "gained_pixels": 29,
+          "lost_share": 0.089,
+          "changed_share": 0.1742
+        },
+        {
+          "from_frame": 2,
+          "to_frame": 3,
+          "iou": 0.7962,
+          "lost_pixels": 31,
+          "gained_pixels": 34,
+          "lost_share": 0.1088,
+          "changed_share": 0.2038
+        }
+      ]
     }
   ]
 }
