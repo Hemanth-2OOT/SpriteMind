@@ -65,10 +65,10 @@ give the same distribution. This is the largest quality jump available.
 
 ## P2 — Speed and control
 
-- [ ] **Batched `best_of` sampling** — `M`
+- [x] **Batched `best_of` sampling** — `M` ✓ #12 (`_sample_batch`, 4 candidates: 478 ms serial → 182 ms)
   *Why:* 4 candidates cost 4× serial forward passes; batching should cut the 465 ms mean substantially.
   *How:* route candidates through `SVAN._sample_batch` in one pass, then rerank as today.
-  *Done when:* benchmark mean drops with identical seed-for-seed output.
+  *Done when:* benchmark mean drops with identical seed-for-seed output. **Met:** 2.6× faster, candidates still distinct and seed-deterministic.
 
 - [ ] **Expose `best_of`, `temperature`, `top_k` in the API and Generate form** — `S`
   *Why:* users cannot trade speed for quality today; the knobs exist but are hard-coded.
@@ -163,6 +163,7 @@ give the same distribution. This is the largest quality jump available.
 | Colour-faithfulness metric in gate + benchmark (`faithfulness.py`) | #9 |
 | Golden-image regression set (10 categories, exact pixel diff) | #10 |
 | Prompt-conditioned corpus (colour/element tags, palette-aware mapping) | #11 |
+| Batched `best_of` sampling (`test_best_of.py`, 2.6× faster) | #12 |
 
 ---
 
