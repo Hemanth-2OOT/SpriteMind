@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { TrainingStatus, ModelsInfo } from '../types';
-import { startTraining, stopTraining, fetchTrainingStatus, fetchTrainingHistory, loadCheckpoint, fetchRuntimeMetrics } from '../services/api';
+import { startTraining, stopTraining, fetchTrainingStatus, fetchTrainingHistory, loadCheckpoint, fetchRuntimeMetrics, fetchBenchmarkReportCard } from '../services/api';
 
 interface ModelLabPageProps {
   modelsInfo: ModelsInfo | null;
@@ -39,6 +39,7 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
   const [localStatus, setLocalStatus] = useState<TrainingStatus | null>(trainingStatus);
   const [historyData, setHistoryData] = useState<any>(null);
   const [runtime, setRuntime] = useState<any>(null);
+  const [reportCard, setReportCard] = useState<any>(null);
 
   const loadHistory = async () => {
     try {
@@ -62,6 +63,12 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
     pollRuntime();
     const runtimeTimer = setInterval(pollRuntime, 10000);
     return () => clearInterval(runtimeTimer);
+  }, []);
+
+  useEffect(() => {
+    fetchBenchmarkReportCard()
+      .then(setReportCard)
+      .catch(() => setReportCard(null));
   }, []);
 
   useEffect(() => {
@@ -216,6 +223,64 @@ export const ModelLabPage: React.FC<ModelLabPageProps> = ({
             </p>
           )}
         </div>
+
+        {/* Category Report Card */}
+        {reportCard?.categories?.length ? (
+          <div className="bg-dark-900 rounded-xl border border-dark-750 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <Award className="w-3.5 h-3.5 text-amber-400" />
+                <span>Category Report Card</span>
+              </h2>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {reportCard.engine} · mean {reportCard.mean_score ?? '—'} · weakest {reportCard.worst_category ?? '—'}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-slate-500">
+                    <th className="text-left font-medium pb-2">Category</th>
+                    <th className="text-right font-medium pb-2">Score</th>
+                    <th className="text-right font-medium pb-2">Struct</th>
+                    <th className="text-right font-medium pb-2">IoU</th>
+                    <th className="text-right font-medium pb-2">Colour</th>
+                    <th className="text-right font-medium pb-2">Latency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportCard.categories.map((row: any) => (
+                    <tr key={row.category} className="border-t border-dark-750/60">
+                      <td className="py-1.5 text-slate-300 flex items-center gap-2">
+                        <span
+                          className="h-1.5 w-16 rounded-full bg-dark-750 overflow-hidden inline-block"
+                          title={`${row.prompts} prompts`}
+                        >
+                          <span
+                            className={`block h-full ${
+                              (row.score ?? 0) >= 70 ? 'bg-emerald-500' : (row.score ?? 0) >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${Math.max(2, Math.min(100, row.score ?? 0))}%` }}
+                          />
+                        </span>
+                        {row.category}
+                      </td>
+                      <td className="py-1.5 text-right font-mono text-slate-100">{row.score ?? '—'}</td>
+                      <td className="py-1.5 text-right font-mono text-slate-400">{row.structural_consistency ?? '—'}</td>
+                      <td className="py-1.5 text-right font-mono text-slate-400">{row.silhouette_iou ?? '—'}</td>
+                      <td className="py-1.5 text-right font-mono text-slate-400">{row.colour_faithfulness ?? '—'}</td>
+                      <td className="py-1.5 text-right font-mono text-slate-500">{row.latency_ms ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2">
+              Weighted from structural consistency, silhouette IoU, colour faithfulness and valid-action rate; weakest
+              category first.
+            </p>
+          </div>
+        ) : null}
 
         {/* Telemetry Overview Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">

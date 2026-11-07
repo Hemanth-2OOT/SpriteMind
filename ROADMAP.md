@@ -114,10 +114,12 @@ give the same distribution. This is the largest quality jump available.
   *How:* 200 prompts × 3 seeds, rated 1–5 by you (or a helper), stored in `data/eval/human_ratings.json`; compute Spearman against IoU and clean rate.
   *Done when:* the correlation is documented (even if weak — that finding matters).
 
-- [ ] **Per-category report card in Model Lab** — `M`
+- [x] **Per-category report card in Model Lab** — `M` ✓ #17 (`GET /api/benchmarks/report_card`, `ml/report_card.py`)
   *Why:* zombie scored ~52 vs wizard ~92 IoU in our probe; that gap is invisible in the UI.
   *How:* group the benchmark JSON by category, render a sorted table with bars and a "worst category" callout.
   *Done when:* the weakest category is obvious without reading a file.
+  **Met:** the Model Lab shows every category weakest first with score bars; on the current 100-prompt run wizard is
+  weakest at 64.2 and the mean is 65.38.
 
 - [ ] **Expanded benchmark suite (300 prompts)** — `M`
   *Why:* 100 prompts make a 1-point IoU change statistically meaningless.
@@ -169,6 +171,7 @@ give the same distribution. This is the largest quality jump available.
 | `GET /api/metrics` p50/p95 ring buffer + Model Lab card | #14 |
 | Inter-frame continuity metric in the coherence report | #15 |
 | Onion-skin PNG export from the animation timeline | #16 |
+| Per-category report card in the Model Lab | #17 |
 
 ---
 
