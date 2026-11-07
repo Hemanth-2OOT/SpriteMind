@@ -23,12 +23,12 @@ Current baseline (as of `386c060`):
 
 ## P0 — Correctness we cannot ship without
 
-- [ ] **Seed determinism test** — `S`
+- [x] **Seed determinism test** — `S` ✓ #8
   *Why:* a `seed` field that does not reproduce the same PNG is a bug users will file as "the model is random".
   *How:* assert two calls with the same `(prompt, seed, engine)` are byte-identical after PNG encode; run over 20 seeds in `test_pipeline_determinism.py`.
   *Done when:* the test is in CI and passes on `trained_model` and `procedural`.
 
-- [ ] **Cache correctness guard** — `S`
+- [x] **Cache correctness guard** — `S` ✓ #8
   *Why:* the LRU cache keys on the request; a param added later (e.g. `best_of`) silently returns stale sprites if it is missing from the key.
   *How:* assert every request field that changes output is part of the cache key, with a test that two different `best_of` values do not share an entry.
   *Done when:* key is derived from the validated request model, not a hand-written tuple.
@@ -159,6 +159,7 @@ give the same distribution. This is the largest quality jump available.
 | Grammar v2 (OUTLINE/SHADE), guarded rerank, gv2 retrain, latency report | #4 |
 | Visual critic retrained on grammar sprites, calibrated at p=0.72 | #5 |
 | Neural critic verdict surfaced in the Inspector | #6 |
+| Seed determinism + cache-key coverage (`test_pipeline_determinism.py`) | #8 |
 
 ---
 
