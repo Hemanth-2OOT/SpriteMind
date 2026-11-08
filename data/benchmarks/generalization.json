@@ -1,0 +1,101 @@
+{
+  "benchmark": "generalization",
+  "coverage": {
+    "corpus_triples": 250,
+    "possible_triples": 250,
+    "benchmark_prompts_on_seen_triples_pct": 100.0,
+    "note": "The corpus enumerates the full category x style x pose Cartesian product, so no compositional novelty can be measured; only semantic OOD prompts are new."
+  },
+  "prompts": 312,
+  "best_of": 4,
+  "seed": 20261105,
+  "novelty_partition": "triples seen in the train split of element_synthetic_20k",
+  "results": {
+    "in_distribution": {
+      "summary": {
+        "n": 296,
+        "opaque_pixels": {
+          "mean": 230.5,
+          "stderr": 1.017
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.0439,
+          "stderr": 0.0311
+        },
+        "largest_component_share": {
+          "mean": 0.9993,
+          "stderr": 0.0004
+        },
+        "column_symmetry": {
+          "mean": 0.9222,
+          "stderr": 0.0032
+        },
+        "interior_hole_pixels": {
+          "mean": 0.1791,
+          "stderr": 0.053
+        },
+        "silhouette_iou": {
+          "mean": 0.7395,
+          "stderr": 0.0062
+        },
+        "colour_faithfulness": {
+          "mean": 13.7719,
+          "stderr": 1.506
+        },
+        "latency_ms": {
+          "mean": 349.1137,
+          "stderr": 6.3376
+        }
+      },
+      "exact_memorisation_pct": 0.0,
+      "guard_win_pct": 17.57
+    },
+    "out_of_vocabulary": {
+      "summary": {
+        "n": 16,
+        "opaque_pixels": {
+          "mean": 228.125,
+          "stderr": 4.1169
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.0,
+          "stderr": 0.0
+        },
+        "largest_component_share": {
+          "mean": 1.0,
+          "stderr": 0.0
+        },
+        "column_symmetry": {
+          "mean": 0.9507,
+          "stderr": 0.0105
+        },
+        "interior_hole_pixels": {
+          "mean": 0.0625,
+          "stderr": 0.0625
+        },
+        "silhouette_iou": {
+          "mean": 0.7565,
+          "stderr": 0.0294
+        },
+        "colour_faithfulness": {
+          "mean": 23.4,
+          "stderr": 16.0
+        },
+        "latency_ms": {
+          "mean": 355.4831,
+          "stderr": 32.1625
+        }
+      },
+      "exact_memorisation_pct": 0.0,
+      "guard_win_pct": 6.25
+    }
+  }
+}

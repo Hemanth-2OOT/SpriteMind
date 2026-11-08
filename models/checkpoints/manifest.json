@@ -33,49 +33,11 @@
       "parameter_count": 1713936,
       "sha256": "16c2cd7310a167dd6ac3ecc64dfbf1d03d1c11f68dc8ba3b1e6f87d23ca2d71e"
     },
-    "svan_v3.ep1.pt": {
-      "best_val_loss": 0.3474,
-      "bytes": 9529365,
-      "file": "svan_v3.ep1.pt",
-      "parameter_count": 2302283,
-      "sha256": "dbe663edc52da33f1d6a37f80611d44282988f35b1b784a4ccd8eadd327b45ec",
-      "vocab_size": 404
-    },
     "temporal_svan_best.pt": {
       "bytes": 1725309,
       "file": "temporal_svan_best.pt",
       "parameter_count": 426918,
       "sha256": "bbc0459bc3d764dd5366dff99985f7a38e02f8f054f2ae8117ecfe9fea53f58f",
-      "trained_animations": 20
-    },
-    "temporal_svan_gv2.pt": {
-      "best_val_loss": 3.2831,
-      "bytes": 1725309,
-      "file": "temporal_svan_gv2.pt",
-      "parameter_count": 426459,
-      "sha256": "bbc0459bc3d764dd5366dff99985f7a38e02f8f054f2ae8117ecfe9fea53f58f",
-      "taxonomy": [
-        "idle",
-        "walk",
-        "run",
-        "jump",
-        "fall",
-        "death",
-        "melee_attack",
-        "ranged_attack",
-        "hit_reaction",
-        "taking_damage",
-        "blocking",
-        "special_ability",
-        "cast",
-        "dash",
-        "slime_bouncing",
-        "zombie_movement",
-        "skeleton_walking",
-        "robot_movement",
-        "animal_running",
-        "flying_creatures"
-      ],
       "trained_animations": 20
     },
     "visual_critic_best.pt": {

@@ -1,0 +1,63 @@
+{
+  "benchmark": "performance",
+  "torch_threads": 2,
+  "checkpoint_load_ms": 28.09,
+  "cpu_count": 48,
+  "arms": {
+    "trained_best1": {
+      "cold_ms": 216.69,
+      "pipeline_reported_ms": 200.87,
+      "median_ms": 207.06,
+      "p90_ms": 234.32,
+      "stdev_ms": 68.52,
+      "throughput_per_s": 4.83
+    },
+    "trained_best2": {
+      "cold_ms": 318.1,
+      "pipeline_reported_ms": 313.81,
+      "median_ms": 316.01,
+      "p90_ms": 341.84,
+      "stdev_ms": 109.84,
+      "throughput_per_s": 3.16
+    },
+    "trained_best4": {
+      "cold_ms": 403.57,
+      "pipeline_reported_ms": 398.81,
+      "median_ms": 389.36,
+      "p90_ms": 422.32,
+      "stdev_ms": 121.4,
+      "throughput_per_s": 2.57
+    },
+    "trained_best8": {
+      "cold_ms": 469.42,
+      "pipeline_reported_ms": 464.6,
+      "median_ms": 504.56,
+      "p90_ms": 548.07,
+      "stdev_ms": 162.39,
+      "throughput_per_s": 1.98
+    },
+    "procedural_baseline": {
+      "median_ms": 6.45,
+      "p90_ms": 7.05,
+      "throughput_per_s": 155.02
+    },
+    "untrained_model": {
+      "median_ms": 98.36,
+      "p90_ms": 246.77,
+      "throughput_per_s": 10.17
+    },
+    "threads_1": {
+      "median_ms": 316.28,
+      "throughput_per_s": 3.16
+    },
+    "threads_2": {
+      "median_ms": 381.53,
+      "throughput_per_s": 2.62
+    },
+    "threads_4": {
+      "median_ms": 801.39,
+      "throughput_per_s": 1.25
+    }
+  },
+  "peak_rss_mb": 295.9
+}

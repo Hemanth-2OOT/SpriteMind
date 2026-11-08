@@ -55,7 +55,7 @@ def build_table() -> str:
         ("SVAN Action Transformer", history.get("parameters"),
          f"val loss {history.get('best_val_loss', 'n/a')}, token acc {val_acc or 'n/a'}",
          f"{history.get('train_samples', 'n/a')} train / {history.get('total_epochs', 'n/a')} epochs"),
-        ("Neural Visual Critic", 369077,
+        ("Neural Visual Critic", critic.get("parameter_count", 368044),
          f"val F1 {critic.get('best_f1', 'n/a')}, recall {critic.get('recall', 'n/a')}% "
          f"(calibrated p={critic.get('calibrated_threshold', 'n/a')}: "
          f"{critic.get('calibrated_precision', 'n/a')}% precision @ {critic.get('calibrated_false_positive_rate', 'n/a')}% FP)",
@@ -84,14 +84,32 @@ def build_table() -> str:
     if trained:
         lines += [
             "",
-            f"Benchmark ({summary.get('total_prompts', '?')} held-out prompts, "
-            f"{summary.get('timestamp', 'unknown time')}): trained model "
-            f"IoU {trained.get('avg_silhouette_iou')}, "
-            f"valid actions {trained.get('avg_valid_action_rate')}%, "
-            f"palette adherence {trained.get('avg_palette_adherence')}%, "
+            f"Legacy proxy benchmark ({summary.get('total_prompts', '?')} prompts, "
+            f"{summary.get('timestamp', 'unknown time')}; **not** image-grounded, see "
+            "`docs/IMPLEMENTATION_AUDIT.md`): "
+            f"density surrogate {trained.get('avg_silhouette_iou')}, "
+            f"render-error rate {trained.get('avg_valid_action_rate')}%, "
             f"colour faithfulness {trained.get('avg_colour_faithfulness')}% "
             f"({trained.get('colours_present_rate')}% of prompts get their colour), "
             f"latency {trained.get('avg_latency_ms')} ms.",
+        ]
+
+    grounded = load("data/benchmarks/neural_vs_procedural.json") or {}
+    trained_arm = (grounded.get("results") or {}).get("trained_best4")
+    base_arm = (grounded.get("results") or {}).get("procedural_baseline")
+    if trained_arm and base_arm:
+        t, b = trained_arm["summary"], base_arm["summary"]
+        lines += [
+            "",
+            f"Pixel-grounded benchmark ({t['n']} prompts, seed {grounded.get('seed', 'n/a')}; "
+            "`silhouette_iou` against the canonical template, palette membership counted per pixel): "
+            f"trained model (best_of=4) IoU {t['silhouette_iou']['mean']:.3f}, "
+            f"palette {t['palette_adherence_pct']['mean']:.1f}%, "
+            f"colour faithfulness {t['colour_faithfulness']['mean']:.1f}%, "
+            f"{t['latency_ms']['mean']:.0f} ms vs procedural baseline IoU "
+            f"{b['silhouette_iou']['mean']:.3f}, palette "
+            f"{b['palette_adherence_pct']['mean']:.1f}%, colour "
+            f"{b['colour_faithfulness']['mean']:.1f}%, {b['latency_ms']['mean']:.1f} ms.",
         ]
     lines.append(END)
     return "\n".join(lines)

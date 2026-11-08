@@ -249,7 +249,7 @@
     3.33
   ],
   "best_val_loss": 3.2831,
-  "parameter_count": 426918,
+  "parameter_count": 426459,
   "checkpoint": "models/checkpoints/temporal_svan_best.pt",
   "best_epoch": 34
 }

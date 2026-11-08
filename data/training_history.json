@@ -7,7 +7,7 @@
   "best_epoch": 2,
   "best_val_loss": 0.3474,
   "device": "cpu",
-  "parameters": 2361304,
+  "parameters": 2302283,
   "vocab_size": 404,
   "loss_history": [
     {

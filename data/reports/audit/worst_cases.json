@@ -1,0 +1,98 @@
+[
+  {
+    "iou": 0.508,
+    "prompt": "A slim gold frost-crackling robot charging downhill",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "run",
+    "seed": 20261331
+  },
+  {
+    "iou": 0.542,
+    "prompt": "A hulking green flame-crackling zombie pacing the hall",
+    "category": "zombie",
+    "style": "cyberpunk",
+    "pose": "walk",
+    "seed": 20261311
+  },
+  {
+    "iou": 0.545,
+    "prompt": "A stout silver frost-crackling goblin sprinting from danger",
+    "category": "goblin",
+    "style": "cyberpunk",
+    "pose": "run",
+    "seed": 20261289
+  },
+  {
+    "iou": 0.558,
+    "prompt": "A slim black flame-crackling knight mid-swing of a heavy blow",
+    "category": "knight",
+    "style": "cyberpunk",
+    "pose": "attack",
+    "seed": 20261303
+  },
+  {
+    "iou": 0.559,
+    "prompt": "A tiny magenta robot standing ready",
+    "category": "robot",
+    "style": "dark_fantasy",
+    "pose": "idle",
+    "seed": 20261240
+  },
+  {
+    "iou": 0.561,
+    "prompt": "A cursed bone archer drawing a spectral bone arrow",
+    "category": "skeleton",
+    "style": "classic_16bit",
+    "pose": "attack",
+    "seed": 20261156
+  },
+  {
+    "iou": 0.571,
+    "prompt": "A tiny pink ice-crackling rogue trudging down a wet road",
+    "category": "rogue",
+    "style": "flat",
+    "pose": "walk",
+    "seed": 20261285
+  },
+  {
+    "iou": 0.576,
+    "prompt": "A moss-covered swamp zombie rising from murky waters",
+    "category": "zombie",
+    "style": "classic_16bit",
+    "pose": "walk",
+    "seed": 20261121
+  },
+  {
+    "iou": 0.576,
+    "prompt": "A storm caller wizard running while summoning tempest winds",
+    "category": "wizard",
+    "style": "classic_16bit",
+    "pose": "run",
+    "seed": 20261202
+  },
+  {
+    "iou": 0.577,
+    "prompt": "A stout lime wizard dashing across the yard",
+    "category": "wizard",
+    "style": "cyberpunk",
+    "pose": "run",
+    "seed": 20261238
+  },
+  {
+    "iou": 0.581,
+    "prompt": "A nimble cat burglar scaling high stone parapets",
+    "category": "rogue",
+    "style": "retro_8bit",
+    "pose": "run",
+    "seed": 20261168
+  },
+  {
+    "iou": 0.581,
+    "prompt": "A tiny fast zombie crawler stalking its prey",
+    "category": "zombie",
+    "style": "retro_8bit",
+    "pose": "run",
+    "seed": 20261123
+  }
+]

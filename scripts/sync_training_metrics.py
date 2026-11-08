@@ -58,7 +58,7 @@ def sync_svan() -> None:
         "best_epoch": epochs,
         "best_val_loss": meta.get("val_loss", meta.get("best_val_loss")),
         "device": meta.get("device"),
-        "parameters": meta.get("state_dict_parameters") or meta.get("parameters"),
+        "parameters": meta.get("parameters") or meta.get("state_dict_parameters"),
         "vocab_size": meta.get("vocab_size"),
         "loss_history": [{"epoch": epochs, "loss": loss}],
         "val_loss_history": [{"epoch": epochs, "val_loss": meta.get("val_loss", meta.get("best_val_loss"))}],
@@ -76,7 +76,7 @@ def sync_temporal() -> None:
         {
             "best_epoch": int(meta.get("epoch", current.get("best_epoch", 0))),
             "best_val_loss": meta.get("val_loss") or meta.get("best_val_loss") or current.get("best_val_loss"),
-            "parameter_count": int(meta.get("state_dict_parameters") or current.get("parameter_count", 0)),
+            "parameter_count": int(meta.get("parameters") or meta.get("parameter_count") or current.get("parameter_count", 0)),
             "checkpoint": "models/checkpoints/temporal_svan_best.pt",
         }
     )

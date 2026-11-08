@@ -1,0 +1,34 @@
+{
+  "benchmark": "socket_predictor",
+  "checkpoint": "socket_predictor_best.pt",
+  "val_samples": 60,
+  "label_source": "alpha-bbox heuristic used by the shipped trainer",
+  "results": {
+    "hand_r": {
+      "mae_px_vs_bbox_labels": 0.517,
+      "rmse_px_vs_bbox_labels": 1.017,
+      "mae_px_vs_anatomical_reference": 2.292
+    },
+    "hand_l": {
+      "mae_px_vs_bbox_labels": 0.7,
+      "rmse_px_vs_bbox_labels": 1.278,
+      "mae_px_vs_anatomical_reference": 1.758
+    },
+    "head": {
+      "mae_px_vs_bbox_labels": 0.392,
+      "rmse_px_vs_bbox_labels": 1.008,
+      "mae_px_vs_anatomical_reference": 1.175
+    },
+    "back": {
+      "mae_px_vs_bbox_labels": 0.392,
+      "rmse_px_vs_bbox_labels": 0.904,
+      "mae_px_vs_anatomical_reference": 1.158
+    }
+  },
+  "overall": {
+    "mean_euclidean_error_px_vs_bbox_labels": 0.867,
+    "mean_euclidean_error_px_vs_anatomical_reference": 2.623,
+    "within_1px_vs_bbox_pct": 76.25,
+    "within_2px_vs_bbox_pct": 96.25
+  }
+}

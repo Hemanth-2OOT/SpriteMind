@@ -24,5 +24,6 @@
   "calibrated_false_positive_rate": 0.0,
   "calibration_eval_samples": 640,
   "previous_best_f1": 0.3902,
-  "previous_recall": 24.62
+  "previous_recall": 24.62,
+  "parameter_count": 368044
 }

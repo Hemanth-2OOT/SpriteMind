@@ -59,3 +59,15 @@ def test_models_endpoint_reports_integrity():
     body = response.json()
     assert "checkpoints" in body
     assert "temporal_checkpoint_status" in body
+
+
+def test_prune_missing_drops_only_entries_without_a_file(tmp_path):
+    from spritemind.ml.checkpoint_manifest import prune_missing, read_manifest, write_manifest
+
+    keep = tmp_path / "keep.pt"
+    keep.write_bytes(b"weights")
+    write_manifest(tmp_path, {"keep.pt": {"file": "keep.pt"}, "gone.pt": {"file": "gone.pt"}})
+
+    assert prune_missing(tmp_path) == ["gone.pt"]
+    assert list(read_manifest(tmp_path)["checkpoints"]) == ["keep.pt"]
+    assert keep.exists()

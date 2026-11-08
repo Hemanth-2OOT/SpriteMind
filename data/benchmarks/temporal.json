@@ -1,0 +1,500 @@
+{
+  "benchmark": "temporal",
+  "checkpoint": "temporal_svan_best.pt",
+  "num_frames": 4,
+  "seed": 42,
+  "characters": [
+    "knight",
+    "robot",
+    "animal"
+  ],
+  "results": {
+    "procedural_baseline": {
+      "summary": {
+        "adjacent_iou": 0.8097,
+        "motion_px_share": 0.2207,
+        "loop_iou": 0.8208,
+        "static_frames": 0.1111,
+        "main_component_share": 1.0,
+        "palette_adherence_pct": 100.0,
+        "pixels_per_frame": 236.7792,
+        "latency_ms": 35.1143,
+        "n_sequences": 60
+      },
+      "per_animation": {
+        "idle": {
+          "motion_px_share": 0.0253,
+          "adjacent_iou": 0.9753,
+          "static_frames": 0.3333
+        },
+        "walk": {
+          "motion_px_share": 0.2289,
+          "adjacent_iou": 0.7951,
+          "static_frames": 0.0
+        },
+        "run": {
+          "motion_px_share": 0.4386,
+          "adjacent_iou": 0.6421,
+          "static_frames": 0.0
+        },
+        "jump": {
+          "motion_px_share": 0.4687,
+          "adjacent_iou": 0.6261,
+          "static_frames": 0.0
+        },
+        "fall": {
+          "motion_px_share": 0.2722,
+          "adjacent_iou": 0.7606,
+          "static_frames": 0.0
+        },
+        "death": {
+          "motion_px_share": 0.2989,
+          "adjacent_iou": 0.7441,
+          "static_frames": 0.2222
+        },
+        "melee_attack": {
+          "motion_px_share": 0.2324,
+          "adjacent_iou": 0.8005,
+          "static_frames": 0.0
+        },
+        "ranged_attack": {
+          "motion_px_share": 0.0653,
+          "adjacent_iou": 0.9376,
+          "static_frames": 0.1111
+        },
+        "hit_reaction": {
+          "motion_px_share": 0.1527,
+          "adjacent_iou": 0.8657,
+          "static_frames": 0.3333
+        },
+        "taking_damage": {
+          "motion_px_share": 0.1527,
+          "adjacent_iou": 0.8657,
+          "static_frames": 0.3333
+        },
+        "blocking": {
+          "motion_px_share": 0.0658,
+          "adjacent_iou": 0.9373,
+          "static_frames": 0.3333
+        },
+        "special_ability": {
+          "motion_px_share": 0.3335,
+          "adjacent_iou": 0.7199,
+          "static_frames": 0.0
+        },
+        "cast": {
+          "motion_px_share": 0.1795,
+          "adjacent_iou": 0.8396,
+          "static_frames": 0.1111
+        },
+        "dash": {
+          "motion_px_share": 0.2942,
+          "adjacent_iou": 0.7468,
+          "static_frames": 0.0
+        },
+        "slime_bouncing": {
+          "motion_px_share": 0.0815,
+          "adjacent_iou": 0.927,
+          "static_frames": 0.4444
+        },
+        "zombie_movement": {
+          "motion_px_share": 0.3395,
+          "adjacent_iou": 0.7131,
+          "static_frames": 0.0
+        },
+        "skeleton_walking": {
+          "motion_px_share": 0.1699,
+          "adjacent_iou": 0.8439,
+          "static_frames": 0.0
+        },
+        "robot_movement": {
+          "motion_px_share": 0.2025,
+          "adjacent_iou": 0.817,
+          "static_frames": 0.0
+        },
+        "animal_running": {
+          "motion_px_share": 0.2652,
+          "adjacent_iou": 0.7693,
+          "static_frames": 0.0
+        },
+        "flying_creatures": {
+          "motion_px_share": 0.1466,
+          "adjacent_iou": 0.8662,
+          "static_frames": 0.0
+        }
+      }
+    },
+    "untrained_model": {
+      "summary": {
+        "adjacent_iou": 0.8839,
+        "motion_px_share": 0.1277,
+        "loop_iou": 0.8876,
+        "static_frames": 0.1111,
+        "main_component_share": 1.0,
+        "palette_adherence_pct": 100.0,
+        "pixels_per_frame": 239.2917,
+        "latency_ms": 137.2903,
+        "n_sequences": 60
+      },
+      "per_animation": {
+        "idle": {
+          "motion_px_share": 0.0253,
+          "adjacent_iou": 0.9753,
+          "static_frames": 0.3333
+        },
+        "walk": {
+          "motion_px_share": 0.198,
+          "adjacent_iou": 0.8207,
+          "static_frames": 0.0
+        },
+        "run": {
+          "motion_px_share": 0.2874,
+          "adjacent_iou": 0.7506,
+          "static_frames": 0.0
+        },
+        "jump": {
+          "motion_px_share": 0.2935,
+          "adjacent_iou": 0.7452,
+          "static_frames": 0.0
+        },
+        "fall": {
+          "motion_px_share": 0.0967,
+          "adjacent_iou": 0.9098,
+          "static_frames": 0.1111
+        },
+        "death": {
+          "motion_px_share": 0.1783,
+          "adjacent_iou": 0.8362,
+          "static_frames": 0.0
+        },
+        "melee_attack": {
+          "motion_px_share": 0.18,
+          "adjacent_iou": 0.8387,
+          "static_frames": 0.0
+        },
+        "ranged_attack": {
+          "motion_px_share": 0.0392,
+          "adjacent_iou": 0.9626,
+          "static_frames": 0.3333
+        },
+        "hit_reaction": {
+          "motion_px_share": 0.0412,
+          "adjacent_iou": 0.9601,
+          "static_frames": 0.3333
+        },
+        "taking_damage": {
+          "motion_px_share": 0.0959,
+          "adjacent_iou": 0.9112,
+          "static_frames": 0.2222
+        },
+        "blocking": {
+          "motion_px_share": 0.063,
+          "adjacent_iou": 0.9399,
+          "static_frames": 0.3333
+        },
+        "special_ability": {
+          "motion_px_share": 0.1495,
+          "adjacent_iou": 0.8613,
+          "static_frames": 0.0
+        },
+        "cast": {
+          "motion_px_share": 0.163,
+          "adjacent_iou": 0.8546,
+          "static_frames": 0.1111
+        },
+        "dash": {
+          "motion_px_share": 0.1986,
+          "adjacent_iou": 0.8227,
+          "static_frames": 0.0
+        },
+        "slime_bouncing": {
+          "motion_px_share": 0.0316,
+          "adjacent_iou": 0.9701,
+          "static_frames": 0.4444
+        },
+        "zombie_movement": {
+          "motion_px_share": 0.1186,
+          "adjacent_iou": 0.8916,
+          "static_frames": 0.0
+        },
+        "skeleton_walking": {
+          "motion_px_share": 0.0811,
+          "adjacent_iou": 0.922,
+          "static_frames": 0.0
+        },
+        "robot_movement": {
+          "motion_px_share": 0.1181,
+          "adjacent_iou": 0.8887,
+          "static_frames": 0.0
+        },
+        "animal_running": {
+          "motion_px_share": 0.1213,
+          "adjacent_iou": 0.8874,
+          "static_frames": 0.0
+        },
+        "flying_creatures": {
+          "motion_px_share": 0.0734,
+          "adjacent_iou": 0.9298,
+          "static_frames": 0.0
+        }
+      }
+    },
+    "trained_model": {
+      "summary": {
+        "adjacent_iou": 0.8201,
+        "motion_px_share": 0.2064,
+        "loop_iou": 0.8246,
+        "static_frames": 0.1056,
+        "main_component_share": 1.0,
+        "palette_adherence_pct": 100.0,
+        "pixels_per_frame": 236.6583,
+        "latency_ms": 125.4865,
+        "n_sequences": 60
+      },
+      "per_animation": {
+        "idle": {
+          "motion_px_share": 0.0261,
+          "adjacent_iou": 0.9745,
+          "static_frames": 0.3333
+        },
+        "walk": {
+          "motion_px_share": 0.2289,
+          "adjacent_iou": 0.7951,
+          "static_frames": 0.0
+        },
+        "run": {
+          "motion_px_share": 0.4347,
+          "adjacent_iou": 0.6445,
+          "static_frames": 0.0
+        },
+        "jump": {
+          "motion_px_share": 0.3814,
+          "adjacent_iou": 0.6842,
+          "static_frames": 0.0
+        },
+        "fall": {
+          "motion_px_share": 0.2722,
+          "adjacent_iou": 0.7606,
+          "static_frames": 0.0
+        },
+        "death": {
+          "motion_px_share": 0.3206,
+          "adjacent_iou": 0.7285,
+          "static_frames": 0.2222
+        },
+        "melee_attack": {
+          "motion_px_share": 0.2441,
+          "adjacent_iou": 0.7908,
+          "static_frames": 0.0
+        },
+        "ranged_attack": {
+          "motion_px_share": 0.0608,
+          "adjacent_iou": 0.9418,
+          "static_frames": 0.1111
+        },
+        "hit_reaction": {
+          "motion_px_share": 0.1527,
+          "adjacent_iou": 0.8657,
+          "static_frames": 0.3333
+        },
+        "taking_damage": {
+          "motion_px_share": 0.1527,
+          "adjacent_iou": 0.8657,
+          "static_frames": 0.3333
+        },
+        "blocking": {
+          "motion_px_share": 0.0658,
+          "adjacent_iou": 0.9373,
+          "static_frames": 0.3333
+        },
+        "special_ability": {
+          "motion_px_share": 0.3015,
+          "adjacent_iou": 0.7401,
+          "static_frames": 0.0
+        },
+        "cast": {
+          "motion_px_share": 0.1608,
+          "adjacent_iou": 0.8556,
+          "static_frames": 0.1111
+        },
+        "dash": {
+          "motion_px_share": 0.2852,
+          "adjacent_iou": 0.7541,
+          "static_frames": 0.0
+        },
+        "slime_bouncing": {
+          "motion_px_share": 0.0525,
+          "adjacent_iou": 0.9516,
+          "static_frames": 0.3333
+        },
+        "zombie_movement": {
+          "motion_px_share": 0.2156,
+          "adjacent_iou": 0.8059,
+          "static_frames": 0.0
+        },
+        "skeleton_walking": {
+          "motion_px_share": 0.1699,
+          "adjacent_iou": 0.8439,
+          "static_frames": 0.0
+        },
+        "robot_movement": {
+          "motion_px_share": 0.2025,
+          "adjacent_iou": 0.817,
+          "static_frames": 0.0
+        },
+        "animal_running": {
+          "motion_px_share": 0.2529,
+          "adjacent_iou": 0.7791,
+          "static_frames": 0.0
+        },
+        "flying_creatures": {
+          "motion_px_share": 0.1466,
+          "adjacent_iou": 0.8662,
+          "static_frames": 0.0
+        }
+      }
+    }
+  },
+  "neural_vs_prior": {
+    "idle": {
+      "neural_mean_mag": 1.2794264258118346,
+      "prior_mean_mag": 0.09375,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.0,
+      "motion_on_prior_parts": 1.596009095509847
+    },
+    "walk": {
+      "neural_mean_mag": 1.2887078177882358,
+      "prior_mean_mag": 0.6710042485937369,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.1875,
+      "motion_on_prior_parts": 1.5426444531019246
+    },
+    "run": {
+      "neural_mean_mag": 1.2964246337069198,
+      "prior_mean_mag": 1.6104876459087445,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.5,
+      "motion_on_prior_parts": 1.4344864523570453
+    },
+    "jump": {
+      "neural_mean_mag": 1.2849311389727518,
+      "prior_mean_mag": 2.4390648246325415,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.5625,
+      "motion_on_prior_parts": 1.4415608004412868
+    },
+    "fall": {
+      "neural_mean_mag": 1.2820088809821755,
+      "prior_mean_mag": 1.5879875487911566,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.4375,
+      "motion_on_prior_parts": 1.53083930650483
+    },
+    "death": {
+      "neural_mean_mag": 1.2941443794989027,
+      "prior_mean_mag": 5.406780533640294,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.84375,
+      "motion_on_prior_parts": 1.4515217620603464
+    },
+    "melee_attack": {
+      "neural_mean_mag": 1.2874081298941746,
+      "prior_mean_mag": 1.2916684612855782,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.375,
+      "motion_on_prior_parts": 1.4301760718226433
+    },
+    "ranged_attack": {
+      "neural_mean_mag": 1.2781248854007572,
+      "prior_mean_mag": 1.3823771242968683,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.34375,
+      "motion_on_prior_parts": 1.7783967582508922
+    },
+    "hit_reaction": {
+      "neural_mean_mag": 1.277907409472391,
+      "prior_mean_mag": 1.1824358851314858,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.28125,
+      "motion_on_prior_parts": 2.2244673649470013
+    },
+    "taking_damage": {
+      "neural_mean_mag": 1.2781879133544862,
+      "prior_mean_mag": 1.1824358851314858,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.28125,
+      "motion_on_prior_parts": 2.224913779894511
+    },
+    "blocking": {
+      "neural_mean_mag": 1.275970923481509,
+      "prior_mean_mag": 0.5446735401324291,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.09375,
+      "motion_on_prior_parts": 2.4193718910217283
+    },
+    "special_ability": {
+      "neural_mean_mag": 1.286485442193225,
+      "prior_mean_mag": 1.854194526071426,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.40625,
+      "motion_on_prior_parts": 1.9291728041134775
+    },
+    "cast": {
+      "neural_mean_mag": 1.2805093032075092,
+      "prior_mean_mag": 1.007708318897707,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.25,
+      "motion_on_prior_parts": 1.6844121198005535
+    },
+    "dash": {
+      "neural_mean_mag": 1.2899075627792627,
+      "prior_mean_mag": 1.6975622732117417,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.625,
+      "motion_on_prior_parts": 1.27055572403165
+    },
+    "slime_bouncing": {
+      "neural_mean_mag": 1.2790246714139357,
+      "prior_mean_mag": 0.3125,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.125,
+      "motion_on_prior_parts": 1.5281566828489304
+    },
+    "zombie_movement": {
+      "neural_mean_mag": 1.2909316862933338,
+      "prior_mean_mag": 1.3298507811213525,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.375,
+      "motion_on_prior_parts": 2.0103634087478413
+    },
+    "skeleton_walking": {
+      "neural_mean_mag": 1.2835794226266444,
+      "prior_mean_mag": 0.5,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.1875,
+      "motion_on_prior_parts": 1.283582947216928
+    },
+    "robot_movement": {
+      "neural_mean_mag": 1.2800291008898057,
+      "prior_mean_mag": 0.3125,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.125,
+      "motion_on_prior_parts": 1.0061425395930808
+    },
+    "animal_running": {
+      "neural_mean_mag": 1.2818911544163711,
+      "prior_mean_mag": 0.7601423537605237,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.28125,
+      "motion_on_prior_parts": 0.6979215301883718
+    },
+    "flying_creatures": {
+      "neural_mean_mag": 1.283144541317597,
+      "prior_mean_mag": 0.4375,
+      "neural_zero_share": 0.0,
+      "prior_dominant_share": 0.15625,
+      "motion_on_prior_parts": 1.32381775478522
+    }
+  }
+}

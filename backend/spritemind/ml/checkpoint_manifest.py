@@ -73,6 +73,22 @@ def verify(checkpoints_dir: Path, checkpoint_name: str) -> Dict[str, Any]:
     return {"exists": True, "recorded": True, "ok": True, "reason": "verified"}
 
 
+def prune_missing(checkpoints_dir: Path) -> List[str]:
+    """Removes manifest entries whose file is gone; returns the pruned names.
+
+    Entries are dropped, never files: a checkpoint on disk that is not in the
+    manifest is always kept.
+    """
+    checkpoints_dir = Path(checkpoints_dir)
+    entries = read_manifest(checkpoints_dir)["checkpoints"]
+    missing = [name for name in sorted(entries) if not (checkpoints_dir / name).exists()]
+    if missing:
+        for name in missing:
+            del entries[name]
+        write_manifest(checkpoints_dir, entries)
+    return missing
+
+
 def list_entries(checkpoints_dir: Path) -> List[Dict[str, Any]]:
     entries = read_manifest(checkpoints_dir)["checkpoints"]
     return [entries[name] for name in sorted(entries)]

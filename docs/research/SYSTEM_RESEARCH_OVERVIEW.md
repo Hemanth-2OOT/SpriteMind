@@ -245,8 +245,9 @@ is now automated (see §15.4).
   `d_model`. Optional prompt-text encoder (`ml/prompt_encoder.py`) exists but is disabled in
   the shipped checkpoint — `PROMPT_MAX_LEN = 64`.
 * `vocab_size = 404`; output head over command token + operand tokens.
-* **2,361,304** parameters (state-dict sum; the metadata field `parameters` reports 2,302,283
-  because it excludes embeddings — prefer the state-dict sum in reporting).
+* **2,302,283 trained parameters** (`sum(p.numel() for p in model.parameters())`). The
+  state dict holds 2,361,304 tensors because it also stores 59,021 BatchNorm
+  `num_batches_tracked` buffers; buffers are not parameters and are reported separately.
 
 ### 6.2 Constrained decoding
 
@@ -280,7 +281,7 @@ at `best_of = 1`.
 * **Topological (deterministic, 0 params):** connected-component analysis over the alpha mask
   finds stray pixels, interior voids, islands and per-part dislocations; RGB classification
   finds palette leaks. This half is exact and always runs.
-* **Neural (369,077 params):** a small CNN over the 32×32 RGBA stack plus an 8×8 spatial
+* **Neural (368,044 params):** a small CNN over the 32×32 RGBA stack plus an 8×8 spatial
   heatmap head for defect localisation, and a severity head (`minor`, `moderate`, `critical`).
 
 Defect taxonomy (7 classes): `clean`, `stray_pixel`, `disconnected_part`, `palette_leak`,
@@ -304,7 +305,7 @@ corpus and are the ones the README reports. Both are true; they are not comparab
 
 ## 8. Temporal intelligence
 
-**TemporalSVAN** (426,918 parameters) predicts continuous kinematics `(Δx, Δy, Δrot)` per body
+**TemporalSVAN** (426,459 parameters) predicts continuous kinematics `(Δx, Δy, Δrot)` per body
 part per frame, conditioned on an animation class embedding.
 
 * 12 parts: `torso, head, arm_left, arm_right, leg_left, leg_right, …`
@@ -436,10 +437,10 @@ baseline.
 
 | Model | Parameters | Quality | Training |
 | --- | --- | --- | --- |
-| SVAN Action Transformer | 2,361,304 | val loss 0.3474, token acc **98.94%** | 16,000 / 2 epochs |
-| Neural Visual Critic | 369,077 | val F1 0.7799, recall 90.09%; at p=0.72: 100% precision, 0% FP | 2,000 / 6 epochs |
-| TemporalSVAN | 426,918 | best val MSE 3.2831 (epoch 34 of 80) | 1,931 / 469 |
-| SocketPredictor | 619,432 | attachment error 0.55 px, 100% attachment accuracy | 8 epochs |
+| SVAN Action Transformer | 2,302,283 | val loss 0.3474, token acc **98.94%** | 16,000 / 2 epochs |
+| Neural Visual Critic | 368,044 | val F1 0.7799, recall 90.09%; at p=0.72: 100% precision, 0% FP | 2,000 / 6 epochs |
+| TemporalSVAN | 426,459 | best val MSE 3.2831 (epoch 34 of 80) | 1,931 / 469 |
+| SocketPredictor | 619,432 | mean branch error 0.87 px vs bbox labels, 2.62 px vs anatomical sockets | 8 epochs |
 
 ### 12.2 300-prompt benchmark (2026-11-07 18:10:19)
 

@@ -143,6 +143,28 @@ give the same distribution. This is the largest quality jump available.
   *How:* extend `data/benchmarks/generalization_prompts.json`, report mean ± standard error, keep the runtime under 5 minutes.
   *Done when:* confidence intervals are reported in the README metrics block.
 
+## P4b — Audit findings (2026-11-08)
+
+Full evidence in `docs/IMPLEMENTATION_AUDIT.md`. Ordered by cost; R1–R3 landed with the audit.
+
+- [x] **R1 manifest drift** — stale entries pruned; `checkpoint_manifest.prune_missing()` covers it from now on.
+- [x] **R2 parameter counts** — every published count is now `sum(p.numel())`; the state-dict tensor count is labelled as such.
+- [x] **R3 publishing** — README reports the legacy metrics as proxies and adds a pixel-grounded benchmark line.
+- [ ] **R4 critic-driven rerank** — the critic verdict now participates in `_rerank_score` and is tested, but switching it off changes colour faithfulness by −0.06 points (29.60 vs 29.66) and guard wins by 7/300, inside one standard error (`M`)
+  *Done when:* `trained_best4` beats `trained_best1` on IoU and colour faithfulness in `scripts/benchmark_neural_vs_procedural.py`. Currently IoU 0.745 vs 0.751 and colour 29.60 vs 29.31 — not met. The critic's `quality_score` does not yet separate sprites well enough to steer selection; see `docs/RERANK_EVALUATION.md`.
+- [x] **R5 colour-aware rerank** — production colour faithfulness 13.9% → 29.6% (2.1×) at n=300 with the same prompts, seeds and checkpoint. Caveat: neural-only colour moved 7.0% → 9.9%, so the gain comes from selection, not generation.
+  *Done when:* neural colour faithfulness ≥ procedural at n=300 — 29.60 vs 29.18, met. Neural-only remains below procedural (9.9% vs 29.2%), so "neural ≥ procedural" stays the primary open objective.
+- [ ] **R6 palette embedding actually used** — `_palette_index()` now feeds the real row and is gated on `palette_conditioning_trained`; every shipped checkpoint was trained with `pal_idx == 0`, so the mapping is inert until a checkpoint is trained on real palette labels (`M`)
+  *Done when:* the same prompt renders differently under two palettes at fixed seed — requires the retrain, not just the plumbing.
+- [ ] **R7 socket labels** — the model learns the bounding-box heuristic (0.87 px) and disagrees with the anatomical rule by 2.62 px (`M`)
+  *Done when:* MAE against anatomical sockets < 1.5 px, or both targets are trained and reported.
+- [ ] **R8 temporal attribution** — 70/30 neural/prior blend; neural magnitude 1.284 px vs prior 1.281 px (`M`)
+  *Done when:* the API reports both magnitudes and trained motion differs from the prior by > 2 SE.
+- [ ] **R9 element corpus** — only 4,918 of 20,000 samples carry an element label; element faithfulness is 33.4% (`L`)
+  *Done when:* element faithfulness ≥ 60%.
+- [ ] **R10 compositional split** — the corpus covers 250/250 category×style×pose triples, so "generalization" is in-distribution only (`L`)
+  *Done when:* 30 triples are held out and novel-triple IoU is reported next to in-distribution IoU.
+
 ## P5 — Product surface
 
 - [ ] **Batch generation / sprite pack export** — `M`
