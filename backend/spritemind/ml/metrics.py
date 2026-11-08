@@ -56,6 +56,29 @@ def bounding_box(mask: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
     return int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())
 
 
+def mask_min_distance(mask_a: np.ndarray, mask_b: np.ndarray) -> Optional[float]:
+    """Smallest Euclidean distance between two masks, in pixels.
+
+    Returns None when either mask is empty (nothing to measure).
+    """
+    ys_a, xs_a = np.where(mask_a)
+    ys_b, xs_b = np.where(mask_b)
+    if len(xs_a) == 0 or len(xs_b) == 0:
+        return None
+    dx = xs_a[:, None] - xs_b[None, :]
+    dy = ys_a[:, None] - ys_b[None, :]
+    return float(np.sqrt(dx * dx + dy * dy).min())
+
+
+def weapon_hand_distance(weapon_mask: np.ndarray, arm_mask: np.ndarray) -> Optional[float]:
+    """Gap between the equipped weapon and the wielding arm.
+
+    A rigidly held weapon stays at 1 px (adjacent pixels); larger values mean the
+    weapon has drifted away from the hand.
+    """
+    return mask_min_distance(weapon_mask, arm_mask)
+
+
 def connected_component_count(mask: np.ndarray) -> int:
     """4-connected components of an opaque mask."""
     seen = np.zeros_like(mask, dtype=bool)

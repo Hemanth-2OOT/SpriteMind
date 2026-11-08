@@ -24,6 +24,8 @@ from spritemind.dataset.temporal_dataset import (
     CYCLIC_ANIMATIONS,
     TemporalDatasetGenerator,
 )
+from spritemind.animations import resolve_animation_name
+from spritemind.pixelscript.rig import RigGeometry
 logger = logging.getLogger(__name__)
 
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
@@ -296,11 +298,17 @@ class TemporalAnimator:
         element: Optional[str] = None,
         weapon: Optional[str] = None,
         accessory: Optional[str] = None,
+        rig_mode: str = "socketed",  # "socketed" | "flat"
     ) -> Dict[str, Any]:
-        """Generates an end-to-end animation with explicit engine attribution."""
+        """Generates an end-to-end animation with explicit engine attribution.
+
+        ``rig_mode="socketed"`` resolves equipment against the actual transformed
+        hand/torso position (see ``pixelscript/rig.py``); ``"flat"`` reproduces the
+        historical absolute-offset behaviour.
+        """
         start_time = time.perf_counter()
-        if anim_category not in ANIMATION_CATEGORIES:
-            anim_category = "walk"
+        requested_animation = anim_category
+        anim_category, animation_aliased = resolve_animation_name(anim_category)
         if category not in CATEGORIES:
             category = "knight"
 
@@ -327,6 +335,12 @@ class TemporalAnimator:
             )
             base_script = PixelScriptSerializer.serialize_program(base_prog)
             base_res = PixelScriptEngine.execute(base_script, width=width, height=height, palette_name=palette_name)
+
+        rig_geometry = None
+        if rig_mode == "socketed":
+            rig_geometry = RigGeometry.from_script(
+                base_script, width=width, height=height, palette_name=palette_name
+            )
 
         # 2. Compute motion trajectory per frame
         frames_out: List[Dict[str, Any]] = []
@@ -407,6 +421,8 @@ class TemporalAnimator:
                     if dx != 0 or dy != 0 or rot != 0:
                         frame_offsets[part_name] = (dx, dy, rot)
 
+                if rig_geometry is not None:
+                    frame_offsets = rig_geometry.resolve(frame_offsets)
                 frame_script = build_frame_script(
                     base_script, frame_offsets, width=width, height=height, palette_name=palette_name
                 )
@@ -424,6 +440,8 @@ class TemporalAnimator:
             for f_idx in range(num_frames):
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
+                if rig_geometry is not None:
+                    offsets = rig_geometry.resolve(offsets)
                 frame_script = build_frame_script(
                     base_script, offsets, width=width, height=height, palette_name=palette_name
                 )
@@ -441,6 +459,9 @@ class TemporalAnimator:
             "engine_used": actual_engine,
             "category": category,
             "animation_category": anim_category,
+            "requested_animation": requested_animation,
+            "animation_aliased": animation_aliased,
+            "rig_mode": rig_mode,
             "num_frames": len(frames_out),
             "fps": fps,
             "is_looping": is_looping,

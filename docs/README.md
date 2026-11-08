@@ -15,6 +15,7 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`PROMPT_CONDITIONING.md`](PROMPT_CONDITIONING.md) — how colour and element tags from the prompt reach the training corpus and the model.
 - [`COLOUR_RECOVERY.md`](COLOUR_RECOVERY.md) — why neural colour faithfulness looked like it regressed, the selection-vs-coverage decomposition, and the steering experiment that recovered it (R11).
 - [`COVERAGE_RERANK.md`](COVERAGE_RERANK.md) — the coverage-aware reranking experiment: validation-tuned, held-out once, measured as a small and not-clearly-significant gain over the shipped ranking (R12).
+- [`ANIMATION_RIG.md`](ANIMATION_RIG.md) — animation-correctness milestone: animation names are resolved explicitly (`attack`/`hurt` no longer render a walk cycle) and equipment is attached to its parent limb through a socket rig; before/after weapons-to-hand measurements.
 - [`CANDIDATE_DIVERSITY.md`](CANDIDATE_DIVERSITY.md) — the candidate-pool diversity experiment: selection is already saturated at `best_of=4`, pool size barely moves coverage, temperature mixing does but costs critic cleanliness; includes the correction to R12's `selection_hit` (R13).
 
 ## Audits and release evidence

@@ -55,7 +55,7 @@ def regenerate_frame(req: RegenerateFrameRequest) -> Dict[str, Any]:
             "frame_index": req.frame_index,
             "engine_used": full_anim.get("engine_used"),
             "frame": target_frame,
-            "animation_category": req.animation_category,
+            "animation_category": full_anim.get("animation_category", req.animation_category),
             "identity_confidence": full_anim.get("identity_confidence"),
         }
     except Exception as e:
