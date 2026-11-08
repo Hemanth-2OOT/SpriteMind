@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from spritemind.critic.model import NeuralVisualCritic, DEFECT_CLASSES, SEVERITY_CLASSES
 from spritemind.renderer.engine import PixelScriptEngine
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 DEFECT_TYPE_MAP = {
@@ -143,8 +144,8 @@ class CriticDataset(Dataset):
 class VisualCriticTrainer:
     """Trainer and evaluator for NeuralVisualCritic."""
 
-    def __init__(self, checkpoints_dir: str = "models/checkpoints"):
-        self.checkpoints_dir = Path(checkpoints_dir)
+    def __init__(self, checkpoints_dir: str = DEFAULT_CHECKPOINTS):
+        self.checkpoints_dir = resolve_checkpoints_dir(checkpoints_dir)
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = NeuralVisualCritic().to(self.device)

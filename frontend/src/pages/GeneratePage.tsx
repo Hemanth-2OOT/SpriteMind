@@ -19,6 +19,13 @@ interface GeneratePageProps {
   selectedEngine: string;
 }
 
+// A rendered frame replaces the caller's copy wholesale, so the script that
+// produced it travels with the request rather than being read back from the
+// render response.
+function frameWithScript(frame: FrameData, script: string): FrameData {
+  return { ...frame, script_text: script };
+}
+
 export const GeneratePage: React.FC<GeneratePageProps> = ({
   modelsInfo,
   selectedEngine,
@@ -39,23 +46,12 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
   const [viewingBefore, setViewingBefore] = useState(false);
   const [repairHistory, setRepairHistory] = useState<any[]>([]);
   const [inferenceTimeMs, setInferenceTimeMs] = useState(0);
-
-  // Initial auto-generation on first mount if empty
-  React.useEffect(() => {
-    if (frames.length === 0) {
-      handleGenerate({
-        category: 'zombie',
-        style: 'classic_16bit',
-        pose: 'idle',
-        palette: 'pico8',
-        width: 32,
-        height: 32,
-        num_frames: 4,
-        engine: selectedEngine,
-        seed: 42,
-      });
-    }
-  }, []);
+  // Critic inspect/repair must run under the same category and palette the
+  // sprite was generated with, otherwise repairs shift the colours.
+  const [genContext, setGenContext] = useState<{ category: string; palette: string }>({
+    category: 'zombie',
+    palette: 'pico8',
+  });
 
   const handleGenerate = async (params: any) => {
     setIsLoading(true);
@@ -65,6 +61,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       setCurrentFrameIndex(0);
       setCriticReport(res.critic);
       setInferenceTimeMs(res.inference_time_ms);
+      setGenContext({ category: res.category, palette: res.palette });
       setBeforeImageBase64(null);
       setBeforeScriptText(null);
       setViewingBefore(false);
@@ -83,8 +80,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
     try {
       const report = await inspectSpriteApi({
         script_text: currentFrame.script_text,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -109,8 +106,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         script_text: currentFrame.script_text,
         auto_refine: true,
         max_iterations: 3,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -122,7 +119,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       });
 
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, res.repaired_script);
       setFrames(updated);
       setCriticReport(res.final_critic);
       setRepairHistory(res.history || []);
@@ -142,7 +139,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         height: currentFrame.height,
       });
       const updated = [...frames];
-      updated[currentFrameIndex] = restored;
+      updated[currentFrameIndex] = frameWithScript(restored, beforeScriptText);
       setFrames(updated);
       setBeforeImageBase64(null);
       setBeforeScriptText(null);
@@ -152,8 +149,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
 
       const rep = await inspectSpriteApi({
         script_text: beforeScriptText,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -186,6 +183,10 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
 
   const handleApplyCriticFix = async (fixCmd: string) => {
     if (!currentFrame) return;
+    if (!currentFrame.script_text) {
+      alert('This frame has no script attached, so it cannot be patched. Regenerate the sprite first.');
+      return;
+    }
     setIsLoading(true);
     try {
       if (!beforeImageBase64) {
@@ -195,8 +196,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       const res = await repairSpriteApi({
         script_text: currentFrame.script_text,
         action_patch: fixCmd,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -208,7 +209,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       });
 
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, res.repaired_script);
       setFrames(updated);
       setCriticReport(res.final_critic);
     } catch (e: any) {
@@ -227,7 +228,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         height: currentFrame.height,
       });
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, newScript);
       setFrames(updated);
     } catch (e: any) {
       alert(`Script Render Error: ${e.message}`);

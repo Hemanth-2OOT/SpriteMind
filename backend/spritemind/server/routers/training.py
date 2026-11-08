@@ -11,6 +11,7 @@ import json
 import torch
 
 from spritemind.server.runtime import dataset_mgr, pipeline, trainer
+from spritemind.paths import resolve_data_dir
 router = APIRouter()
 
 @router.get("/api/dataset/stats")
@@ -78,7 +79,7 @@ def get_training_metrics() -> Dict[str, Any]:
 
 @router.get("/api/training/history")
 def get_training_history() -> Dict[str, Any]:
-    history_file = Path("data/training_history.json")
+    history_file = resolve_data_dir() / "training_history.json"
     if history_file.exists():
         try:
             with open(history_file, "r", encoding="utf-8") as f:
@@ -99,7 +100,7 @@ def get_training_history() -> Dict[str, Any]:
 
 @router.get("/api/benchmarks/gallery")
 def get_benchmark_gallery(limit: int = 100) -> Dict[str, Any]:
-    results_path = Path("data/benchmarks/benchmark_results.json")
+    results_path = resolve_data_dir() / "benchmarks/benchmark_results.json"
     if results_path.exists():
         try:
             with open(results_path, "r", encoding="utf-8") as f:
@@ -124,7 +125,7 @@ def get_benchmark_report_card(engine: str = "trained_model") -> Dict[str, Any]:
     """Per-category aggregation of the stored benchmark gallery."""
     from spritemind.ml.report_card import summarise_gallery
 
-    results_path = Path("data/benchmarks/benchmark_results.json")
+    results_path = resolve_data_dir() / "benchmarks/benchmark_results.json"
     if not results_path.exists():
         raise HTTPException(status_code=404, detail="No benchmark results yet; run a benchmark first")
     data = json.loads(results_path.read_text(encoding="utf-8"))

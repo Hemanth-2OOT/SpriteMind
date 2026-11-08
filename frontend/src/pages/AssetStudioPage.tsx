@@ -170,6 +170,17 @@ export const AssetStudioPage: React.FC = () => {
     }
   };
 
+  const compBench = benchmarkData?.benchmark_results;
+  const compSummary = compBench?.summary ?? {};
+  const compEngines: Array<[string, string, string]> = [
+    ['procedural_baseline', 'Procedural Baseline', 'text-blue-400'],
+    ['untrained_model', 'Untrained Baseline', 'text-amber-400'],
+    ['trained_model', 'Trained SocketPredictor', 'text-emerald-400'],
+    ['hybrid', 'Hybrid Model', 'text-purple-300'],
+  ];
+  const compFmt = (v: unknown, digits: number, suffix = '') =>
+    typeof v === 'number' ? `${v.toFixed(digits)}${suffix}` : '—';
+
   const currentDisplayImage =
     isAnimated && animFrames[activeFrameIdx]
       ? animFrames[activeFrameIdx].image_base64
@@ -466,43 +477,43 @@ export const AssetStudioPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-dark-750">
-                      <tr>
-                        <td className="p-2.5 text-blue-400 font-sans font-semibold">Procedural Baseline</td>
-                        <td className="p-2.5">92.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">13.59 ms</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 text-amber-400 font-sans font-semibold">Untrained Baseline</td>
-                        <td className="p-2.5">85.0%</td>
-                        <td className="p-2.5">91.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">50.68 ms</td>
-                      </tr>
-                      <tr className="bg-purple-950/30 text-emerald-300 font-semibold">
-                        <td className="p-2.5 text-emerald-400 font-sans">Trained SocketPredictor</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">45.15 ms</td>
-                      </tr>
-                      <tr className="bg-purple-950/30 text-purple-200 font-semibold">
-                        <td className="p-2.5 text-purple-300 font-sans">Hybrid Model</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">100.0%</td>
-                        <td className="p-2.5">45.34 ms</td>
-                      </tr>
+                      {compEngines.map(([key, label, colour]) => {
+                        const row = compSummary[key];
+                        const highlight = key === 'trained_model' || key === 'hybrid';
+                        return (
+                          <tr key={key} className={highlight ? 'bg-purple-950/30' : undefined}>
+                            <td className={`p-2.5 font-sans font-semibold ${colour}`}>{label}</td>
+                            <td className="p-2.5">{compFmt(row?.mean_attachment_accuracy_pct, 1, '%')}</td>
+                            <td className="p-2.5">{compFmt(row?.defect_rate_pct, 1, '%')}</td>
+                            <td className="p-2.5">{compFmt(row?.alpha_mask_correctness_pct, 1, '%')}</td>
+                            <td className="p-2.5">{compFmt(row?.mean_latency_ms, 2, ' ms')}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="bg-dark-950 p-3 rounded-lg border border-dark-750 text-slate-400 space-y-1">
-                  <div className="font-semibold text-slate-200">Key Takeaways:</div>
-                  <div>• SocketPredictor achieved 0.55px sub-pixel alignment accuracy across varied silhouettes.</div>
-                  <div>• Discrete PixelScript representation guarantees 100% clean binary alpha masks.</div>
-                  <div>• Dead Zone starter pack export verified with 100% reversible texture atlas extraction.</div>
+                  <div className="font-semibold text-slate-200">Read from the benchmark file:</div>
+                  {!compBench && <div>No benchmark results loaded.</div>}
+                  {compBench && (
+                    <>
+                      <div>
+                        • {compBench.num_test_cases ?? '—'} composition cases, recorded{' '}
+                        {compBench.timestamp ?? 'unknown date'}.
+                      </div>
+                      <div>
+                        • SocketPredictor alignment {compFmt(compSummary.procedural_baseline?.mean_attachment_accuracy_pct, 1, '%')}{' '}
+                        → {compFmt(compSummary.trained_model?.mean_attachment_accuracy_pct, 1, '%')}; alpha mask
+                        correctness {compFmt(compSummary.trained_model?.alpha_mask_correctness_pct, 1, '%')}.
+                      </div>
+                      <div>
+                        • Defect rate is not zero for any engine in this run — open Composition to inspect live
+                        results rather than assuming a clean sheet.
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

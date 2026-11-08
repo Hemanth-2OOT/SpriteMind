@@ -18,6 +18,10 @@ import {
 import { EvaluationResults } from '../types';
 import { fetchEvaluationResults, fetchBenchmarkGallery, runBenchmark } from '../services/api';
 
+const fmtPct = (v: unknown, digits = 1) => (typeof v === 'number' ? `${v.toFixed(digits)}%` : '—');
+const fmtIou = (v: unknown) => (typeof v === 'number' ? v.toFixed(3) : '—');
+const fmtMs = (v: unknown) => (typeof v === 'number' ? `${v.toFixed(1)} ms` : '—');
+
 export const EvaluationLabPage: React.FC = () => {
   const [results, setResults] = useState<EvaluationResults | null>(null);
   const [galleryData, setGalleryData] = useState<any>(null);
@@ -25,6 +29,7 @@ export const EvaluationLabPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'gallery' | 'matrix'>('gallery');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeCheckpoint, setActiveCheckpoint] = useState<string>('');
 
   const loadData = async () => {
     try {
@@ -41,6 +46,10 @@ export const EvaluationLabPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    fetch('/api/models')
+      .then((r) => r.json())
+      .then((m) => setActiveCheckpoint(m?.loaded_model?.active_checkpoint || ''))
+      .catch(() => {});
   }, []);
 
   const handleRunBenchmark = async () => {
@@ -95,7 +104,7 @@ export const EvaluationLabPage: React.FC = () => {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Benchmark Gallery (100 Prompts)
+                Benchmark Gallery ({summary?.total_prompts ?? galleryData?.total ?? '—'} Prompts)
               </button>
               <button
                 onClick={() => setActiveTab('matrix')}
@@ -132,10 +141,10 @@ export const EvaluationLabPage: React.FC = () => {
               </span>
             </div>
             <div className="text-2xl font-bold text-white font-mono">
-              {summary?.procedural_baseline?.avg_valid_action_rate ?? procedural?.pixel_accuracy ?? 100}%
+              {fmtPct(summary?.procedural_baseline?.avg_valid_action_rate)}
             </div>
             <p className="text-[11px] text-slate-400">
-              Deterministic rule-based baseline • Silhouette IoU: {summary?.procedural_baseline?.avg_silhouette_iou ?? '0.850'}
+              Deterministic rule-based baseline • Silhouette IoU: {fmtIou(summary?.procedural_baseline?.avg_silhouette_iou)}
             </p>
           </div>
 
@@ -150,10 +159,10 @@ export const EvaluationLabPage: React.FC = () => {
               </span>
             </div>
             <div className="text-2xl font-bold text-purple-300 font-mono">
-              {summary?.trained_model?.avg_valid_action_rate ?? '98.5'}%
+              {fmtPct(summary?.trained_model?.avg_valid_action_rate)}
             </div>
             <p className="text-[11px] text-slate-400">
-              Autoregressive action generation • Structural Score: {summary?.trained_model?.avg_structural_consistency ?? '94.2'}%
+              Autoregressive action generation • Structural Score: {fmtPct(summary?.trained_model?.avg_structural_consistency)}
             </p>
           </div>
 
@@ -167,10 +176,10 @@ export const EvaluationLabPage: React.FC = () => {
               </span>
             </div>
             <div className="text-2xl font-bold text-amber-400 font-mono">
-              {summary?.untrained_model?.avg_valid_action_rate ?? '21.0'}%
+              {fmtPct(summary?.untrained_model?.avg_valid_action_rate)}
             </div>
             <p className="text-[11px] text-slate-400">
-              Random initialization control • Structural Score: {summary?.untrained_model?.avg_structural_consistency ?? '15.0'}%
+              Random initialization control • Structural Score: {fmtPct(summary?.untrained_model?.avg_structural_consistency)}
             </p>
           </div>
         </div>
@@ -276,7 +285,7 @@ export const EvaluationLabPage: React.FC = () => {
 
                           <div className="w-full text-[10px] font-mono text-slate-400 flex justify-between border-t border-dark-800/60 pt-1.5">
                             <span>Pixels: {outProc?.metrics?.pixel_fill_count ?? '—'}</span>
-                            <span className="text-emerald-400">Valid: {outProc?.metrics?.valid_action_rate ?? 100}%</span>
+                            <span className="text-emerald-400">Valid: {fmtPct(outProc?.metrics?.valid_action_rate)}</span>
                           </div>
                         </div>
 
@@ -302,7 +311,7 @@ export const EvaluationLabPage: React.FC = () => {
 
                           <div className="w-full text-[10px] font-mono text-slate-400 flex justify-between border-t border-dark-800/60 pt-1.5">
                             <span>Pixels: {outUntrained?.metrics?.pixel_fill_count ?? '—'}</span>
-                            <span className="text-amber-400">Valid: {outUntrained?.metrics?.valid_action_rate ?? 21}%</span>
+                            <span className="text-amber-400">Valid: {fmtPct(outUntrained?.metrics?.valid_action_rate)}</span>
                           </div>
                         </div>
 
@@ -314,7 +323,7 @@ export const EvaluationLabPage: React.FC = () => {
                               <Sparkles className="w-3 h-3 text-amber-400" />
                               <span>Trained SVAN</span>
                             </span>
-                            <span className="text-[10px] text-purple-400 font-mono">svan_checkpoint_best.pt</span>
+                            <span className="text-[10px] text-purple-400 font-mono">{activeCheckpoint || 'active checkpoint'}</span>
                           </div>
 
                           <div className="w-24 h-24 bg-dark-900 border border-purple-500/20 rounded flex items-center justify-center overflow-hidden">
@@ -332,7 +341,7 @@ export const EvaluationLabPage: React.FC = () => {
 
                           <div className="w-full text-[10px] font-mono text-slate-400 flex justify-between border-t border-dark-800/60 pt-1.5">
                             <span>Pixels: {outTrained?.metrics?.pixel_fill_count ?? '—'}</span>
-                            <span className="text-purple-300 font-semibold">Valid: {outTrained?.metrics?.valid_action_rate ?? 98}%</span>
+                            <span className="text-purple-300 font-semibold">Valid: {fmtPct(outTrained?.metrics?.valid_action_rate)}</span>
                           </div>
                         </div>
                       </div>
@@ -354,7 +363,7 @@ export const EvaluationLabPage: React.FC = () => {
                 Multi-Metric Benchmark Matrix
               </h2>
               <span className="text-xs text-slate-500 font-mono">
-                Comparative evaluation across 100 held-out prompts
+                Comparative evaluation across {summary?.total_prompts ?? '—'} held-out prompts
               </span>
             </div>
 
@@ -372,41 +381,41 @@ export const EvaluationLabPage: React.FC = () => {
                 <tbody className="divide-y divide-dark-800 font-mono">
                   <tr>
                     <td className="py-3 px-4 text-slate-200 font-sans font-medium">Valid PixelScript Action Rate</td>
-                    <td className="py-3 px-4 text-emerald-400">{summary?.procedural_baseline?.avg_valid_action_rate ?? 100}%</td>
-                    <td className="py-3 px-4 text-rose-400">{summary?.untrained_model?.avg_valid_action_rate ?? 21.0}%</td>
-                    <td className="py-3 px-4 text-purple-300 font-semibold">{summary?.trained_model?.avg_valid_action_rate ?? 98.5}%</td>
+                    <td className="py-3 px-4 text-emerald-400">{fmtPct(summary?.procedural_baseline?.avg_valid_action_rate)}</td>
+                    <td className="py-3 px-4 text-rose-400">{fmtPct(summary?.untrained_model?.avg_valid_action_rate)}</td>
+                    <td className="py-3 px-4 text-purple-300 font-semibold">{fmtPct(summary?.trained_model?.avg_valid_action_rate)}</td>
                     <td className="py-3 px-4 text-slate-500">&gt; 95%</td>
                   </tr>
 
                   <tr>
                     <td className="py-3 px-4 text-slate-200 font-sans font-medium">Palette Adherence</td>
-                    <td className="py-3 px-4 text-emerald-400">{summary?.procedural_baseline?.avg_palette_adherence ?? 100}%</td>
-                    <td className="py-3 px-4 text-amber-400">{summary?.untrained_model?.avg_palette_adherence ?? 75.0}%</td>
-                    <td className="py-3 px-4 text-purple-300 font-semibold">{summary?.trained_model?.avg_palette_adherence ?? 99.1}%</td>
+                    <td className="py-3 px-4 text-emerald-400">{fmtPct(summary?.procedural_baseline?.avg_palette_adherence)}</td>
+                    <td className="py-3 px-4 text-amber-400">{fmtPct(summary?.untrained_model?.avg_palette_adherence)}</td>
+                    <td className="py-3 px-4 text-purple-300 font-semibold">{fmtPct(summary?.trained_model?.avg_palette_adherence)}</td>
                     <td className="py-3 px-4 text-slate-500">100%</td>
                   </tr>
 
                   <tr>
                     <td className="py-3 px-4 text-slate-200 font-sans font-medium">Silhouette IoU</td>
-                    <td className="py-3 px-4 text-emerald-400">{summary?.procedural_baseline?.avg_silhouette_iou ?? '0.850'}</td>
-                    <td className="py-3 px-4 text-amber-400">{summary?.untrained_model?.avg_silhouette_iou ?? '0.045'}</td>
-                    <td className="py-3 px-4 text-purple-300 font-semibold">{summary?.trained_model?.avg_silhouette_iou ?? '0.620'}</td>
+                    <td className="py-3 px-4 text-emerald-400">{fmtIou(summary?.procedural_baseline?.avg_silhouette_iou)}</td>
+                    <td className="py-3 px-4 text-amber-400">{fmtIou(summary?.untrained_model?.avg_silhouette_iou)}</td>
+                    <td className="py-3 px-4 text-purple-300 font-semibold">{fmtIou(summary?.trained_model?.avg_silhouette_iou)}</td>
                     <td className="py-3 px-4 text-slate-500">&gt; 0.60</td>
                   </tr>
 
                   <tr>
                     <td className="py-3 px-4 text-slate-200 font-sans font-medium">Structural Consistency Score</td>
-                    <td className="py-3 px-4 text-emerald-400">{summary?.procedural_baseline?.avg_structural_consistency ?? '98.0'}%</td>
-                    <td className="py-3 px-4 text-rose-400">{summary?.untrained_model?.avg_structural_consistency ?? '15.0'}%</td>
-                    <td className="py-3 px-4 text-purple-300 font-semibold">{summary?.trained_model?.avg_structural_consistency ?? '94.2'}%</td>
+                    <td className="py-3 px-4 text-emerald-400">{fmtPct(summary?.procedural_baseline?.avg_structural_consistency)}</td>
+                    <td className="py-3 px-4 text-rose-400">{fmtPct(summary?.untrained_model?.avg_structural_consistency)}</td>
+                    <td className="py-3 px-4 text-purple-300 font-semibold">{fmtPct(summary?.trained_model?.avg_structural_consistency)}</td>
                     <td className="py-3 px-4 text-slate-500">&gt; 90%</td>
                   </tr>
 
                   <tr>
                     <td className="py-3 px-4 text-slate-200 font-sans font-medium">Generation Latency</td>
-                    <td className="py-3 px-4 text-emerald-400">{summary?.procedural_baseline?.avg_latency_ms ?? '4.2'} ms</td>
-                    <td className="py-3 px-4 text-slate-300">{summary?.untrained_model?.avg_latency_ms ?? '88.5'} ms</td>
-                    <td className="py-3 px-4 text-purple-300 font-semibold">{summary?.trained_model?.avg_latency_ms ?? '92.1'} ms</td>
+                    <td className="py-3 px-4 text-emerald-400">{fmtMs(summary?.procedural_baseline?.avg_latency_ms)}</td>
+                    <td className="py-3 px-4 text-slate-300">{fmtMs(summary?.untrained_model?.avg_latency_ms)}</td>
+                    <td className="py-3 px-4 text-purple-300 font-semibold">{fmtMs(summary?.trained_model?.avg_latency_ms)}</td>
                     <td className="py-3 px-4 text-slate-500">&lt; 150 ms</td>
                   </tr>
                 </tbody>

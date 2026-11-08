@@ -16,6 +16,7 @@ from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction, ActionType
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 class RepairAction:
@@ -55,8 +56,8 @@ NEURAL_DEFECT_THRESHOLD = 0.72
 class AutonomousRepairEngine:
     """Closed-loop visual critic and self-correction engine."""
 
-    def __init__(self, checkpoints_dir: str = "models/checkpoints"):
-        self.checkpoints_dir = Path(checkpoints_dir)
+    def __init__(self, checkpoints_dir: str = DEFAULT_CHECKPOINTS):
+        self.checkpoints_dir = resolve_checkpoints_dir(checkpoints_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.neural_critic: Optional[NeuralVisualCritic] = None
         self.visual_understanding = VisualUnderstandingPipeline()
@@ -196,7 +197,7 @@ class AutonomousRepairEngine:
         return repairs
 
     def apply_patch_to_script(self, script_text: str, patch_cmd: str) -> str:
-        """Applies a PixelScript repair command to an existing script."""
+        """Applies a PixelScript repair command inside the program body."""
         patch_cmd = patch_cmd.strip()
         if "\n" in patch_cmd:
             cur = script_text
@@ -207,30 +208,21 @@ class AutonomousRepairEngine:
 
         lines = [ln.strip() for ln in script_text.splitlines() if ln.strip()]
 
-        if patch_cmd.startswith("ERASE"):
-            # Appending ERASE overrides previously painted pixels at that coordinate
-            lines.append(patch_cmd)
-        elif patch_cmd.startswith("TRANSFORM"):
-            # If an existing TRANSFORM for this part exists, replace it; else append before END
+        if patch_cmd.startswith("TRANSFORM"):
+            # If an existing TRANSFORM for this part exists, replace it in place.
             parts = patch_cmd.split()
             if len(parts) >= 2:
                 target_part = parts[1]
-                found_existing = False
                 for i, ln in enumerate(lines):
                     if ln.startswith(f"TRANSFORM {target_part} "):
                         lines[i] = patch_cmd
-                        found_existing = True
-                        break
-                if not found_existing:
-                    lines.append(patch_cmd)
-        elif patch_cmd.startswith("PIXEL") or patch_cmd.startswith("RECT"):
-            lines.append(patch_cmd)
-        elif patch_cmd.startswith("PART"):
-            # Insert part definition
-            lines.append(patch_cmd)
-        else:
-            lines.append(patch_cmd)
+                        return "\n".join(lines)
 
+        # The patch belongs at the end of the drawing body (so it paints over
+        # whatever the critic flagged) but inside the program: appended after
+        # END PROGRAM it is no longer part of the validated script.
+        end_index = next((i for i, ln in enumerate(lines) if ln == "END PROGRAM"), len(lines))
+        lines.insert(end_index, patch_cmd)
         return "\n".join(lines)
 
     def refine_closed_loop(

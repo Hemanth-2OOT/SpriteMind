@@ -114,8 +114,12 @@ const ActionTile: React.FC<{ action: BuiltAction }> = ({ action }) => {
   );
 };
 
-export const ActionSetPage: React.FC = () => {
-  const [prompt, setPrompt] = useState('fire mage that casts fireballs and dashes');
+const randomSeed = () => Math.floor(Math.random() * 999999);
+
+export const ActionSetPage: React.FC<{ selectedEngine?: string }> = ({
+  selectedEngine = 'procedural_baseline',
+}) => {
+  const [prompt, setPrompt] = useState('');
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [actions, setActions] = useState<BuiltAction[]>([]);
@@ -125,9 +129,14 @@ export const ActionSetPage: React.FC = () => {
   const [sheetBusy, setSheetBusy] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [facing, setFacing] = useState<'right' | 'left'>('right');
-  const [seed, setSeed] = useState(42);
+  const [seed, setSeed] = useState<number>(randomSeed);
+  const [seedPinned, setSeedPinned] = useState(false);
 
   const refreshPlan = async () => {
+    if (!prompt.trim()) {
+      setError('Describe a character first, then read the prompt.');
+      return;
+    }
     setPlanning(true);
     setError(null);
     try {
@@ -141,15 +150,19 @@ export const ActionSetPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    refreshPlan();
-  }, []);
-
   const generate = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await generateActionSetApi({ prompt, actions: selected, facing, seed });
+      const runSeed = seedPinned ? seed : randomSeed();
+      if (!seedPinned) setSeed(runSeed);
+      const res = await generateActionSetApi({
+        prompt,
+        actions: selected,
+        facing,
+        seed: runSeed,
+        engine: selectedEngine,
+      });
       setPlan(res.plan);
       setActions(res.actions);
     } catch (e: any) {
@@ -263,12 +276,18 @@ export const ActionSetPage: React.FC = () => {
             <input
               type="number"
               value={seed}
-              onChange={(e) => setSeed(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setSeed(Number(e.target.value) || 0);
+                setSeedPinned(true);
+              }}
               title="Variation seed: same seed and prompt rebuild the same character"
               className="w-16 bg-dark-950 border border-dark-800 rounded-md px-2 py-1.5 text-[10px] text-slate-300 outline-none focus:border-purple-500"
             />
             <button
-              onClick={() => setSeed(Math.floor(Math.random() * 100000))}
+              onClick={() => {
+                setSeed(randomSeed());
+                setSeedPinned(false);
+              }}
               title="New variation"
               className="px-2 py-1.5 text-xs bg-dark-900 hover:bg-dark-800 rounded-md text-slate-300"
             >
@@ -276,8 +295,8 @@ export const ActionSetPage: React.FC = () => {
             </button>
             <button
               onClick={refreshPlan}
-              disabled={planning}
-              className="px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 rounded-md text-slate-300 flex items-center gap-1.5"
+              disabled={planning || !prompt.trim()}
+              className="px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 disabled:opacity-40 rounded-md text-slate-300 flex items-center gap-1.5"
             >
               {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
               Read prompt
@@ -338,7 +357,8 @@ export const ActionSetPage: React.FC = () => {
 
         {actions.length === 0 && !loading && (
           <div className="text-center text-[11px] text-slate-500 py-10">
-            Read a prompt to see the planned actions, then generate the set.
+            Describe a character above, press <span className="text-slate-300">Read prompt</span> to see the planned actions, then
+            generate the set.
           </div>
         )}
       </div>

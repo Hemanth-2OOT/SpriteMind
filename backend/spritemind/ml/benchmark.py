@@ -15,6 +15,7 @@ from spritemind.dataset.conditioning import COLOUR_RGB, ELEMENT_RGB, element_hue
 from spritemind.dataset.generator import CATEGORIES, POSES, STYLES
 from spritemind.ml.pipeline import SpriteMindPipeline
 from spritemind.utils.palettes import PALETTES
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 BENCHMARK_PROMPTS: List[Dict[str, Any]] = [
@@ -276,7 +277,7 @@ class GeneralizationBenchmark:
             prompts = prompts[:limit]
 
         # Ensure best checkpoint is loaded if available
-        best_ckpt = Path("models/checkpoints/svan_checkpoint_best.pt")
+        best_ckpt = resolve_checkpoints_dir() / "svan_checkpoint_best.pt"
         if best_ckpt.exists():
             self.pipeline.load_checkpoint("svan_checkpoint_best.pt")
 

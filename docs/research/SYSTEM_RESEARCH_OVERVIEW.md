@@ -1,7 +1,7 @@
 # SpriteMind — System Research Overview
 
 **Document type:** consolidated technical reference (architecture, stack, methods, results)
-**Version:** post-`#25` (`main` @ `f61463e`), grammar v2.1, SVAN v3 checkpoint
+**Version:** post-`#26` (`main` @ `e64daeb`), grammar v2.1, SVAN v3 checkpoint
 **Scope:** everything that exists in the repository today — what it is, how it works, how it
 is measured, and what it cannot yet do.
 
@@ -16,7 +16,7 @@ checkpoints and the recorded benchmark JSON.
 ## 1. Abstract
 
 SpriteMind is a **local, from-scratch neural pixel-art generator**. It does not sample a
-diffusion model and it does not call a hosted image API. A 2.36M-parameter causal transformer
+diffusion model and it does not call a hosted image API. A 2.30M-parameter causal transformer
 (**SVAN**, SpriteMind Visual-Action Network) writes a short program in a domain-specific
 drawing language (**PixelScript**), a deterministic CPU renderer rasterises that program to a
 32×32 sprite, a 369K-parameter visual critic inspects the raster for anatomical and palette
@@ -27,7 +27,7 @@ sub-pixel sockets. Everything runs CPU-first, deterministically, and offline.
 The contribution is not "another pixel generator". It is that the artefact is **inspectable
 and auditable at every stage**: the model's output is a readable program, the render is
 reproducible from a seed, the defect report names pixels, the animation is a trajectory over
-named parts, and the whole pipeline is covered by a 257-test suite, a perceptual-hash golden
+named parts, and the whole pipeline is covered by a 325-test suite, a perceptual-hash golden
 set, and a generation quality gate that fails CI on regression.
 
 ---
@@ -73,7 +73,7 @@ connectivity, frame-to-frame continuity, direction of facing, per-part equipment
 │ L3  Orchestration  SpriteMindPipeline   ActionPlanner   AssetComposer          │
 │                    CriticRepairEngine   TemporalAnimator  AtlasBuilder         │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ L2  Models         SVAN (2.36M)   VisualCritic (369K)   TemporalSVAN (427K)   │
+│ L2  Models         SVAN (2.30M)   VisualCritic (369K)   TemporalSVAN (427K)   │
 │                    SocketPredictor (619K)   procedural baseline (0 params)     │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ L1  Language       PixelScript AST · parser · validator · serializer           │
@@ -431,7 +431,7 @@ baseline.
 
 ---
 
-## 12. Results (as shipped, `main` @ `f61463e`)
+## 12. Results (as shipped, `main` @ `e64daeb`)
 
 ### 12.1 Model inventory
 
@@ -516,7 +516,7 @@ frontend CI job instead of silently rendering `undefined`.
 
 ## 15. Engineering practice
 
-### 15.1 Test strategy (257 tests, 72.42% coverage, floor 71%)
+### 15.1 Test strategy (325 tests, 74.3% coverage, floor 71%)
 
 | Layer | Representative tests |
 | --- | --- |
@@ -538,13 +538,23 @@ with the coverage floor → `ruff check backend` → README metrics `--check` �
 `npm run build` (which typechecks first). Lint scope is deliberately narrow (E9, F) — it catches
 real defects without arguing about style.
 
-### 15.3 Determinism
+### 15.3 Corpus loading
+
+`PixelScriptDataset` accepts either layout: a single `records.jsonl`, or a directory of
+`sample_*.json` files. The JSONL corpora are regenerable and gitignored, so a fresh clone (and
+therefore CI) only sees the tracked `samples/` tree, and both routes must stay equivalent.
+Every per-sample field — tokens, category, style, pose, palette, colour, element, prompt — is
+computed before any of them is appended, so a malformed record is skipped whole and the tensors
+can never drift out of step. A record with no palette label gets `palette_id(None) == 0`: the
+neutral row the shipped checkpoints were trained on, not a guessed palette.
+
+### 15.4 Determinism
 
 Seeded sampler, seeded corpus generator, seeded goldens, deterministic renderer. A request with
 the same `(prompt, category, style, pose, palette, seed, size)` yields byte-identical frames
 across processes on the same platform. CUDA is supported but is not the determinism reference.
 
-### 15.4 Invariants worth remembering
+### 15.5 Invariants worth remembering
 
 1. Vocabulary and checkpoint must agree — the pipeline refuses a mismatch (`checkpoint_error`).
 2. A shipped checkpoint must load into the current model class; there is a test for the temporal

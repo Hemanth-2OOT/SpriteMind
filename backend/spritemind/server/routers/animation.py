@@ -8,6 +8,7 @@ from spritemind.ml.temporal import CATEGORIES
 from spritemind.ml.temporal import TemporalAnimator
 from spritemind.server.schemas import AnimationGenerateRequest
 from spritemind.server.schemas import RegenerateFrameRequest
+from spritemind.paths import resolve_data_dir
 import json
 router = APIRouter()
 
@@ -69,7 +70,7 @@ def get_animation_metrics() -> Dict[str, Any]:
         "supported_animation_categories": ANIMATION_CATEGORIES,
         "supported_character_categories": CATEGORIES,
     }
-    metrics_path = Path("data/temporal_metrics.json")
+    metrics_path = resolve_data_dir() / "temporal_metrics.json"
     if metrics_path.exists():
         try:
             with open(metrics_path, "r", encoding="utf-8") as f:
@@ -77,7 +78,7 @@ def get_animation_metrics() -> Dict[str, Any]:
         except Exception:
             pass
 
-    benchmarks_path = Path("data/benchmarks/temporal_benchmark_results.json")
+    benchmarks_path = resolve_data_dir() / "benchmarks/temporal_benchmark_results.json"
     if benchmarks_path.exists():
         try:
             with open(benchmarks_path, "r", encoding="utf-8") as f:

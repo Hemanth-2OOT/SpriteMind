@@ -22,6 +22,7 @@ import base64
 import json
 
 from spritemind.server.runtime import asset_mgr, backup_mgr, cleaner, lifecycle_mgr, storage_db
+from spritemind.paths import resolve_data_dir
 router = APIRouter()
 
 @router.get("/api/asset_catalog")
@@ -105,7 +106,7 @@ def get_composition_metrics() -> Dict[str, Any]:
         "parameter_count": 619432,
         "supported_categories": ASSET_CATEGORIES,
     }
-    metrics_path = Path("data/composition_metrics.json")
+    metrics_path = resolve_data_dir() / "composition_metrics.json"
     if metrics_path.exists():
         try:
             with open(metrics_path, "r", encoding="utf-8") as f:
@@ -113,7 +114,7 @@ def get_composition_metrics() -> Dict[str, Any]:
         except Exception:
             pass
 
-    benchmarks_path = Path("data/benchmarks/composition_benchmark_results.json")
+    benchmarks_path = resolve_data_dir() / "benchmarks/composition_benchmark_results.json"
     if benchmarks_path.exists():
         try:
             with open(benchmarks_path, "r", encoding="utf-8") as f:

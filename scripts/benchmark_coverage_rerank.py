@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _bench_common import BENCH_DIR, canonical_reference, markdown_table, write_json  # noqa: E402
 from benchmark_heldout import build_grids, load_spec  # noqa: E402
 
-from spritemind.assets.faithfulness import MATCH_SHARE_FOR_PRESENCE, colour_faithfulness  # noqa: E402
+from spritemind.assets.faithfulness import MATCH_SHARE_FOR_PRESENCE, colour_faithfulness, selection_hit  # noqa: E402
 from spritemind.ml.metrics import evaluate_sprite  # noqa: E402
 from spritemind.ml.pipeline import SpriteMindPipeline  # noqa: E402
 from spritemind.pixelscript.ast import PixelScriptProgram  # noqa: E402
@@ -66,11 +66,12 @@ def measure(pipeline, comp, item):
     rgba = comp["render"].composite_array
     palette = item.get("palette", "pico8")
     row = evaluate_sprite(rgba, palette, reference_mask=canonical_reference(item["category"], palette), prompt=item["prompt"])
-    faith = colour_faithfulness(item["prompt"], rgba) or {}
-    share = float(faith.get("matched_share") or 0.0)
+    faith = colour_faithfulness(item["prompt"], rgba)
+    # Uncoloured prompts are excluded from colour metrics rather than scored 0.
+    share = float(faith["matched_share"]) if faith else None
     row.update({
-        "coverage_pct": round(share * 100.0, 2),
-        "selection_hit": int(share >= MATCH_SHARE_FOR_PRESENCE),
+        "coverage_pct": None if share is None else round(share * 100.0, 2),
+        "selection_hit": selection_hit(faith),
         "critic_quality": comp["critic"],
         "critic_defects": int(comp.get("critic_defects") or 0),
         "source": comp["source"],
@@ -104,6 +105,7 @@ def run_policy(pipeline, items, seed, best_of, steer, weight, target, arm, pools
             arr = np.asarray(values, dtype=float)
             summary[key] = round(float(arr.mean()), 4)
             summary[f"{key}_se"] = round(float(arr.std(ddof=1) / np.sqrt(arr.size)) if arr.size > 1 else 0.0, 4)
+    summary["n_coloured"] = sum(1 for r in rows if r.get("coverage_pct") is not None)
     summary["clean_share"] = round(sum(1 for r in rows if (r.get("critic_defects") or 0) == 0) / max(1, len(rows)), 4)
     summary["guard_share"] = round(sum(1 for r in rows if r.get("source") == "procedural_guard") / max(1, len(rows)), 4)
     return summary

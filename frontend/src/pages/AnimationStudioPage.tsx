@@ -81,7 +81,9 @@ const CHARACTER_CATEGORIES = [
   'animal',
 ];
 
-export const AnimationStudioPage: React.FC = () => {
+export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
+  selectedEngine = 'procedural_baseline',
+}) => {
   const [frames, setFrames] = useState<FrameData[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -90,14 +92,16 @@ export const AnimationStudioPage: React.FC = () => {
   const [onionSkin, setOnionSkin] = useState(true);
   const [animCategory, setAnimCategory] = useState('walk');
   const [charCategory, setCharCategory] = useState('knight');
-  const [engineMode, setEngineMode] = useState('trained_model');
+  const [engineMode, setEngineMode] = useState(selectedEngine);
   const [prompt, setPrompt] = useState('');
   const [scale, setScale] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [engineUsed, setEngineUsed] = useState<string>('trained_model');
-  const [identityConfidence, setIdentityConfidence] = useState<number>(0.95);
+  const [engineUsed, setEngineUsed] = useState<string>(selectedEngine);
+  const [identityConfidence, setIdentityConfidence] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number>(0);
+  const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 999999));
+  const [seedPinned, setSeedPinned] = useState(false);
 
   // Inspector & script editing
   const [showInspector, setShowInspector] = useState(false);
@@ -105,10 +109,18 @@ export const AnimationStudioPage: React.FC = () => {
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   const [benchmarkMetrics, setBenchmarkMetrics] = useState<any>(null);
 
-  // Initial load
+  // Initial load: benchmark data only. Nothing is generated until the user
+  // asks for an animation.
   useEffect(() => {
-    handleGenerate();
+    fetchAnimationMetrics()
+      .then(setBenchmarkMetrics)
+      .catch(() => {});
   }, []);
+
+  // Follow the navbar engine selector unless this page overrides it.
+  useEffect(() => {
+    setEngineMode(selectedEngine);
+  }, [selectedEngine]);
 
   // Sync script editor when active frame changes
   useEffect(() => {
@@ -135,6 +147,8 @@ export const AnimationStudioPage: React.FC = () => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
+      const runSeed = seedPinned ? seed : Math.floor(Math.random() * 999999);
+      if (!seedPinned) setSeed(runSeed);
       const res = await generateAnimationApi({
         prompt: prompt.trim() || undefined,
         category: charCategory,
@@ -145,13 +159,16 @@ export const AnimationStudioPage: React.FC = () => {
         num_frames: 6,
         fps,
         engine: engineMode,
+        seed: runSeed,
       });
 
       if (res.frames && res.frames.length > 0) {
         setFrames(res.frames);
         setCurrentFrameIndex(0);
         setEngineUsed(res.engine_used || engineMode);
-        setIdentityConfidence(res.identity_confidence ?? 0.95);
+        setIdentityConfidence(
+          typeof res.identity_confidence === 'number' ? res.identity_confidence : null
+        );
         setElapsedMs(res.elapsed_ms ?? 0);
         setIsLooping(res.is_looping ?? true);
       }
@@ -174,6 +191,7 @@ export const AnimationStudioPage: React.FC = () => {
         animation_category: animCategory,
         category: charCategory,
         engine: engineMode,
+        seed,
       });
 
       if (res.frame) {
@@ -263,6 +281,16 @@ export const AnimationStudioPage: React.FC = () => {
       console.error('Failed to load metrics', e);
     }
   };
+
+  const animBench = benchmarkMetrics?.benchmark_results;
+  const animSummary = animBench?.summary ?? {};
+  const animEngines: Array<[string, string, string]> = [
+    ['procedural_baseline', 'Procedural Baseline', 'text-blue-400'],
+    ['untrained_model', 'Untrained Baseline', 'text-amber-400'],
+    ['trained_model', 'Trained Temporal SVAN', 'text-emerald-400'],
+  ];
+  const fmt = (v: unknown, digits: number, suffix = '') =>
+    typeof v === 'number' ? `${v.toFixed(digits)}${suffix}` : '—';
 
   const curr = frames[currentFrameIndex];
   const prevFrame =
@@ -402,6 +430,30 @@ export const AnimationStudioPage: React.FC = () => {
                 <option value="untrained_model">Untrained Neural Baseline</option>
                 <option value="procedural_baseline">Procedural Kinematic Baseline</option>
               </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">Seed:</span>
+              <input
+                type="number"
+                value={seed}
+                onChange={(e) => {
+                  setSeed(Number(e.target.value) || 0);
+                  setSeedPinned(true);
+                }}
+                title="Same prompt and seed rebuild the same animation; a new seed makes a new variation"
+                className="w-20 bg-dark-950 border border-dark-750 text-slate-200 text-xs rounded-md px-2.5 py-1 font-mono text-right focus:outline-none focus:border-purple-500"
+              />
+              <button
+                onClick={() => {
+                  setSeed(Math.floor(Math.random() * 999999));
+                  setSeedPinned(false);
+                }}
+                title="New variation"
+                className="px-2 py-1 bg-dark-850 hover:bg-dark-800 text-slate-300 rounded-md border border-dark-700"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -549,7 +601,7 @@ export const AnimationStudioPage: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-400">Identity Confidence</span>
                   <span className="text-emerald-400 font-mono font-bold">
-                    {(identityConfidence * 100).toFixed(1)}%
+                    {identityConfidence === null ? '—' : `${(identityConfidence * 100).toFixed(1)}%`}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -627,7 +679,11 @@ export const AnimationStudioPage: React.FC = () => {
 
             <div className="text-[11px] text-slate-500 border-t border-dark-750/60 pt-3 flex items-center justify-between">
               <span>Architecture: TemporalSVAN</span>
-              <span>426K Parameters</span>
+              <span>
+                {typeof benchmarkMetrics?.parameter_count === 'number'
+                  ? `${Math.round(benchmarkMetrics.parameter_count / 1000)}K Parameters`
+                  : '— Parameters'}
+              </span>
             </div>
           </div>
         </div>
@@ -688,7 +744,12 @@ export const AnimationStudioPage: React.FC = () => {
 
               <div className="space-y-3 text-xs text-slate-300">
                 <p>
-                  Evaluated across 100 test animation sequences comparing all three execution engines under identical evaluation conditions:
+                  Evaluated across{' '}
+                  <span className="text-slate-100 font-semibold">
+                    {animBench?.total_sequences_evaluated ?? '—'}
+                  </span>{' '}
+                  test animation sequences comparing all three execution engines under identical evaluation
+                  conditions.
                 </p>
 
                 <div className="overflow-x-auto">
@@ -704,39 +765,48 @@ export const AnimationStudioPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-dark-750 font-mono">
-                      <tr className="hover:bg-dark-850/50">
-                        <td className="p-2.5 text-blue-400 font-sans font-semibold">Procedural Baseline</td>
-                        <td className="p-2.5">0.9031</td>
-                        <td className="p-2.5">90.60</td>
-                        <td className="p-2.5">0.9694</td>
-                        <td className="p-2.5">0.179%</td>
-                        <td className="p-2.5">2.89 ms</td>
-                      </tr>
-                      <tr className="hover:bg-dark-850/50">
-                        <td className="p-2.5 text-amber-400 font-sans font-semibold">Untrained Baseline</td>
-                        <td className="p-2.5">1.0000</td>
-                        <td className="p-2.5">100.00</td>
-                        <td className="p-2.5">1.0000</td>
-                        <td className="p-2.5">0.000%</td>
-                        <td className="p-2.5">5.52 ms</td>
-                      </tr>
-                      <tr className="bg-purple-950/30 text-purple-200 font-semibold">
-                        <td className="p-2.5 text-emerald-400 font-sans">Trained Temporal SVAN</td>
-                        <td className="p-2.5 text-emerald-400">0.9553</td>
-                        <td className="p-2.5 text-emerald-400">98.19</td>
-                        <td className="p-2.5 text-emerald-400">0.9958</td>
-                        <td className="p-2.5 text-emerald-400">0.060%</td>
-                        <td className="p-2.5">6.75 ms</td>
-                      </tr>
+                      {animEngines.map(([key, label, colour]) => {
+                        const row = animSummary[key];
+                        return (
+                          <tr
+                            key={key}
+                            className={key === 'trained_model' ? 'bg-purple-950/30' : 'hover:bg-dark-850/50'}
+                          >
+                            <td className={`p-2.5 font-sans font-semibold ${colour}`}>{label}</td>
+                            <td className="p-2.5">{fmt(row?.mean_identity_iou, 4)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_smoothness, 2)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_loop_consistency, 4)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_flicker_rate_pct, 3, '%')}</td>
+                            <td className="p-2.5">{fmt(row?.mean_latency_ms, 2, ' ms')}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="bg-dark-950 p-3 rounded-lg border border-dark-750 text-slate-400 space-y-1">
-                  <div className="font-semibold text-slate-200">Key Scientific Takeaways:</div>
-                  <div>• Untrained model produces zero articulation (static sprite), yielding artificially high IoU and smoothness.</div>
-                  <div>• Trained Temporal SVAN articulates limbs smoothly while achieving 3x lower flicker than procedural oscillators.</div>
-                  <div>• Real-time CPU inference on Intel i7 delivers complete 6-frame animations in under 7 ms.</div>
+                  <div className="font-semibold text-slate-200">Read from the benchmark file:</div>
+                  {!animBench && <div>No benchmark results loaded.</div>}
+                  {animBench && (
+                    <>
+                      <div>
+                        • Trained model vs procedural: identity IoU{' '}
+                        {fmt(animSummary.procedural_baseline?.mean_identity_iou, 4)} →{' '}
+                        {fmt(animSummary.trained_model?.mean_identity_iou, 4)}, flicker{' '}
+                        {fmt(animSummary.procedural_baseline?.mean_flicker_rate_pct, 3, '%')} →{' '}
+                        {fmt(animSummary.trained_model?.mean_flicker_rate_pct, 3, '%')}.
+                      </div>
+                      <div>
+                        • Untrained baseline is expected to be static; its high identity and smoothness are artifacts,
+                        not articulation.
+                      </div>
+                      <div>
+                        • Measured on {animBench.total_sequences_evaluated ?? '—'} sequences over{' '}
+                        {(animBench.categories_tested ?? []).length || '—'} categories.
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

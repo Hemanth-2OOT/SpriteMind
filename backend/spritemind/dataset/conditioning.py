@@ -82,8 +82,39 @@ def element_id(name: Optional[str]) -> int:
     return ELEMENT_IDS.get(str(name).lower(), 0) if name else 0
 
 
-WEAPON_WORDS = tuple(WEAPONS)
-ACCESSORY_WORDS = tuple(ACCESSORIES)
+# Everyday synonyms so a prompt like "mage with a wand" picks the staff rig
+# instead of falling back to a random weapon.
+WEAPON_SYNONYMS: Dict[str, str] = {
+    "wand": "staff",
+    "stave": "staff",
+    "scepter": "staff",
+    "katana": "sword",
+    "blade": "sword",
+    "sabre": "sword",
+    "knife": "dagger",
+    "crossbow": "bow",
+    "longbow": "bow",
+    "buckler": "shield",
+}
+
+ACCESSORY_SYNONYMS: Dict[str, str] = {
+    "cloak": "cape",
+    "helm": "helmet",
+    "helmet": "helmet",
+    "horn": "horns",
+    "wing": "wings",
+    "wings": "wings",
+    "satchel": "backpack",
+    "armor": "pauldrons",
+    "armour": "pauldrons",
+}
+
+WEAPON_WORDS = tuple(WEAPONS) + tuple(WEAPON_SYNONYMS)
+ACCESSORY_WORDS = tuple(ACCESSORIES) + tuple(ACCESSORY_SYNONYMS)
+
+
+def _normalise(word: str, synonyms: Dict[str, str]) -> str:
+    return synonyms.get(word, word)
 
 
 def _luma(rgb: RGB) -> float:
@@ -181,8 +212,10 @@ def parse_conditioning(prompt: str) -> Dict[str, Any]:
     words = prompt.lower().replace("_", " ").split()
     colours = [w for w in words if w in COLOUR_RGB]
     elements = [w for w in words if w in ELEMENT_RGB]
-    weapons = [w for w in words if w in WEAPON_WORDS and w != "none"]
-    accessories = [w for w in words if w in ACCESSORY_WORDS and w != "none"]
+    weapons = [_normalise(w, WEAPON_SYNONYMS) for w in words if w in WEAPON_WORDS]
+    weapons = [w for w in weapons if w not in ("none",)]
+    accessories = [_normalise(w, ACCESSORY_SYNONYMS) for w in words if w in ACCESSORY_WORDS]
+    accessories = [w for w in accessories if w not in ("none",)]
     return {
         "colour": colours[0] if colours else None,
         "element": elements[0] if elements else None,
