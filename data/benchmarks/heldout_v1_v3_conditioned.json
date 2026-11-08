@@ -1,0 +1,198 @@
+{
+  "benchmark": "heldout_generalization",
+  "checkpoint": "svan_checkpoint_best.pt",
+  "label": "v3_conditioned",
+  "spec": "data/splits/heldout_v1.json",
+  "spec_digest": "581bd3fa4c1253723cd8e7169d45847cb209d0a09ea99b9b65cecd830086a06b",
+  "heldout_triples": 30,
+  "heldout_category_element": 10,
+  "palette_conditioning_trained": false,
+  "prompts_per_grid": {
+    "heldout": 80,
+    "in_distribution": 80
+  },
+  "best_of": 4,
+  "seed": 20261105,
+  "palette": "pico8",
+  "wall_seconds": 215.0,
+  "results": {
+    "heldout/neural_only": {
+      "summary": {
+        "n": 80,
+        "opaque_pixels": {
+          "mean": 238.15,
+          "stderr": 3.1733
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.0,
+          "stderr": 0.0
+        },
+        "largest_component_share": {
+          "mean": 1.0,
+          "stderr": 0.0
+        },
+        "column_symmetry": {
+          "mean": 0.9387,
+          "stderr": 0.0061
+        },
+        "interior_hole_pixels": {
+          "mean": 0.1375,
+          "stderr": 0.0526
+        },
+        "silhouette_iou": {
+          "mean": 0.7707,
+          "stderr": 0.0123
+        },
+        "colour_faithfulness": {
+          "mean": 48.525,
+          "stderr": 2.3411
+        }
+      },
+      "n": 80,
+      "failures": 0,
+      "candidate_sources": {
+        "neural": 80
+      }
+    },
+    "heldout/production": {
+      "summary": {
+        "n": 80,
+        "opaque_pixels": {
+          "mean": 232.4375,
+          "stderr": 2.4898
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.0125,
+          "stderr": 0.0125
+        },
+        "largest_component_share": {
+          "mean": 0.9997,
+          "stderr": 0.0003
+        },
+        "column_symmetry": {
+          "mean": 0.9392,
+          "stderr": 0.0059
+        },
+        "interior_hole_pixels": {
+          "mean": 0.05,
+          "stderr": 0.0303
+        },
+        "silhouette_iou": {
+          "mean": 0.7789,
+          "stderr": 0.0131
+        },
+        "latency_ms": {
+          "mean": 668.0899,
+          "stderr": 24.6894
+        },
+        "colour_faithfulness": {
+          "mean": 48.635,
+          "stderr": 2.3135
+        }
+      },
+      "n": 80,
+      "failures": 0,
+      "candidate_sources": {
+        "neural": 61,
+        "procedural_guard": 19
+      }
+    },
+    "in_distribution/neural_only": {
+      "summary": {
+        "n": 80,
+        "opaque_pixels": {
+          "mean": 234.675,
+          "stderr": 3.128
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.025,
+          "stderr": 0.0176
+        },
+        "largest_component_share": {
+          "mean": 0.9986,
+          "stderr": 0.0012
+        },
+        "column_symmetry": {
+          "mean": 0.9184,
+          "stderr": 0.0066
+        },
+        "interior_hole_pixels": {
+          "mean": 0.25,
+          "stderr": 0.0723
+        },
+        "silhouette_iou": {
+          "mean": 0.7514,
+          "stderr": 0.013
+        },
+        "colour_faithfulness": {
+          "mean": 25.815,
+          "stderr": 3.4352
+        }
+      },
+      "n": 80,
+      "failures": 0,
+      "candidate_sources": {
+        "neural": 80
+      }
+    },
+    "in_distribution/production": {
+      "summary": {
+        "n": 80,
+        "opaque_pixels": {
+          "mean": 232.0375,
+          "stderr": 2.186
+        },
+        "palette_adherence_pct": {
+          "mean": 100.0,
+          "stderr": 0.0
+        },
+        "connected_components": {
+          "mean": 1.0125,
+          "stderr": 0.0125
+        },
+        "largest_component_share": {
+          "mean": 0.9997,
+          "stderr": 0.0003
+        },
+        "column_symmetry": {
+          "mean": 0.9306,
+          "stderr": 0.0064
+        },
+        "interior_hole_pixels": {
+          "mean": 0.05,
+          "stderr": 0.0245
+        },
+        "silhouette_iou": {
+          "mean": 0.7512,
+          "stderr": 0.0112
+        },
+        "latency_ms": {
+          "mean": 680.54,
+          "stderr": 33.3399
+        },
+        "colour_faithfulness": {
+          "mean": 46.9325,
+          "stderr": 2.5622
+        }
+      },
+      "n": 80,
+      "failures": 0,
+      "candidate_sources": {
+        "neural": 68,
+        "procedural_guard": 12
+      }
+    }
+  }
+}

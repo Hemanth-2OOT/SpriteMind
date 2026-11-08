@@ -164,6 +164,17 @@ class PixelScriptDataset(Dataset):
         }
 
 
+def colour_token_weights(tokenizer, weight: float, device=None) -> "torch.Tensor":
+    """Per-token CE multiplier: `weight` on COL_* slots, 1.0 everywhere else."""
+    import torch as _torch
+
+    weights = _torch.ones(tokenizer.vocab_size, device=device)
+    for token, tid in tokenizer.token_to_id.items():
+        if token.startswith("COL_"):
+            weights[tid] = weight
+    return weights
+
+
 class ModelTrainer:
     """Background asynchronous trainer for SVAN models with full training rigor."""
 
@@ -242,6 +253,7 @@ class ModelTrainer:
         prompt_text: bool = False,
         max_samples: Optional[int] = None,
         palette_conditioning: bool = False,
+        colour_token_weight: float = 1.0,
     ) -> Dict[str, Any]:
         if self.is_training:
             return {"status": "error", "message": "Training already in progress"}
@@ -252,7 +264,7 @@ class ModelTrainer:
             target=self._run_training_loop,
             args=(dataset_name, epochs, batch_size, learning_rate, optimizer_name, save_checkpoint_name, resume, resume_from, patience, seed,
                   max_seq_len, d_model, nhead, num_layers, dim_feedforward, dropout, label_smoothing, threads,
-                  prompt_text, max_samples, palette_conditioning),
+                  prompt_text, max_samples, palette_conditioning, colour_token_weight),
             daemon=True,
         )
         self._thread.start()
@@ -294,6 +306,7 @@ class ModelTrainer:
         prompt_text: bool = False,
         max_samples: Optional[int] = None,
         palette_conditioning: bool = False,
+        colour_token_weight: float = 1.0,
     ):
         start_time = time.time()
         if threads > 0:
@@ -359,6 +372,11 @@ class ModelTrainer:
 
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
             criterion = nn.CrossEntropyLoss(ignore_index=self.tokenizer.pad_id, label_smoothing=label_smoothing)
+            # R11: upweight the colour slots so a rare wrong hue costs more than a
+            # wrong coordinate. 1.0 leaves the objective exactly as it was.
+            token_weights = None
+            if colour_token_weight != 1.0:
+                token_weights = colour_token_weights(self.tokenizer, colour_token_weight, self.device)
 
             total_steps = epochs * len(train_loader)
             loss_history: List[Dict[str, Any]] = []
@@ -427,7 +445,21 @@ class ModelTrainer:
                         element_idx=el_idx,
                     )
 
-                    loss = criterion(logits.reshape(-1, logits.size(-1)), tgt.view(-1))
+                    flat_logits = logits.reshape(-1, logits.size(-1))
+                    flat_tgt = tgt.view(-1)
+                    if token_weights is None:
+                        loss = criterion(flat_logits, flat_tgt)
+                    else:
+                        per_token = nn.functional.cross_entropy(
+                            flat_logits,
+                            flat_tgt,
+                            ignore_index=self.tokenizer.pad_id,
+                            reduction="none",
+                            label_smoothing=label_smoothing,
+                        )
+                        weights = token_weights[flat_tgt.clamp(min=0)]
+                        weights = weights * (flat_tgt != self.tokenizer.pad_id).float()
+                        loss = (per_token * weights).sum() / weights.sum().clamp(min=1.0)
                     loss.backward()
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     optimizer.step()

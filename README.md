@@ -142,6 +142,8 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 - **Roadmap & TODO (next work, sizes, acceptance criteria):** [`ROADMAP.md`](ROADMAP.md)
 - **Prompt colour faithfulness (metric definition + baseline):** [`docs/PROMPT_FAITHFULNESS.md`](docs/PROMPT_FAITHFULNESS.md)
 - **Rerank evaluation (R4/R5/R6 ablations, before/after):** [`docs/RERANK_EVALUATION.md`](docs/RERANK_EVALUATION.md)
+- **Palette-conditioned retrain (R6/R7/R9 + held-out R10):** [`docs/RETRAIN_V4.md`](docs/RETRAIN_V4.md)
+- **Neural colour recovery (R11 — diagnosis, experiments, gate):** [`docs/COLOUR_RECOVERY.md`](docs/COLOUR_RECOVERY.md)
 - **Prompt conditioning in the corpus (colour/element tags, palette mapping, probe):** [`docs/PROMPT_CONDITIONING.md`](docs/PROMPT_CONDITIONING.md)
 - **Action Sets (prompt → animation package):** [`docs/ACTION_SETS.md`](docs/ACTION_SETS.md)
 - **PixelScript Grammar (v2 primitives: SHADE / OUTLINE):** [`docs/PIXELSCRIPT_GRAMMAR.md`](docs/PIXELSCRIPT_GRAMMAR.md)

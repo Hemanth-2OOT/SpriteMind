@@ -1,0 +1,289 @@
+{
+  "benchmark": "determinism",
+  "cases": 15,
+  "seeds": [
+    0,
+    42,
+    1337
+  ],
+  "colour_steer": 3.0,
+  "comparisons": [
+    {
+      "Comparison": "in-process run 1 vs run 2",
+      "cases": 15,
+      "mismatches": 0,
+      "examples": []
+    },
+    {
+      "Comparison": "process PYTHONHASHSEED=0 vs 1",
+      "cases": 15,
+      "mismatches": 0,
+      "examples": []
+    },
+    {
+      "Comparison": "process PYTHONHASHSEED=0 vs 12345",
+      "cases": 15,
+      "mismatches": 0,
+      "examples": []
+    },
+    {
+      "Comparison": "in-process vs child process",
+      "cases": 15,
+      "mismatches": 0,
+      "examples": []
+    }
+  ],
+  "deterministic": true,
+  "hashes": {
+    "in_process": {
+      "knight/idle/0": [
+        "7ead2e09b6a2a4f5",
+        "dddafe704c83495b"
+      ],
+      "knight/idle/42": [
+        "992d1f3db4ae1232",
+        "f787f7243cbc019f"
+      ],
+      "knight/idle/1337": [
+        "8a8b231b8d94db1d",
+        "a0977d5d67b49c4b"
+      ],
+      "wizard/attack/0": [
+        "042492d665a0ba20",
+        "74973278f3900666"
+      ],
+      "wizard/attack/42": [
+        "fdd53b0e670178ba",
+        "c66a4b5b92150b75"
+      ],
+      "wizard/attack/1337": [
+        "748a5db3be4d0f52",
+        "f9197d6decf999fa"
+      ],
+      "robot/run/0": [
+        "2e2f28f553dcde91",
+        "76f915ffbdeaab9e"
+      ],
+      "robot/run/42": [
+        "24d4177f4796e0d4",
+        "022e972aa025fce0"
+      ],
+      "robot/run/1337": [
+        "b7757b186a3fa47b",
+        "d0e1534658ab3c4b"
+      ],
+      "slime/idle/0": [
+        "ae16fc087ead2dc5",
+        "19ebe11f14a3ae5c"
+      ],
+      "slime/idle/42": [
+        "9e33a0049147194a",
+        "836e2e41afad9671"
+      ],
+      "slime/idle/1337": [
+        "e74c5b0b37b42e73",
+        "abad93f3556b2238"
+      ],
+      "zombie/walk/0": [
+        "6d693bb28d005886",
+        "ee50e3b137f57f5a"
+      ],
+      "zombie/walk/42": [
+        "7f893cf49bd4452d",
+        "99d725c6637c3cb1"
+      ],
+      "zombie/walk/1337": [
+        "f4eaeec3e7db9919",
+        "2485c128d8eeb1fd"
+      ]
+    },
+    "children": [
+      {
+        "knight/idle/0": [
+          "7ead2e09b6a2a4f5",
+          "dddafe704c83495b"
+        ],
+        "knight/idle/42": [
+          "992d1f3db4ae1232",
+          "f787f7243cbc019f"
+        ],
+        "knight/idle/1337": [
+          "8a8b231b8d94db1d",
+          "a0977d5d67b49c4b"
+        ],
+        "wizard/attack/0": [
+          "042492d665a0ba20",
+          "74973278f3900666"
+        ],
+        "wizard/attack/42": [
+          "fdd53b0e670178ba",
+          "c66a4b5b92150b75"
+        ],
+        "wizard/attack/1337": [
+          "748a5db3be4d0f52",
+          "f9197d6decf999fa"
+        ],
+        "robot/run/0": [
+          "2e2f28f553dcde91",
+          "76f915ffbdeaab9e"
+        ],
+        "robot/run/42": [
+          "24d4177f4796e0d4",
+          "022e972aa025fce0"
+        ],
+        "robot/run/1337": [
+          "b7757b186a3fa47b",
+          "d0e1534658ab3c4b"
+        ],
+        "slime/idle/0": [
+          "ae16fc087ead2dc5",
+          "19ebe11f14a3ae5c"
+        ],
+        "slime/idle/42": [
+          "9e33a0049147194a",
+          "836e2e41afad9671"
+        ],
+        "slime/idle/1337": [
+          "e74c5b0b37b42e73",
+          "abad93f3556b2238"
+        ],
+        "zombie/walk/0": [
+          "6d693bb28d005886",
+          "ee50e3b137f57f5a"
+        ],
+        "zombie/walk/42": [
+          "7f893cf49bd4452d",
+          "99d725c6637c3cb1"
+        ],
+        "zombie/walk/1337": [
+          "f4eaeec3e7db9919",
+          "2485c128d8eeb1fd"
+        ]
+      },
+      {
+        "knight/idle/0": [
+          "7ead2e09b6a2a4f5",
+          "dddafe704c83495b"
+        ],
+        "knight/idle/42": [
+          "992d1f3db4ae1232",
+          "f787f7243cbc019f"
+        ],
+        "knight/idle/1337": [
+          "8a8b231b8d94db1d",
+          "a0977d5d67b49c4b"
+        ],
+        "wizard/attack/0": [
+          "042492d665a0ba20",
+          "74973278f3900666"
+        ],
+        "wizard/attack/42": [
+          "fdd53b0e670178ba",
+          "c66a4b5b92150b75"
+        ],
+        "wizard/attack/1337": [
+          "748a5db3be4d0f52",
+          "f9197d6decf999fa"
+        ],
+        "robot/run/0": [
+          "2e2f28f553dcde91",
+          "76f915ffbdeaab9e"
+        ],
+        "robot/run/42": [
+          "24d4177f4796e0d4",
+          "022e972aa025fce0"
+        ],
+        "robot/run/1337": [
+          "b7757b186a3fa47b",
+          "d0e1534658ab3c4b"
+        ],
+        "slime/idle/0": [
+          "ae16fc087ead2dc5",
+          "19ebe11f14a3ae5c"
+        ],
+        "slime/idle/42": [
+          "9e33a0049147194a",
+          "836e2e41afad9671"
+        ],
+        "slime/idle/1337": [
+          "e74c5b0b37b42e73",
+          "abad93f3556b2238"
+        ],
+        "zombie/walk/0": [
+          "6d693bb28d005886",
+          "ee50e3b137f57f5a"
+        ],
+        "zombie/walk/42": [
+          "7f893cf49bd4452d",
+          "99d725c6637c3cb1"
+        ],
+        "zombie/walk/1337": [
+          "f4eaeec3e7db9919",
+          "2485c128d8eeb1fd"
+        ]
+      },
+      {
+        "knight/idle/0": [
+          "7ead2e09b6a2a4f5",
+          "dddafe704c83495b"
+        ],
+        "knight/idle/42": [
+          "992d1f3db4ae1232",
+          "f787f7243cbc019f"
+        ],
+        "knight/idle/1337": [
+          "8a8b231b8d94db1d",
+          "a0977d5d67b49c4b"
+        ],
+        "wizard/attack/0": [
+          "042492d665a0ba20",
+          "74973278f3900666"
+        ],
+        "wizard/attack/42": [
+          "fdd53b0e670178ba",
+          "c66a4b5b92150b75"
+        ],
+        "wizard/attack/1337": [
+          "748a5db3be4d0f52",
+          "f9197d6decf999fa"
+        ],
+        "robot/run/0": [
+          "2e2f28f553dcde91",
+          "76f915ffbdeaab9e"
+        ],
+        "robot/run/42": [
+          "24d4177f4796e0d4",
+          "022e972aa025fce0"
+        ],
+        "robot/run/1337": [
+          "b7757b186a3fa47b",
+          "d0e1534658ab3c4b"
+        ],
+        "slime/idle/0": [
+          "ae16fc087ead2dc5",
+          "19ebe11f14a3ae5c"
+        ],
+        "slime/idle/42": [
+          "9e33a0049147194a",
+          "836e2e41afad9671"
+        ],
+        "slime/idle/1337": [
+          "e74c5b0b37b42e73",
+          "abad93f3556b2238"
+        ],
+        "zombie/walk/0": [
+          "6d693bb28d005886",
+          "ee50e3b137f57f5a"
+        ],
+        "zombie/walk/42": [
+          "7f893cf49bd4452d",
+          "99d725c6637c3cb1"
+        ],
+        "zombie/walk/1337": [
+          "f4eaeec3e7db9919",
+          "2485c128d8eeb1fd"
+        ]
+      }
+    ]
+  }
+}

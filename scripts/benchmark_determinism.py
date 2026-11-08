@@ -28,6 +28,9 @@ CASES = [
     {"category": "zombie", "style": "retro_8bit", "pose": "walk", "palette": "gameboy", "engine": "procedural_baseline"},
 ]
 SEEDS = [0, 42, 1337]
+# R11: the colour-steering knob is verified the same way as the default path.
+STEER = float(os.environ.get("SPRITEMIND_COLOUR_STEER", "0"))
+SUFFIX = os.environ.get("SPRITEMIND_BENCH_SUFFIX", "")
 
 
 def _digest(payload: str) -> str:
@@ -52,6 +55,7 @@ def _run_cases(seed_offset: int = 0) -> dict:
                 engine_mode=case["engine"],
                 seed=seed + seed_offset,
                 best_of=2,
+                colour_steer=STEER,
             )
             script = result["frames"][0].get("script_text", "")
             image = result["frames"][0].get("image_base64", "")
@@ -100,13 +104,14 @@ def run():
         "benchmark": "determinism",
         "cases": len(in_process_a),
         "seeds": SEEDS,
+        "colour_steer": STEER,
         "comparisons": rows,
         "deterministic": all(row["mismatches"] == 0 for row in rows),
         "hashes": {"in_process": in_process_a, "children": children},
     }
-    write_json(BENCH_DIR / "determinism.json", payload)
+    write_json(BENCH_DIR / f"determinism{SUFFIX}.json", payload)
     table = markdown_table(rows, ["Comparison", "cases", "mismatches", "examples"])
-    (BENCH_DIR / "determinism.md").write_text(table + "\n")
+    (BENCH_DIR / f"determinism{SUFFIX}.md").write_text(table + "\n")
     print(table)
     print(f"\ndeterministic: {payload['deterministic']}")
     return payload

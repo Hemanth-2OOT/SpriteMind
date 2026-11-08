@@ -13,6 +13,7 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`PROMPT_FAITHFULNESS.md`](PROMPT_FAITHFULNESS.md) — how well the generated colours match the prompt, how the metric is computed, and the current baselines.
 - [`ACTION_SETS.md`](ACTION_SETS.md) — turning one prompt into a playable animation package: idle, walk, attack, cast and dash, and how frames stay connected.
 - [`PROMPT_CONDITIONING.md`](PROMPT_CONDITIONING.md) — how colour and element tags from the prompt reach the training corpus and the model.
+- [`COLOUR_RECOVERY.md`](COLOUR_RECOVERY.md) — why neural colour faithfulness looked like it regressed, the selection-vs-coverage decomposition, and the steering experiment that recovered it (R11).
 
 ## Training and tuning
 
@@ -33,5 +34,5 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - `scripts/finetune_svan.py --prompt-text` — trains the optional prompt text encoder (`ml/prompt_encoder.py`) as a fourth memory token; `docs/PROMPT_FAITHFULNESS.md` explains why the shipped checkpoint leaves it off.
 - `scripts/golden_images.py` — the perceptual-hash regression set (`--update-goldens` to accept a deliberate change).
 - `GET /api/metrics` — p50/p95 latency ring buffer, also shown in the Model Lab.
-- `pytest` — the 240-test suite now also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
+- `pytest` — the 300-test suite now also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
 - `npm run typecheck` — TypeScript over `frontend/src`; `npm run build` runs it first, so the frontend CI job typechecks too.

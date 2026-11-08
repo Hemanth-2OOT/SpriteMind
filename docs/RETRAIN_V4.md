@@ -148,12 +148,15 @@ Read this honestly:
   prompts (0.7682 → 0.7904) and +1.7 on in-distribution (0.7599 → 0.7767), now
   above the procedural baseline's 0.754 without the guard. The guarded path rose
   on both grids too.
-* **Neural colour faithfulness fell** (19.81 → 17.43 held-out, 21.00 → 15.36
-  in-distribution). The multi-palette corpus makes the drawing task harder and the
-  model spends capacity on geometry. The guarded path still improved (48.63 →
-  49.08 on held-out), so the selection layer hides most of the regression — which
-  is exactly the "selection, not generation" trap the audit warned about. The
-  neural colour regression is the main open item from this milestone.
+* **Neural colour faithfulness appeared to fall** (19.81 → 17.43 held-out,
+  21.00 → 15.36 in-distribution). **This measurement was wrong in the harness,
+  not only in the checkpoints**: the neural-only arm of `benchmark_heldout.py`
+  never passed the requested colour into `_neural_generate`, so both checkpoints
+  were scored on a colour they were never told. Re-measured with the request
+  actually passed (same spec, seeds and arms), the numbers are 48.52 (v3) and
+  47.46 (v4 ep2) held-out, and 25.82 / 46.45 in-distribution — see
+  [`COLOUR_RECOVERY.md`](COLOUR_RECOVERY.md) (R11). The guarded path is unchanged
+  (48.63 → 49.08 held-out), because it always passed the request.
 * **No held-out gap was measured**; both checkpoints score *higher* on held-out
   prompts than on the in-distribution grid. That is not evidence of generalization
   being solved: the IoU reference is each category's canonical *idle* template, so

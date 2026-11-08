@@ -170,8 +170,16 @@ Full evidence in `docs/IMPLEMENTATION_AUDIT.md`. Ordered by cost; R1–R3 landed
 Full evidence in `docs/RETRAIN_V4.md`; production checkpoint and corpus untouched.
 
 - Neural-only IoU on held-out prompts: 0.7682 (v3) → **0.7904** (v4 ep2); in-distribution 0.7599 → **0.7767**. Both now exceed the procedural baseline's 0.754 without the guard.
-- Neural-only colour faithfulness **regressed**: 19.81 → 17.43 (held-out), 21.00 → 15.36 (in-distribution). Guarded output still improved slightly (48.63 → 49.08 held-out), i.e. selection masked it. This is the open item.
+- Neural-only colour faithfulness appeared to regress (19.81 → 17.43 held-out, 21.00 → 15.36 in-distribution), but that harness never passed the requested colour to the neural arm. Corrected numbers: 48.52 (v3) vs 47.46 (v4) held-out, 25.82 vs 46.45 in-distribution — see R11 below.
 - The finetune adoption gate (critic clean rate ≥ 90%) rejected both epochs at 87.5%, so no checkpoint was promoted automatically.
+
+### R11 neural colour recovery (2026-11-05)
+
+- [x] **Diagnosis and harness fix** — `benchmark_heldout.py` scored the neural arm on a colour it was never given; the request is now forwarded. With the request passed, palette *selection* is 1.000 when conditioned (0.775 v3 / 0.675 v4 blind) and the remaining loss is *coverage* (~0.20–0.24 of the sprite).
+- [x] **Controlled experiments** — E1 colour-saturated corpus (`cond_v2_colour`, 15k, all records labelled) + E3 colour-weighted cross-entropy (`--colour-loss-weight`, `colour_token_weights()`): **negative**, 47.48 vs 47.46 held-out colour at 0.7782 vs 0.7814 IoU; checkpoint `svan_v5_colour.ep1.pt` kept for provenance, not adopted (clean rate 87.5%). E2 inference-time `colour_steer`: **positive**, 52.36 (held-out) / 55.63 (in-distribution) colour at 0.7856 / 0.7696 IoU.
+- [x] **Gate** — colour improved, geometry retained, palette 100%, determinism 0/15 mismatches at steer 3.0; critic gate **fails** at 87.5% clean with and without steering, so nothing is promoted and `colour_steer` defaults to 0.0 and stays out of the API.
+  *Evidence:* `docs/COLOUR_RECOVERY.md`, the `data/benchmarks/` set (`heldout_v1_v3_conditioned`, `heldout_v1_v4_conditioned`, `heldout_v1_v4_steer3`, `heldout_v1_v5_colour`, `colour_diagnosis`, `determinism_steer3`).
+- [ ] **Next colour work** — structured per-part colour plans (grammar v3), coverage-aware reranking, coverage curricula. Ordered by expected value per hour in `docs/COLOUR_RECOVERY.md` §6.
 
 ## P5 — Product surface
 
