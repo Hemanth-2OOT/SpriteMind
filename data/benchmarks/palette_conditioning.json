@@ -1,0 +1,183 @@
+{
+  "benchmark": "palette_conditioning",
+  "palettes": [
+    "pico8",
+    "gameboy",
+    "dawnbringer16",
+    "cyberpunk",
+    "endesga32"
+  ],
+  "results": [
+    {
+      "checkpoint": "svan_checkpoint_best.pt",
+      "palette_conditioning_trained": false,
+      "seed": 20261105,
+      "prompts": [
+        {
+          "prompt": "a knight with a sword",
+          "geometry_digest": {
+            "pico8": "0e597849b58e",
+            "gameboy": "0e597849b58e",
+            "dawnbringer16": "0e597849b58e",
+            "cyberpunk": "0e597849b58e",
+            "endesga32": "0e597849b58e"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 45.261
+        },
+        {
+          "prompt": "a wizard casting a spell",
+          "geometry_digest": {
+            "pico8": "3de94f29aa05",
+            "gameboy": "3de94f29aa05",
+            "dawnbringer16": "3de94f29aa05",
+            "cyberpunk": "3de94f29aa05",
+            "endesga32": "3de94f29aa05"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 43.147
+        },
+        {
+          "prompt": "a slime creature",
+          "geometry_digest": {
+            "pico8": "0f82d86cf0f3",
+            "gameboy": "0f82d86cf0f3",
+            "dawnbringer16": "0f82d86cf0f3",
+            "cyberpunk": "0f82d86cf0f3",
+            "endesga32": "0f82d86cf0f3"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 64.927
+        },
+        {
+          "prompt": "a robot with a blaster",
+          "geometry_digest": {
+            "pico8": "14914c72db53",
+            "gameboy": "14914c72db53",
+            "dawnbringer16": "14914c72db53",
+            "cyberpunk": "14914c72db53",
+            "endesga32": "14914c72db53"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 45.702
+        }
+      ],
+      "mean_distinct_geometries": 1.0,
+      "mean_pairwise_rgba_diff": 49.759
+    },
+    {
+      "checkpoint": "svan_v4_palette.pt",
+      "palette_conditioning_trained": true,
+      "seed": 20261105,
+      "prompts": [
+        {
+          "prompt": "a knight with a sword",
+          "geometry_digest": {
+            "pico8": "b7fd96c05beb",
+            "gameboy": "c1cb846a11b4",
+            "dawnbringer16": "b7fd96c05beb",
+            "cyberpunk": "5f99b9bdce3c",
+            "endesga32": "0010f34dc9ab"
+          },
+          "distinct_geometries": 4,
+          "mean_pairwise_rgba_diff": 56.307
+        },
+        {
+          "prompt": "a wizard casting a spell",
+          "geometry_digest": {
+            "pico8": "841116a46c49",
+            "gameboy": "841116a46c49",
+            "dawnbringer16": "841116a46c49",
+            "cyberpunk": "841116a46c49",
+            "endesga32": "841116a46c49"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 63.354
+        },
+        {
+          "prompt": "a slime creature",
+          "geometry_digest": {
+            "pico8": "046d2b63101b",
+            "gameboy": "28dfeac76a71",
+            "dawnbringer16": "c24931969b35",
+            "cyberpunk": "28dfeac76a71",
+            "endesga32": "046d2b63101b"
+          },
+          "distinct_geometries": 3,
+          "mean_pairwise_rgba_diff": 41.809
+        },
+        {
+          "prompt": "a robot with a blaster",
+          "geometry_digest": {
+            "pico8": "05f60d0c58b6",
+            "gameboy": "05f60d0c58b6",
+            "dawnbringer16": "05f60d0c58b6",
+            "cyberpunk": "05f60d0c58b6",
+            "endesga32": "05f60d0c58b6"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 57.564
+        }
+      ],
+      "mean_distinct_geometries": 2.25,
+      "mean_pairwise_rgba_diff": 54.758
+    },
+    {
+      "checkpoint": "svan_v4_palette_ep2.pt",
+      "palette_conditioning_trained": true,
+      "seed": 20261105,
+      "prompts": [
+        {
+          "prompt": "a knight with a sword",
+          "geometry_digest": {
+            "pico8": "510d07cf921d",
+            "gameboy": "e0a7c153657b",
+            "dawnbringer16": "510d07cf921d",
+            "cyberpunk": "f5e86557dd15",
+            "endesga32": "85826eb848cf"
+          },
+          "distinct_geometries": 4,
+          "mean_pairwise_rgba_diff": 45.858
+        },
+        {
+          "prompt": "a wizard casting a spell",
+          "geometry_digest": {
+            "pico8": "c07889fe2a71",
+            "gameboy": "c07889fe2a71",
+            "dawnbringer16": "c07889fe2a71",
+            "cyberpunk": "c07889fe2a71",
+            "endesga32": "c07889fe2a71"
+          },
+          "distinct_geometries": 1,
+          "mean_pairwise_rgba_diff": 53.298
+        },
+        {
+          "prompt": "a slime creature",
+          "geometry_digest": {
+            "pico8": "c24931969b35",
+            "gameboy": "ac6ed3de4138",
+            "dawnbringer16": "c24931969b35",
+            "cyberpunk": "ac6ed3de4138",
+            "endesga32": "52ab73c268e1"
+          },
+          "distinct_geometries": 3,
+          "mean_pairwise_rgba_diff": 46.857
+        },
+        {
+          "prompt": "a robot with a blaster",
+          "geometry_digest": {
+            "pico8": "ec497669cb64",
+            "gameboy": "9f735700b4c8",
+            "dawnbringer16": "ec497669cb64",
+            "cyberpunk": "9f735700b4c8",
+            "endesga32": "9f735700b4c8"
+          },
+          "distinct_geometries": 2,
+          "mean_pairwise_rgba_diff": 45.926
+        }
+      ],
+      "mean_distinct_geometries": 2.5,
+      "mean_pairwise_rgba_diff": 47.985
+    }
+  ]
+}

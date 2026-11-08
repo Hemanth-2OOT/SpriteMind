@@ -1,0 +1,17 @@
+{
+  "dataset": "cond_v1_15k",
+  "replay": [],
+  "from_scratch": false,
+  "epochs": [
+    {
+      "epoch": 1,
+      "checkpoint": "svan_v4_palette_ep2.pt.ep1.pt",
+      "val_loss": 0.3423,
+      "token_accuracy": 98.91,
+      "val_token_accuracy": 99.09,
+      "clean_rate": 87.5,
+      "elapsed_seconds": 1044.7
+    }
+  ],
+  "best_clean_rate": 87.5
+}

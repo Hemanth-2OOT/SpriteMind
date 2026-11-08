@@ -154,16 +154,24 @@ Full evidence in `docs/IMPLEMENTATION_AUDIT.md`. Ordered by cost; R1–R3 landed
   *Done when:* `trained_best4` beats `trained_best1` on IoU and colour faithfulness in `scripts/benchmark_neural_vs_procedural.py`. Currently IoU 0.745 vs 0.751 and colour 29.60 vs 29.31 — not met. The critic's `quality_score` does not yet separate sprites well enough to steer selection; see `docs/RERANK_EVALUATION.md`.
 - [x] **R5 colour-aware rerank** — production colour faithfulness 13.9% → 29.6% (2.1×) at n=300 with the same prompts, seeds and checkpoint. Caveat: neural-only colour moved 7.0% → 9.9%, so the gain comes from selection, not generation.
   *Done when:* neural colour faithfulness ≥ procedural at n=300 — 29.60 vs 29.18, met. Neural-only remains below procedural (9.9% vs 29.2%), so "neural ≥ procedural" stays the primary open objective.
-- [ ] **R6 palette embedding actually used** — `_palette_index()` now feeds the real row and is gated on `palette_conditioning_trained`; every shipped checkpoint was trained with `pal_idx == 0`, so the mapping is inert until a checkpoint is trained on real palette labels (`M`)
-  *Done when:* the same prompt renders differently under two palettes at fixed seed — requires the retrain, not just the plumbing.
-- [ ] **R7 socket labels** — the model learns the bounding-box heuristic (0.87 px) and disagrees with the anatomical rule by 2.62 px (`M`)
-  *Done when:* MAE against anatomical sockets < 1.5 px, or both targets are trained and reported.
+- [x] **R6 palette embedding actually used** — `_palette_index()` feeds the real row, gated on `palette_conditioning_trained`; `PixelScriptDataset` now reads each record's `palette`, and `finetune_svan.py --palette-conditioning` trains the embedding. At a fixed seed the shipped checkpoint produces 1.00 distinct programs across 5 palettes (the plumbing was inert, as predicted), the retrained one 2.50.
+  *Evidence:* `docs/RETRAIN_V4.md`, `data/benchmarks/palette_conditioning.json`.
+- [x] **R7 socket labels** — `spritemind.dataset.anatomical_sockets` labels sockets from the drawn parts (head centre, torso centre, distal arm pixels); `scripts/train_socket_anatomical.py` trains `socket_predictor_anatomical_v2.pt` to **0.349 px** MAE against anatomical targets, versus 2.469 px for the shipped weights and 1.803 px for the proportional prior.
+  *Not wired into production:* promotion changes accessory placement and needs its own review.
 - [ ] **R8 temporal attribution** — 70/30 neural/prior blend; neural magnitude 1.284 px vs prior 1.281 px (`M`)
   *Done when:* the API reports both magnitudes and trained motion differs from the prior by > 2 SE.
-- [ ] **R9 element corpus** — only 4,918 of 20,000 samples carry an element label; element faithfulness is 33.4% (`L`)
+- [ ] **R9 element corpus** — `data/datasets/cond_v1_15k` labels 7,533/15,000 records (50%, up from 25%) with per-element counts in its metadata; element *faithfulness* has not been re-measured yet, so the 33.4% figure still stands as the last measurement.
   *Done when:* element faithfulness ≥ 60%.
-- [ ] **R10 compositional split** — the corpus covers 250/250 category×style×pose triples, so "generalization" is in-distribution only (`L`)
-  *Done when:* 30 triples are held out and novel-triple IoU is reported next to in-distribution IoU.
+- [x] **R10 compositional split** — `data/splits/heldout_v1.json` freezes 30 (category, style, pose) triples and 10 (category, element) pairs behind a SHA-256 digest that `load_spec()` verifies; conditioned corpora keep those combinations out of train/val and the digest is recorded in their metadata.
+  *Evidence:* `data/benchmarks/heldout_v1_baseline.json` (v3) and `heldout_v1_v4_ep2.json` (retrained), both on 80 held-out + 80 in-distribution prompts at identical seeds. Caveat recorded in the doc: the IoU reference is the canonical idle template, so cross-regime deltas compare prompt mixes, and only same-regime old-vs-new rows are checkpoint improvements.
+
+### R6/R7/R9/R10 results (2026-11-05)
+
+Full evidence in `docs/RETRAIN_V4.md`; production checkpoint and corpus untouched.
+
+- Neural-only IoU on held-out prompts: 0.7682 (v3) → **0.7904** (v4 ep2); in-distribution 0.7599 → **0.7767**. Both now exceed the procedural baseline's 0.754 without the guard.
+- Neural-only colour faithfulness **regressed**: 19.81 → 17.43 (held-out), 21.00 → 15.36 (in-distribution). Guarded output still improved slightly (48.63 → 49.08 held-out), i.e. selection masked it. This is the open item.
+- The finetune adoption gate (critic clean rate ≥ 90%) rejected both epochs at 87.5%, so no checkpoint was promoted automatically.
 
 ## P5 — Product surface
 

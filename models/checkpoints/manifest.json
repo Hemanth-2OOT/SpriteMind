@@ -1,5 +1,12 @@
 {
   "checkpoints": {
+    "socket_predictor_anatomical_v2.pt": {
+      "best_val_loss": 9.5e-05,
+      "bytes": 2491501,
+      "file": "socket_predictor_anatomical_v2.pt",
+      "parameter_count": 619884,
+      "sha256": "e081f27bb82636eb27f7f1c322cb04f80ae30f3cbaee8732280cd8c6ef8d4553"
+    },
     "socket_predictor_best.pt": {
       "bytes": 2490967,
       "file": "socket_predictor_best.pt",
@@ -32,6 +39,50 @@
       "file": "svan_trained_baseline.pt",
       "parameter_count": 1713936,
       "sha256": "16c2cd7310a167dd6ac3ecc64dfbf1d03d1c11f68dc8ba3b1e6f87d23ca2d71e"
+    },
+    "svan_v4_palette.pt": {
+      "best_val_loss": 0.3516,
+      "bytes": 9532012,
+      "epoch": 3,
+      "file": "svan_v4_palette.pt",
+      "model_config": {
+        "d_model": 128,
+        "dim_feedforward": 512,
+        "dropout": 0.05,
+        "max_seq_len": 448,
+        "nhead": 4,
+        "num_colours": 29,
+        "num_elements": 9,
+        "num_layers": 6,
+        "palette_conditioning": true,
+        "prompt_max_len": 64,
+        "prompt_text": false,
+        "vocab_size": 404
+      },
+      "parameter_count": 2361304,
+      "sha256": "447e659bec8a4118f280e57c0f0ca5f5154f902133d111f5ca32bcc577379937"
+    },
+    "svan_v4_palette_ep2.pt": {
+      "best_val_loss": 0.3423,
+      "bytes": 9532928,
+      "epoch": 4,
+      "file": "svan_v4_palette_ep2.pt",
+      "model_config": {
+        "d_model": 128,
+        "dim_feedforward": 512,
+        "dropout": 0.05,
+        "max_seq_len": 448,
+        "nhead": 4,
+        "num_colours": 29,
+        "num_elements": 9,
+        "num_layers": 6,
+        "palette_conditioning": true,
+        "prompt_max_len": 64,
+        "prompt_text": false,
+        "vocab_size": 404
+      },
+      "parameter_count": 2361304,
+      "sha256": "5e67c690a0620a4e851107a9ce3c089f53a437ab52c127dae3d892da84405e2d"
     },
     "temporal_svan_best.pt": {
       "bytes": 1725309,

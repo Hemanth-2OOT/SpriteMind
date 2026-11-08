@@ -1,0 +1,128 @@
+{
+  "samples": 225,
+  "label_rule": "head=torso-anchored drawn head centre; back=torso centre; hand_r/hand_l=distal pixel of the drawn arm parts; silhouette-bbox fallback only when a part is absent",
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.008824,
+      "val_loss": 0.000667,
+      "val_mean_px": 0.827
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.001057,
+      "val_loss": 0.000441,
+      "val_mean_px": 0.672
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.000907,
+      "val_loss": 0.000324,
+      "val_mean_px": 0.576
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.000798,
+      "val_loss": 0.0003,
+      "val_mean_px": 0.555
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.000774,
+      "val_loss": 0.000858,
+      "val_mean_px": 0.937
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.000737,
+      "val_loss": 0.000378,
+      "val_mean_px": 0.622
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.000626,
+      "val_loss": 0.000178,
+      "val_mean_px": 0.427
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.000568,
+      "val_loss": 0.000185,
+      "val_mean_px": 0.435
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.000545,
+      "val_loss": 0.000131,
+      "val_mean_px": 0.366
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.000577,
+      "val_loss": 0.000479,
+      "val_mean_px": 0.701
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.000525,
+      "val_loss": 0.000327,
+      "val_mean_px": 0.579
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.000465,
+      "val_loss": 0.000234,
+      "val_mean_px": 0.49
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.000466,
+      "val_loss": 0.000188,
+      "val_mean_px": 0.439
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.00042,
+      "val_loss": 9.5e-05,
+      "val_mean_px": 0.311
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.00039,
+      "val_loss": 0.000125,
+      "val_mean_px": 0.358
+    }
+  ],
+  "procedural_baseline": {
+    "mean_px_error": 1.803,
+    "max_px_error": 9.871,
+    "per_socket_px": {
+      "hand_r": 1.902,
+      "hand_l": 2.08,
+      "head": 2.706,
+      "back": 0.524
+    }
+  },
+  "shipped_checkpoint": {
+    "mean_px_error": 2.469,
+    "max_px_error": 8.308,
+    "per_socket_px": {
+      "hand_r": 3.133,
+      "hand_l": 2.473,
+      "head": 2.69,
+      "back": 1.578
+    }
+  },
+  "anatomical_checkpoint": {
+    "mean_px_error": 0.349,
+    "max_px_error": 2.04,
+    "per_socket_px": {
+      "hand_r": 0.415,
+      "hand_l": 0.39,
+      "head": 0.386,
+      "back": 0.203
+    }
+  },
+  "checkpoint": "socket_predictor_anatomical_v2.pt",
+  "elapsed_seconds": 211.6
+}
