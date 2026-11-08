@@ -40,7 +40,7 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   selectedEngine,
   historyVersion = 0,
 }) => {
-  const [prompt, setPrompt] = useState('Create a 32x32 green zombie with red eyes, a torn brown shirt, and a front-facing idle pose.');
+  const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('Blurry pixels, inconsistent outlines, excessive colors, disconnected limbs');
   const [category, setCategory] = useState('zombie');
   const [resolution, setResolution] = useState<number>(32);
@@ -408,9 +408,10 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
         <div className="space-y-2 pt-2">
           <button
             onClick={triggerGenerate}
-            disabled={isLoading}
+            disabled={isLoading || !prompt.trim()}
+            title={!prompt.trim() ? 'Enter a prompt or pick a preset first' : undefined}
             className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
-              isLoading
+              isLoading || !prompt.trim()
                 ? 'bg-purple-800 text-purple-300 cursor-not-allowed opacity-75'
                 : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/25 active:scale-[0.98]'
             }`}

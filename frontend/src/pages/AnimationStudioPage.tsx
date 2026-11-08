@@ -108,6 +108,9 @@ export const AnimationStudioPage: React.FC = () => {
   // Initial load
   useEffect(() => {
     handleGenerate();
+    fetchAnimationMetrics()
+      .then(setBenchmarkMetrics)
+      .catch(() => {});
   }, []);
 
   // Sync script editor when active frame changes
@@ -263,6 +266,16 @@ export const AnimationStudioPage: React.FC = () => {
       console.error('Failed to load metrics', e);
     }
   };
+
+  const animBench = benchmarkMetrics?.benchmark_results;
+  const animSummary = animBench?.summary ?? {};
+  const animEngines: Array<[string, string, string]> = [
+    ['procedural_baseline', 'Procedural Baseline', 'text-blue-400'],
+    ['untrained_model', 'Untrained Baseline', 'text-amber-400'],
+    ['trained_model', 'Trained Temporal SVAN', 'text-emerald-400'],
+  ];
+  const fmt = (v: unknown, digits: number, suffix = '') =>
+    typeof v === 'number' ? `${v.toFixed(digits)}${suffix}` : '—';
 
   const curr = frames[currentFrameIndex];
   const prevFrame =
@@ -627,7 +640,11 @@ export const AnimationStudioPage: React.FC = () => {
 
             <div className="text-[11px] text-slate-500 border-t border-dark-750/60 pt-3 flex items-center justify-between">
               <span>Architecture: TemporalSVAN</span>
-              <span>426K Parameters</span>
+              <span>
+                {typeof benchmarkMetrics?.parameter_count === 'number'
+                  ? `${Math.round(benchmarkMetrics.parameter_count / 1000)}K Parameters`
+                  : '— Parameters'}
+              </span>
             </div>
           </div>
         </div>
@@ -688,7 +705,12 @@ export const AnimationStudioPage: React.FC = () => {
 
               <div className="space-y-3 text-xs text-slate-300">
                 <p>
-                  Evaluated across 100 test animation sequences comparing all three execution engines under identical evaluation conditions:
+                  Evaluated across{' '}
+                  <span className="text-slate-100 font-semibold">
+                    {animBench?.total_sequences_evaluated ?? '—'}
+                  </span>{' '}
+                  test animation sequences comparing all three execution engines under identical evaluation
+                  conditions.
                 </p>
 
                 <div className="overflow-x-auto">
@@ -704,39 +726,48 @@ export const AnimationStudioPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-dark-750 font-mono">
-                      <tr className="hover:bg-dark-850/50">
-                        <td className="p-2.5 text-blue-400 font-sans font-semibold">Procedural Baseline</td>
-                        <td className="p-2.5">0.9031</td>
-                        <td className="p-2.5">90.60</td>
-                        <td className="p-2.5">0.9694</td>
-                        <td className="p-2.5">0.179%</td>
-                        <td className="p-2.5">2.89 ms</td>
-                      </tr>
-                      <tr className="hover:bg-dark-850/50">
-                        <td className="p-2.5 text-amber-400 font-sans font-semibold">Untrained Baseline</td>
-                        <td className="p-2.5">1.0000</td>
-                        <td className="p-2.5">100.00</td>
-                        <td className="p-2.5">1.0000</td>
-                        <td className="p-2.5">0.000%</td>
-                        <td className="p-2.5">5.52 ms</td>
-                      </tr>
-                      <tr className="bg-purple-950/30 text-purple-200 font-semibold">
-                        <td className="p-2.5 text-emerald-400 font-sans">Trained Temporal SVAN</td>
-                        <td className="p-2.5 text-emerald-400">0.9553</td>
-                        <td className="p-2.5 text-emerald-400">98.19</td>
-                        <td className="p-2.5 text-emerald-400">0.9958</td>
-                        <td className="p-2.5 text-emerald-400">0.060%</td>
-                        <td className="p-2.5">6.75 ms</td>
-                      </tr>
+                      {animEngines.map(([key, label, colour]) => {
+                        const row = animSummary[key];
+                        return (
+                          <tr
+                            key={key}
+                            className={key === 'trained_model' ? 'bg-purple-950/30' : 'hover:bg-dark-850/50'}
+                          >
+                            <td className={`p-2.5 font-sans font-semibold ${colour}`}>{label}</td>
+                            <td className="p-2.5">{fmt(row?.mean_identity_iou, 4)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_smoothness, 2)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_loop_consistency, 4)}</td>
+                            <td className="p-2.5">{fmt(row?.mean_flicker_rate_pct, 3, '%')}</td>
+                            <td className="p-2.5">{fmt(row?.mean_latency_ms, 2, ' ms')}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="bg-dark-950 p-3 rounded-lg border border-dark-750 text-slate-400 space-y-1">
-                  <div className="font-semibold text-slate-200">Key Scientific Takeaways:</div>
-                  <div>• Untrained model produces zero articulation (static sprite), yielding artificially high IoU and smoothness.</div>
-                  <div>• Trained Temporal SVAN articulates limbs smoothly while achieving 3x lower flicker than procedural oscillators.</div>
-                  <div>• Real-time CPU inference on Intel i7 delivers complete 6-frame animations in under 7 ms.</div>
+                  <div className="font-semibold text-slate-200">Read from the benchmark file:</div>
+                  {!animBench && <div>No benchmark results loaded.</div>}
+                  {animBench && (
+                    <>
+                      <div>
+                        • Trained model vs procedural: identity IoU{' '}
+                        {fmt(animSummary.procedural_baseline?.mean_identity_iou, 4)} →{' '}
+                        {fmt(animSummary.trained_model?.mean_identity_iou, 4)}, flicker{' '}
+                        {fmt(animSummary.procedural_baseline?.mean_flicker_rate_pct, 3, '%')} →{' '}
+                        {fmt(animSummary.trained_model?.mean_flicker_rate_pct, 3, '%')}.
+                      </div>
+                      <div>
+                        • Untrained baseline is expected to be static; its high identity and smoothness are artifacts,
+                        not articulation.
+                      </div>
+                      <div>
+                        • Measured on {animBench.total_sequences_evaluated ?? '—'} sequences over{' '}
+                        {(animBench.categories_tested ?? []).length || '—'} categories.
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

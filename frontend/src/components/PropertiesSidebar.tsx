@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FileCode,
   Layers,
@@ -60,6 +60,15 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   const [scriptEditContent, setScriptEditContent] = useState<string>('');
   const [isRerendering, setIsRerendering] = useState(false);
   const [showCode, setShowCode] = useState(true);
+  const [criticMetrics, setCriticMetrics] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/critic/metrics')
+      .then((r) => r.json())
+      .then(setCriticMetrics)
+      .catch(() => {});
+  }, []);
+
 
   // Sync edited script when currentFrame changes
   React.useEffect(() => {
@@ -325,12 +334,23 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
 
               {/* Neural validation status badge */}
               <div className="pt-2 border-t border-dark-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                <span>Critic Precision</span>
-                <span className="text-emerald-400 font-semibold">94.12% (368K Params)</span>
+                <span>Critic Precision (calibrated)</span>
+                <span className="text-emerald-400 font-semibold">
+                  {typeof criticMetrics?.calibrated_precision === 'number'
+                    ? `${criticMetrics.calibrated_precision.toFixed(2)}%`
+                    : '—'}{' '}
+                  {typeof criticMetrics?.parameter_count === 'number'
+                    ? `(${Math.round(criticMetrics.parameter_count / 1000)}K Params)`
+                    : ''}
+                </span>
               </div>
               <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                <span>Identity Guard</span>
-                <span className="text-cyan-400">Monotonic Quality Check Active</span>
+                <span>Critic Recall (calibrated)</span>
+                <span className="text-cyan-400">
+                  {typeof criticMetrics?.calibrated_recall === 'number'
+                    ? `${criticMetrics.calibrated_recall.toFixed(1)}% @ p=${criticMetrics.calibrated_threshold ?? '—'}`
+                    : '—'}
+                </span>
               </div>
             </div>
 

@@ -53,23 +53,6 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
     palette: 'pico8',
   });
 
-  // Initial auto-generation on first mount if empty
-  React.useEffect(() => {
-    if (frames.length === 0) {
-      handleGenerate({
-        category: 'zombie',
-        style: 'classic_16bit',
-        pose: 'idle',
-        palette: 'pico8',
-        width: 32,
-        height: 32,
-        num_frames: 4,
-        engine: selectedEngine,
-        seed: 42,
-      });
-    }
-  }, []);
-
   const handleGenerate = async (params: any) => {
     setIsLoading(true);
     try {

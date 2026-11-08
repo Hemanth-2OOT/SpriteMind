@@ -115,7 +115,7 @@ const ActionTile: React.FC<{ action: BuiltAction }> = ({ action }) => {
 };
 
 export const ActionSetPage: React.FC = () => {
-  const [prompt, setPrompt] = useState('fire mage that casts fireballs and dashes');
+  const [prompt, setPrompt] = useState('');
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [actions, setActions] = useState<BuiltAction[]>([]);
@@ -128,6 +128,10 @@ export const ActionSetPage: React.FC = () => {
   const [seed, setSeed] = useState(42);
 
   const refreshPlan = async () => {
+    if (!prompt.trim()) {
+      setError('Describe a character first, then read the prompt.');
+      return;
+    }
     setPlanning(true);
     setError(null);
     try {
@@ -140,10 +144,6 @@ export const ActionSetPage: React.FC = () => {
       setPlanning(false);
     }
   };
-
-  useEffect(() => {
-    refreshPlan();
-  }, []);
 
   const generate = async () => {
     setLoading(true);
@@ -276,8 +276,8 @@ export const ActionSetPage: React.FC = () => {
             </button>
             <button
               onClick={refreshPlan}
-              disabled={planning}
-              className="px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 rounded-md text-slate-300 flex items-center gap-1.5"
+              disabled={planning || !prompt.trim()}
+              className="px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 disabled:opacity-40 rounded-md text-slate-300 flex items-center gap-1.5"
             >
               {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
               Read prompt
@@ -338,7 +338,8 @@ export const ActionSetPage: React.FC = () => {
 
         {actions.length === 0 && !loading && (
           <div className="text-center text-[11px] text-slate-500 py-10">
-            Read a prompt to see the planned actions, then generate the set.
+            Describe a character above, press <span className="text-slate-300">Read prompt</span> to see the planned actions, then
+            generate the set.
           </div>
         )}
       </div>
