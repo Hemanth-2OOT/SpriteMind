@@ -12,6 +12,7 @@ import {
   GitCompare,
 } from 'lucide-react';
 import { FrameData, VisualCriticReport } from '../types';
+import { SPRITE_SIZE } from '../config/sprite';
 
 interface CanvasWorkspaceProps {
   currentFrame: FrameData | null;
@@ -48,8 +49,8 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [hoveredPixel, setHoveredPixel] = useState<{ x: number; y: number; part?: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const canvasWidth = currentFrame?.width || 32;
-  const canvasHeight = currentFrame?.height || 32;
+  const canvasWidth = currentFrame?.width || SPRITE_SIZE;
+  const canvasHeight = currentFrame?.height || SPRITE_SIZE;
 
   // Resolve active image based on before/after view or view pass
   let activeImageBase64 = viewingBefore && beforeImageBase64 ? beforeImageBase64 : currentFrame?.image_base64;

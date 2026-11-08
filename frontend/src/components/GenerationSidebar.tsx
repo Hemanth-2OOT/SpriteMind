@@ -24,12 +24,12 @@ interface GenerationSidebarProps {
 }
 
 const PROMPT_PRESETS = [
-  { label: 'Zombie', prompt: 'Create a 32x32 green zombie with red eyes, a torn brown shirt, and a front-facing idle pose.' },
-  { label: 'Knight', prompt: 'A 32x32 brave knight with steel plate armor, glowing sword, and classic 16-bit aesthetic.' },
-  { label: 'Rogue', prompt: 'A 32x32 nimble rogue with dark hood, yellow eyes, leather belt, and dual daggers.' },
-  { label: 'Wizard', prompt: 'A 32x32 arcane wizard in deep blue robes holding a mystical wooden staff.' },
-  { label: 'Robot', prompt: 'A 32x32 retro cybernetic android with metallic chassis and bright cyan optical sensors.' },
-  { label: 'Slime', prompt: 'A 32x32 bouncy acidic lime slime with glossy highlights.' },
+  { label: 'Zombie', prompt: 'Create a 64x64 green zombie with red eyes, a torn brown shirt, and a front-facing idle pose.' },
+  { label: 'Knight', prompt: 'A 64x64 brave knight with steel plate armor, glowing sword, and classic 16-bit aesthetic.' },
+  { label: 'Rogue', prompt: 'A 64x64 nimble rogue with dark hood, yellow eyes, leather belt, and dual daggers.' },
+  { label: 'Wizard', prompt: 'A 64x64 arcane wizard in deep blue robes holding a mystical wooden staff.' },
+  { label: 'Robot', prompt: 'A 64x64 retro cybernetic android with metallic chassis and bright cyan optical sensors.' },
+  { label: 'Slime', prompt: 'A 64x64 bouncy acidic lime slime with glossy highlights.' },
 ];
 
 const randomSeed = () => Math.floor(Math.random() * 999999);
@@ -66,7 +66,7 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const [category, setCategory] = useState('zombie');
   // Prompt keywords pick the archetype until the user chooses one explicitly.
   const [categoryPinned, setCategoryPinned] = useState(false);
-  const [resolution, setResolution] = useState<number>(32);
+  const [resolution, setResolution] = useState<number>(64);
   const [style, setStyle] = useState('classic_16bit');
   const [perspective, setPerspective] = useState('front');
   const [pose, setPose] = useState('idle');

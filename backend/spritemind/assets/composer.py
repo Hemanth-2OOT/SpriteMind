@@ -12,6 +12,8 @@ from spritemind.ml.composition_model import SocketPredictorManager
 from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.renderer.export import array_to_base64
 from spritemind.ml.temporal import TemporalAnimator
+from spritemind.pixelscript.scaling import DESIGN_SIZE, scale_script
+
 
 
 class AssetComposer:
@@ -44,8 +46,12 @@ class AssetComposer:
             char_sockets = {}
             char_hitboxes = {}
 
+        scale = max(1, min(width, height) // DESIGN_SIZE)
+
         # 2. Render base character to extract visual features for socket prediction
-        base_render = PixelScriptEngine.execute(char_script, width=width, height=height, palette_name=palette_name)
+        base_render = PixelScriptEngine.execute(
+            char_script, width=DESIGN_SIZE, height=DESIGN_SIZE, palette_name=palette_name
+        )
         base_rgba = base_render.composite_array
 
         # 3. Determine attachment sockets
@@ -133,20 +139,27 @@ class AssetComposer:
                 layers_used.append(f"fx:{fx_asset.name}")
 
         composite_lines.append("END PROGRAM")
-        final_script = "\n".join(composite_lines)
+        design_script = "\n".join(composite_lines)
+        final_script = scale_script(design_script, scale)
 
-        # 5. Render Final Composite Sprite
-        rendered = PixelScriptEngine.execute(final_script, width=width, height=height, palette_name=palette_name)
+        # 5. Render at design size, then enlarge the pixels. Rendering the scaled
+        # script instead would thin every one-pixel stroke and open seams.
+        rendered = PixelScriptEngine.execute(
+            design_script, width=DESIGN_SIZE, height=DESIGN_SIZE, palette_name=palette_name
+        )
+        r_dict = rendered.to_dict(scale=scale)
 
         return {
             "status": "success",
             "name": f"Composed {char_name}",
             "engine_used": engine_mode,
             "script_text": final_script,
-            "image_base64": rendered.to_dict()["image_base64"],
-            "pixel_count": rendered.to_dict()["pixel_count"],
-            "sockets": composed_sockets,
-            "hitboxes": composed_hitboxes,
+            "image_base64": r_dict["image_base64"],
+            "pixel_count": r_dict["pixel_count"],
+            "sockets": {k: (v[0] * scale, v[1] * scale) for k, v in composed_sockets.items()},
+            "hitboxes": {
+                k: [b[0] * scale, b[1] * scale, b[2] * scale, b[3] * scale] for k, b in composed_hitboxes.items()
+            },
             "layers_used": layers_used,
             "width": width,
             "height": height,
@@ -172,6 +185,8 @@ class AssetComposer:
         base_asset = AssetLibrary.get(character_asset_or_script)
         char_script = base_asset.script_text if base_asset else character_asset_or_script
 
+        scale = max(1, min(width, height) // DESIGN_SIZE)
+
         # 1. Generate base character animation frames
         char_anim = TemporalAnimator.generate_animation(
             base_script_or_prompt=char_script,
@@ -180,8 +195,8 @@ class AssetComposer:
             fps=fps,
             engine_mode=engine_mode,
             palette_name=palette_name,
-            width=width,
-            height=height,
+            width=DESIGN_SIZE,
+            height=DESIGN_SIZE,
         )
         base_frames = char_anim.get("frames", [])
 
@@ -205,9 +220,30 @@ class AssetComposer:
                 backpack_id=backpack_id,
                 fx_id=fx_id if f_idx in (1, 2) else None,  # Muzzle flash during active strike/fire frames
                 palette_name=palette_name,
-                width=width,
-                height=height,
+                width=DESIGN_SIZE,
+                height=DESIGN_SIZE,
             )
+            if scale > 1:
+                design_script = comp_res["script_text"]
+                frame_render = PixelScriptEngine.execute(
+                    design_script, width=DESIGN_SIZE, height=DESIGN_SIZE, palette_name=palette_name
+                ).to_dict(scale=scale)
+                sockets = {k: (v[0] * scale, v[1] * scale) for k, v in (comp_res.get("sockets") or {}).items()}
+                hitboxes = {
+                    k: [b[0] * scale, b[1] * scale, b[2] * scale, b[3] * scale]
+                    for k, b in (comp_res.get("hitboxes") or {}).items()
+                }
+                frame_render.update(
+                    {
+                        "script_text": scale_script(design_script, scale),
+                        "sockets": sockets,
+                        "hitboxes": hitboxes,
+                        "name": comp_res.get("name"),
+                        "engine_used": comp_res.get("engine_used", engine_mode),
+                    }
+                )
+                frame_render["width"], frame_render["height"] = width, height
+                comp_res = frame_render
             comp_res["frame_index"] = f_idx
             composed_frames.append(comp_res)
 

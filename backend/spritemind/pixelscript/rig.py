@@ -100,7 +100,22 @@ def _closest_pair(a, b) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
     return best
 
 
-def apply_limb_flex(offsets: Dict[str, Offset]) -> Dict[str, Offset]:
+def resolution_scale(width: int, height: int) -> int:
+    """Integer pixel scale of a canvas against the 32 px design space."""
+    return max(1, min(width, height) // 32)
+
+
+def scale_offsets(offsets: Dict[str, Offset], scale: int) -> Dict[str, Offset]:
+    """Converts design-space motion into canvas pixels. Rotations are angles."""
+    if scale == 1:
+        return dict(offsets)
+    return {
+        name: (dx * scale, dy * scale, rot)
+        for name, (dx, dy, rot) in offsets.items()
+    }
+
+
+def apply_limb_flex(offsets: Dict[str, Offset], scale: int = 1) -> Dict[str, Offset]:
     """Makes the second segment follow the first, then bends the joint.
 
     A segment with no authored motion of its own inherits the whole transform of
@@ -115,7 +130,8 @@ def apply_limb_flex(offsets: Dict[str, Offset]) -> Dict[str, Offset]:
             continue
         lag = 0
         if prot and abs(prot) <= MAX_FLEX_SWING:
-            lag = max(-max_px, min(max_px, int(round(-per_degree * prot))))
+            limit = max_px * scale
+            lag = max(-limit, min(limit, int(round(-per_degree * prot * scale))))
         if (pdx, pdy, prot) != (0, 0, 0):
             out[child] = (pdx + lag, pdy, prot)
     return out
@@ -132,12 +148,15 @@ class RigGeometry:
     joints: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], str]]
     # child -> parent, for hierarchy-ordered joint resolution
     hierarchy: Dict[str, str]
+    # canvas pixels per design-space pixel
+    scale: int = 1
 
     @classmethod
     def from_script(
         cls, script: str, width: int = 32, height: int = 32, palette_name: str = "pico8"
     ) -> "RigGeometry":
         res = PixelScriptEngine.execute(script, width=width, height=height, palette_name=palette_name)
+        geometry_scale = resolution_scale(width, height)
         parts = res.canvas.parts
         anchors: Dict[str, Tuple[int, int]] = {}
         for name, part in parts.items():
@@ -172,7 +191,8 @@ class RigGeometry:
             pair = _closest_pair(parts[child].pixels, parts[parent].pixels)
             if pair is not None:
                 joints[child] = (pair[0], pair[1], parent)
-        return cls(anchors=anchors, sockets=sockets, joints=joints, hierarchy=hierarchy)
+        return cls(anchors=anchors, sockets=sockets, joints=joints, hierarchy=hierarchy,
+                   scale=geometry_scale)
 
     def _depth(self, part: str) -> int:
         depth = 0
@@ -183,7 +203,7 @@ class RigGeometry:
             depth += 1
         return depth
 
-    def _snap_joints(self, out: Dict[str, Offset], slack: float = JOINT_STRAY_SLACK,
+    def _snap_joints(self, out: Dict[str, Offset], slack: Optional[float] = None,
                      only: Optional[Set[str]] = None) -> None:
         """Pull a body part back when it drifts off its parent.
 
@@ -192,6 +212,8 @@ class RigGeometry:
         by exactly the same amount. ``slack=0`` pins the contact exactly, which
         is what a bent elbow or knee needs.
         """
+        if slack is None:
+            slack = JOINT_STRAY_SLACK * self.scale
         for child in sorted(self.joints, key=self._depth):
             if only is not None and child not in only:
                 continue
@@ -230,7 +252,8 @@ class RigGeometry:
             if child not in self.joints:
                 continue
             bent = apply_limb_flex({child: out.get(child, (0, 0, 0)),
-                                    LIMB_CHAINS[child][0]: out.get(LIMB_CHAINS[child][0], (0, 0, 0))})
+                                    LIMB_CHAINS[child][0]: out.get(LIMB_CHAINS[child][0], (0, 0, 0))},
+                                   scale=self.scale)
             if child in bent:
                 out[child] = bent[child]
 
@@ -297,6 +320,8 @@ __all__ = [
     "JOINT_STRAY_SLACK",
     "LIMB_CHAINS",
     "apply_limb_flex",
+    "resolution_scale",
+    "scale_offsets",
     "RigGeometry",
     "compose_socketed_offsets",
     "part_parent_map",

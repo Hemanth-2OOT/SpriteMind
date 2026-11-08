@@ -21,6 +21,46 @@ PROPORTIONS = ["standard", "stocky", "slender", "chibi"]
 WEAPONS = ["sword", "staff", "axe", "dagger", "shield", "bow", "none"]
 ACCESSORIES = ["helmet", "cape", "horns", "wings", "backpack", "pauldrons", "none"]
 
+# The anatomy below is authored in a 32 px design space; a larger canvas scales
+# it up by an integer factor so a 64x64 sprite is the same character with twice
+# the pixel budget instead of a small figure on a big empty canvas. The default
+# stays at the design size because the frozen dataset and evaluation pipelines
+# are built on 32 px frames; every user-facing entry point asks for 64.
+DESIGN_SIZE = 32
+
+
+def _scale_program(actions: List[PixelAction], scale: int) -> List[PixelAction]:
+    """Multiplies every drawing coordinate by ``scale``.
+
+    Canvas-wide operations (SHADE, OUTLINE, AURA) already carry the real canvas
+    size, so they are left alone.
+    """
+    if scale == 1:
+        return actions
+
+    def s(value: int) -> int:
+        return int(round(value * scale))
+
+    out: List[PixelAction] = []
+    for action in actions:
+        params = dict(action.params)
+        if action.action_type == ActionType.PIXEL:
+            params.update(x=s(params["x"]), y=s(params["y"]))
+        elif action.action_type in (ActionType.RECT, ActionType.ERASE):
+            params.update(
+                x=s(params["x"]), y=s(params["y"]),
+                w=max(1, s(params.get("w", 1))), h=max(1, s(params.get("h", 1))),
+            )
+        elif action.action_type == ActionType.LINE:
+            params.update(
+                x0=s(params["x0"]), y0=s(params["y0"]),
+                x1=s(params["x1"]), y1=s(params["y1"]),
+            )
+        elif action.action_type == ActionType.PART:
+            params.update(anchor_x=s(params["anchor_x"]), anchor_y=s(params["anchor_y"]))
+        out.append(PixelAction(action.action_type, params))
+    return out
+
 
 def _clip_ops(ops, y_lo: int, y_hi: int):
     """Restricts drawing ops to the rows ``[y_lo, y_hi)``.
@@ -230,8 +270,9 @@ class CharacterGenerator:
             c_pants = c_skin
             c_eyes = rng.choice([11, 9, 8])
 
-        cx = width // 2
-        cy = height // 2
+        scale = max(1, min(width, height) // DESIGN_SIZE)
+        cx = DESIGN_SIZE // 2
+        cy = DESIGN_SIZE // 2
 
         # Conditioned colour override: prompt words win over the category default ramp.
         if colour or element:
@@ -338,7 +379,7 @@ class CharacterGenerator:
 
             cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-            return PixelScriptProgram(actions=actions, metadata=meta)
+            return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)
 
         # -------------------------------------------------------------
         # 2. SPECIAL CASE: SLIME (blob)
@@ -366,7 +407,7 @@ class CharacterGenerator:
 
             cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-            return PixelScriptProgram(actions=actions, metadata=meta)
+            return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)
 
         # -------------------------------------------------------------
         # 3. BIPED HUMAN/CREATURE ANATOMY (Knights, Zombies, Rogues, Wizards, Robots, Skeletons, Goblins, Fantasy Creatures)
@@ -575,4 +616,4 @@ class CharacterGenerator:
 
         cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
         actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-        return PixelScriptProgram(actions=actions, metadata=meta)
+        return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)
