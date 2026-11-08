@@ -69,7 +69,7 @@ Every local branch head was compared with `git ls-remote --heads origin`; all ma
 | `lemon/r10-retrain-v4` | `e7bc2b1` | same | #28 | `lemon/audit-r4r5r6` | open |
 | `lemon/r11-colour-recovery` | `f794dd4` | same | #29 | `lemon/r10-retrain-v4` | open |
 | `lemon/r12-coverage-rerank` | `3668a81` | same | #30 | `lemon/r11-colour-recovery` | open |
-| `lemon/r13-candidate-diversity` | `a35c0b1` + release-readiness doc commits | same | #31 | `lemon/r12-coverage-rerank` | open |
+| `lemon/r13-candidate-diversity` | `80f5aab` (release docs + dataset-loader fix on top of `a35c0b1`) | same | #31 | `lemon/r12-coverage-rerank` | open |
 | `lemon/category-report-card` | `be509a0` | same | — | — | no PR |
 | `lemon/element-aura` | `6b89075` | same | — | — | no PR, not an ancestor of `main` |
 | `lemon/onion-skin-export` | `6f827c0` | same | — | — | no PR (merged as #16 on `main`) |
@@ -88,15 +88,31 @@ the branch it describes and `main` is untouched. Say the word if it should inste
 
 ## 5. Test results
 
-- `pytest backend/tests` — **318 tests, all passing**, coverage **73.4 %** (floor 71 %;
-  73.37 % and 73.44 % on two consecutive runs, 7548 statements, 2214 branches). Suite unchanged from the R13 commit: no test was removed,
-  skipped or weakened.
+- `pytest backend/tests` — **318 tests, all passing**, coverage **73.82 %** (floor 71 %;
+  7542 statements, 2214 branches). No test was removed, skipped or weakened at any point.
+- The suite is also green in the CI layout, i.e. with the gitignored `records.jsonl` corpora
+  moved away so only the tracked `samples/` trees load (this is the case that caught the
+  loader bug below).
+- GitHub Actions on `80f5aab` — backend **pass** (1 m 28 s), frontend **pass** (1 m 19 s).
 - `ruff check backend scripts` — clean.
 - `cd frontend && npm run build` (`tsc --noEmit` + `vite build`) — clean; 1485 modules,
   `index.html` 1.18 kB, CSS 36.26 kB, JS 340.84 kB (gzip 85.74 kB).
 - `python scripts/update_readme_metrics.py --check` — up to date.
 - Runner environment: `/tmp/sm-venv` (Python 3.11.16, torch 2.15.0+cpu, CPU-only container)
   because this workspace has no GPU and no system torch.
+
+### 5.1 Fix made after the first CI run
+
+The first push of this branch failed two tests in CI only — `test_dataset_jsonl_loading` and
+`test_dataset_carries_prompt_tokens` — with `IndexError` from `palette_idx[idx]`. Root cause was
+not the datasets: the `samples/sample_*.json` fallback loader read `palette` from the *other*
+loader's loop variable, so every sample raised `NameError` after `input_ids` had already been
+appended; the swallowed exception left `input_ids` populated and `palette_idx` empty. The JSONL
+corpora are gitignored, so CI only ever takes that fallback, while the local run never did.
+Both paths now share one atomic `_add(record)` helper, and a record with no palette label gets
+`palette_id(None) == 0`, the neutral row the shipped checkpoints were trained on. Real labels are
+untouched (`cond_v1_15k` still yields its five palettes). Four regression tests cover the legacy
+folder path, real labels, the empty corpus and per-sample tensor alignment.
 
 ## 6. End-to-end smoke tests (live server, port 7860)
 
@@ -137,15 +153,16 @@ still renders (see limitation 1).
    ("neural quality ≥ procedural quality").
 3. **`is_clean` is `null`** in `/api/generate` responses for some poses; the critic panel computes
    it separately via `/api/critic/inspect`.
-4. **Parameter count discrepancy (unresolved).** `GET /api/models` reports 2,302,283 parameters for
-   `svan_checkpoint_best.pt`; the research overview states 2,361,304. One of the two numbers is
-   wrong; not investigated in this pass and not "fixed" by editing the doc.
+4. **Parameter count (resolved after this pass).** `GET /api/models` and the generated README block
+   agree on **2,302,283**; `2,361,304` is the state-dict tensor sum, which also counts 59,021
+   BatchNorm `num_batches_tracked` buffers (see `docs/IMPLEMENTATION_AUDIT.md` §1). The overview's
+   "2.36M" shorthand has been corrected to 2.30M.
 5. **5 stale rows in the storage catalogue** (`/api/storage/orphans` "missing files") reference
    files that no longer exist, including one `.pyc` removed in this cleanup. `/api/storage/sync`
    adds but does not prune. Left untouched because it would mean deleting DB records.
-6. **Untested here:** GPU/CUDA paths (no GPU in this container), model training/fine-tuning UI
-   flows (explicitly out of scope: no retraining), and the GitHub Actions workflow (no `workflow`
-   scope on the CLI token). The workflow file itself is unchanged.
+6. **Untested here:** GPU/CUDA paths (no GPU in this container) and model training/fine-tuning UI
+   flows (explicitly out of scope: no retraining). GitHub Actions is now observed green on
+   `80f5aab` (backend and frontend jobs); the workflow file is unchanged.
 
 ## 8. Launch steps
 

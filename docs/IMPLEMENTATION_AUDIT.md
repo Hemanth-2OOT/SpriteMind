@@ -13,6 +13,13 @@ checkpoints and the shipped metric files. Nothing is taken from the README.
 | **INCORRECT** | The code contradicts the documented claim. |
 | **NOT IMPLEMENTED** | No code path implements the claim. |
 
+> **This is a historical audit of `main` @ `e64daeb` and its numbers are frozen at that commit.**
+> The figures below (275 tests, 75.4% coverage) describe that tree. The current maintenance stack
+> `lemon/audit-r4r5r6` → `lemon/r13-candidate-diversity` (PRs #27–#31, all unmerged) runs
+> **318 tests at 73.8% coverage**, and the master list of that work is
+> [`FINAL_RELEASE_READINESS.md`](FINAL_RELEASE_READINESS.md). Where the two disagree, the audit
+> describes the shipped `main` and the release-readiness record describes the stack.
+
 ---
 
 ## Executive verdict

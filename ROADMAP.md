@@ -9,7 +9,7 @@ wishlists. Each item lists **why**, **how**, **done when**, and a **size**:
 
 Tick items as they land and move them to the "Shipped" section at the bottom with the PR number.
 
-Current baseline (as of `6d0d58a`):
+Historical baseline (as of `6d0d58a`, kept for comparison):
 
 | Metric | Value |
 | --- | --- |
@@ -24,6 +24,18 @@ Current baseline (as of `6d0d58a`):
 | Visual critic | F1 0.7799, recall 88.8%, calibrated p=0.72 → 100% precision / 0% FP |
 | Tests | 233 passing, CI green on every PR |
 | API | generate (+ sampler controls), refine, action sets, animation, export (PNG / spritesheet / GIF / onion skin / JSON), critic, benchmarks (+ per-category report card), metrics, history |
+
+Current state (2026-11-05, maintenance stack `lemon/r13-candidate-diversity` @ `80f5aab`, PR #31,
+nothing merged):
+
+| Metric | Value |
+| --- | --- |
+| `main` | `e64daeb` (#26) — untouched by the R4–R13 stack |
+| Tests | **318 passing**, coverage **73.82%** (floor 71%), ruff clean, frontend build clean |
+| CI | backend and frontend jobs green on `80f5aab` |
+| Production checkpoint | `svan_checkpoint_best.pt`, unchanged (sha256 recorded in `docs/FINAL_RELEASE_READINESS.md`) |
+| Open objective | "neural quality ≥ procedural quality" — critic clean rate still 0.675–0.775 against a 90% gate, so nothing is promoted |
+| Best documented experiment result | R13: temperature-mixed pools +7.35 pp colour coverage (SE 2.27) at a cost of 0.025 IoU and clean share 0.762 → 0.675 |
 
 ---
 
@@ -252,6 +264,15 @@ Full evidence in `docs/RETRAIN_V4.md`; production checkpoint and corpus untouche
 | Per-category report card in the Model Lab | #17 |
 | Prompt history with re-seed (SQLite) | #18 |
 | Docs index (`docs/README.md`) | #19 |
+| Roadmap baseline refresh | #20 |
+| Router modules split per domain | #21 |
+| Typed API client + frontend typecheck in CI | #22 |
+| Backend coverage measured with a 71% floor | #23 |
+| Optional prompt text encoder in SVAN | #24 |
+| Elemental aura primitive, colour/element conditioning, 300-prompt benchmark, sprite-sheet export | #25 |
+| Consolidated system research overview | #26 |
+| Release-readiness pass: inventory, cache cleanup, git verification, 318-test run, live smoke tests (`docs/FINAL_RELEASE_READINESS.md`) | — (branch `lemon/r13-candidate-diversity`, `ae31e3e`) |
+| Dataset loader no longer desynchronises `palette_idx` on corpora without `records.jsonl` (+4 regression tests) | — (branch `lemon/r13-candidate-diversity`, `80f5aab`) |
 
 ---
 

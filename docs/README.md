@@ -17,6 +17,13 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`COVERAGE_RERANK.md`](COVERAGE_RERANK.md) — the coverage-aware reranking experiment: validation-tuned, held-out once, measured as a small and not-clearly-significant gain over the shipped ranking (R12).
 - [`CANDIDATE_DIVERSITY.md`](CANDIDATE_DIVERSITY.md) — the candidate-pool diversity experiment: selection is already saturated at `best_of=4`, pool size barely moves coverage, temperature mixing does but costs critic cleanliness; includes the correction to R12's `selection_hit` (R13).
 
+## Audits and release evidence
+
+- [`IMPLEMENTATION_AUDIT.md`](IMPLEMENTATION_AUDIT.md) — the audit of `main` @ `e64daeb`: every published claim checked against the code, with the four places where the documentation described the system more strongly than it behaves. Historical; its test counts are frozen at that commit.
+- [`RERANK_EVALUATION.md`](RERANK_EVALUATION.md) — the reranking ablation behind R4/R5: what the critic contributes, what colour-awareness contributes, and the measured cost of each.
+- [`RETRAIN_V4.md`](RETRAIN_V4.md) — the conditioned retrain (palette, colour, element, anatomical sockets): what was trained, what the gates rejected, and why no checkpoint was promoted.
+- [`../ROADMAP.md`](../ROADMAP.md) — the working backlog: the historical baseline, the current state, and every open objective with its `done when` test.
+
 ## Training and tuning
 
 - [`MODEL_TUNING.md`](MODEL_TUNING.md) — fine-tuning SVAN, latency and sampler measurements, coherence and inter-frame continuity, and the flags on the benchmark scripts.
