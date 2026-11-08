@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "name": "validation_v1",
+  "palette": "pico8",
+  "rationale": "Coloured prompts disjoint from data/splits/heldout_v1.json; used only to tune reranker weights.",
+  "prompts": [
+    {
+      "prompt": "a amber knight",
+      "category": "knight",
+      "style": "retro_8bit",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink knight",
+      "category": "knight",
+      "style": "flat",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber knight",
+      "category": "knight",
+      "style": "cyberpunk",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink zombie",
+      "category": "zombie",
+      "style": "classic_16bit",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber zombie",
+      "category": "zombie",
+      "style": "dark_fantasy",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink rogue",
+      "category": "rogue",
+      "style": "retro_8bit",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber rogue",
+      "category": "rogue",
+      "style": "flat",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink rogue",
+      "category": "rogue",
+      "style": "cyberpunk",
+      "pose": "run",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber wizard",
+      "category": "wizard",
+      "style": "classic_16bit",
+      "pose": "run",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink wizard",
+      "category": "wizard",
+      "style": "dark_fantasy",
+      "pose": "run",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber robot",
+      "category": "robot",
+      "style": "retro_8bit",
+      "pose": "run",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink robot",
+      "category": "robot",
+      "style": "flat",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber robot",
+      "category": "robot",
+      "style": "cyberpunk",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink slime",
+      "category": "slime",
+      "style": "classic_16bit",
+      "pose": "attack",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber slime",
+      "category": "slime",
+      "style": "dark_fantasy",
+      "pose": "attack",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink skeleton",
+      "category": "skeleton",
+      "style": "retro_8bit",
+      "pose": "death",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber skeleton",
+      "category": "skeleton",
+      "style": "dark_fantasy",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink skeleton",
+      "category": "skeleton",
+      "style": "cyberpunk",
+      "pose": "death",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber goblin",
+      "category": "goblin",
+      "style": "flat",
+      "pose": "walk",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink goblin",
+      "category": "goblin",
+      "style": "cyberpunk",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber animal",
+      "category": "animal",
+      "style": "classic_16bit",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink animal",
+      "category": "animal",
+      "style": "flat",
+      "pose": "death",
+      "palette": "pico8",
+      "colour": "pink"
+    },
+    {
+      "prompt": "a amber fantasy creature",
+      "category": "fantasy_creature",
+      "style": "retro_8bit",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "amber"
+    },
+    {
+      "prompt": "a pink fantasy creature",
+      "category": "fantasy_creature",
+      "style": "flat",
+      "pose": "idle",
+      "palette": "pico8",
+      "colour": "pink"
+    }
+  ],
+  "digest": "7c6216ee8a694ef5a4ddb3827120017f064d2a229a82de4f23f435e945df7ebd"
+}

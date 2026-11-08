@@ -6,6 +6,7 @@
     42,
     1337
   ],
+  "colour_steer": 0.0,
   "comparisons": [
     {
       "Comparison": "in-process run 1 vs run 2",

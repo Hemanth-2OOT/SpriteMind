@@ -37,6 +37,11 @@ CRITIC_RERANK_REFERENCE = 60.0
 # leaked share of its opaque area. Measured: without it the colour term let 0.18%
 # of sprites through with off-palette pixels.
 PALETTE_LEAK_PENALTY = 40.0
+# R12: the share of pixels drawn in the requested colour, credited up to a target
+# and capped there. Saturating means a candidate cannot win by flooding the
+# sprite, and 0.0 keeps the shipped ranking byte-identical.
+COVERAGE_RERANK_WEIGHT = 0.0
+COVERAGE_RERANK_TARGET = 0.22
 
 
 class SpriteMindPipeline:
@@ -52,6 +57,8 @@ class SpriteMindPipeline:
         self.active_checkpoint_name: Optional[str] = None
         self.trained_model: Optional[SVANModel] = None
         self.checkpoint_error: Optional[str] = None
+        self.coverage_rerank_weight = COVERAGE_RERANK_WEIGHT
+        self.coverage_rerank_target = COVERAGE_RERANK_TARGET
 
         self._result_cache: "OrderedDict[Tuple[Any, ...], Dict[str, Any]]" = OrderedDict()
         self._result_cache_size = int(os.environ.get("SPRITEMIND_RESULT_CACHE", "64"))
@@ -553,26 +560,65 @@ class SpriteMindPipeline:
         never rewarded for naming a colour it did not draw or for a critic score it
         did not earn.
         """
+        comp = self._rerank_components(
+            prog, palette, width, height,
+            category=category, colour=colour, prompt_text=prompt_text,
+            use_critic=use_critic, use_colour=use_colour,
+        )
+        if comp is None:
+            return -100.0
+        return self._score_components(comp)
+
+    def _rerank_components(
+        self,
+        prog: PixelScriptProgram,
+        palette: str,
+        width: int = 32,
+        height: int = 32,
+        category: str = "knight",
+        colour: Optional[str] = None,
+        prompt_text: str = "",
+        use_critic: bool = True,
+        use_colour: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        """The measured parts of a candidate, so ranking weights can be varied without re-rendering."""
         res = self._render_candidate(prog, palette, width, height)
         if res is None:
-            return -100.0
-        score = self._heuristic_score(prog, res, width, height)
-
-        leak = self._palette_leak_share(res.composite_array, palette)
-        if leak is not None:
-            score -= PALETTE_LEAK_PENALTY * leak
-
+            return None
+        comp: Dict[str, Any] = {
+            "render": res,
+            "heuristic": self._heuristic_score(prog, res, width, height),
+            "leak": self._palette_leak_share(res.composite_array, palette) or 0.0,
+            "colour_score": None,
+            "coverage": None,
+            "critic": None,
+            "critic_defects": None,
+        }
         requested = (colour or prompt_text) if use_colour else ""
         if requested:
             faith = colour_faithfulness(requested, res.composite_array)
             if faith is not None:
-                score += COLOUR_RERANK_WEIGHT * (float(faith["score"]) - COLOUR_RERANK_REFERENCE)
-
+                comp["colour_score"] = float(faith["score"])
+                comp["coverage"] = float(faith.get("matched_share") or 0.0)
         if use_critic:
             report = self._run_critic(res, prog, category=category, palette_name=palette)
             quality = report.get("quality_score")
             if isinstance(quality, (int, float)):
-                score += CRITIC_RERANK_WEIGHT * (float(quality) - CRITIC_RERANK_REFERENCE)
+                comp["critic"] = float(quality)
+            defects = report.get("defects")
+            comp["critic_defects"] = int(report.get("defects_count", len(defects) if defects else 0))
+        return comp
+
+    def _score_components(self, comp: Dict[str, Any]) -> float:
+        """Ranks an already-measured candidate; the only place ranking weights are applied."""
+        score = float(comp["heuristic"]) - PALETTE_LEAK_PENALTY * float(comp["leak"])
+        if comp["colour_score"] is not None:
+            score += COLOUR_RERANK_WEIGHT * (float(comp["colour_score"]) - COLOUR_RERANK_REFERENCE)
+            if self.coverage_rerank_weight > 0.0 and comp["coverage"] is not None:
+                shortfall = max(0.0, self.coverage_rerank_target - float(comp["coverage"]))
+                score -= self.coverage_rerank_weight * shortfall
+        if comp["critic"] is not None:
+            score += CRITIC_RERANK_WEIGHT * (float(comp["critic"]) - CRITIC_RERANK_REFERENCE)
         return score
 
     def _palette_leak_share(self, rgba: np.ndarray, palette: str) -> Optional[float]:
