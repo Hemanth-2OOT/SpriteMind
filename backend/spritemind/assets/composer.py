@@ -29,8 +29,8 @@ class AssetComposer:
         fx_id: Optional[str] = None,
         engine_mode: str = "trained_model",  # "trained_model" | "untrained_model" | "procedural_baseline" | "hybrid"
         palette_name: str = "pico8",
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
     ) -> Dict[str, Any]:
         """Composes a static character sprite with equipped items and optional effects."""
         # 1. Resolve base character
@@ -178,8 +178,8 @@ class AssetComposer:
         fx_id: Optional[str] = None,
         engine_mode: str = "trained_model",
         palette_name: str = "pico8",
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
     ) -> Dict[str, Any]:
         """Synthesizes a multi-frame animation with dynamically synchronized equipment sockets."""
         base_asset = AssetLibrary.get(character_asset_or_script)
