@@ -114,7 +114,11 @@ const ActionTile: React.FC<{ action: BuiltAction }> = ({ action }) => {
   );
 };
 
-export const ActionSetPage: React.FC = () => {
+const randomSeed = () => Math.floor(Math.random() * 999999);
+
+export const ActionSetPage: React.FC<{ selectedEngine?: string }> = ({
+  selectedEngine = 'procedural_baseline',
+}) => {
   const [prompt, setPrompt] = useState('');
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -125,7 +129,8 @@ export const ActionSetPage: React.FC = () => {
   const [sheetBusy, setSheetBusy] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [facing, setFacing] = useState<'right' | 'left'>('right');
-  const [seed, setSeed] = useState(42);
+  const [seed, setSeed] = useState<number>(randomSeed);
+  const [seedPinned, setSeedPinned] = useState(false);
 
   const refreshPlan = async () => {
     if (!prompt.trim()) {
@@ -149,7 +154,15 @@ export const ActionSetPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await generateActionSetApi({ prompt, actions: selected, facing, seed });
+      const runSeed = seedPinned ? seed : randomSeed();
+      if (!seedPinned) setSeed(runSeed);
+      const res = await generateActionSetApi({
+        prompt,
+        actions: selected,
+        facing,
+        seed: runSeed,
+        engine: selectedEngine,
+      });
       setPlan(res.plan);
       setActions(res.actions);
     } catch (e: any) {
@@ -263,12 +276,18 @@ export const ActionSetPage: React.FC = () => {
             <input
               type="number"
               value={seed}
-              onChange={(e) => setSeed(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setSeed(Number(e.target.value) || 0);
+                setSeedPinned(true);
+              }}
               title="Variation seed: same seed and prompt rebuild the same character"
               className="w-16 bg-dark-950 border border-dark-800 rounded-md px-2 py-1.5 text-[10px] text-slate-300 outline-none focus:border-purple-500"
             />
             <button
-              onClick={() => setSeed(Math.floor(Math.random() * 100000))}
+              onClick={() => {
+                setSeed(randomSeed());
+                setSeedPinned(false);
+              }}
               title="New variation"
               className="px-2 py-1.5 text-xs bg-dark-900 hover:bg-dark-800 rounded-md text-slate-300"
             >

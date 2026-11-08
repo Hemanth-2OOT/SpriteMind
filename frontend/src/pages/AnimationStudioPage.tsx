@@ -81,7 +81,9 @@ const CHARACTER_CATEGORIES = [
   'animal',
 ];
 
-export const AnimationStudioPage: React.FC = () => {
+export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
+  selectedEngine = 'procedural_baseline',
+}) => {
   const [frames, setFrames] = useState<FrameData[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -90,14 +92,16 @@ export const AnimationStudioPage: React.FC = () => {
   const [onionSkin, setOnionSkin] = useState(true);
   const [animCategory, setAnimCategory] = useState('walk');
   const [charCategory, setCharCategory] = useState('knight');
-  const [engineMode, setEngineMode] = useState('trained_model');
+  const [engineMode, setEngineMode] = useState(selectedEngine);
   const [prompt, setPrompt] = useState('');
   const [scale, setScale] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [engineUsed, setEngineUsed] = useState<string>('trained_model');
-  const [identityConfidence, setIdentityConfidence] = useState<number>(0.95);
+  const [engineUsed, setEngineUsed] = useState<string>(selectedEngine);
+  const [identityConfidence, setIdentityConfidence] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number>(0);
+  const [seed, setSeed] = useState<number>(() => Math.floor(Math.random() * 999999));
+  const [seedPinned, setSeedPinned] = useState(false);
 
   // Inspector & script editing
   const [showInspector, setShowInspector] = useState(false);
@@ -105,13 +109,18 @@ export const AnimationStudioPage: React.FC = () => {
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   const [benchmarkMetrics, setBenchmarkMetrics] = useState<any>(null);
 
-  // Initial load
+  // Initial load: benchmark data only. Nothing is generated until the user
+  // asks for an animation.
   useEffect(() => {
-    handleGenerate();
     fetchAnimationMetrics()
       .then(setBenchmarkMetrics)
       .catch(() => {});
   }, []);
+
+  // Follow the navbar engine selector unless this page overrides it.
+  useEffect(() => {
+    setEngineMode(selectedEngine);
+  }, [selectedEngine]);
 
   // Sync script editor when active frame changes
   useEffect(() => {
@@ -138,6 +147,8 @@ export const AnimationStudioPage: React.FC = () => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
+      const runSeed = seedPinned ? seed : Math.floor(Math.random() * 999999);
+      if (!seedPinned) setSeed(runSeed);
       const res = await generateAnimationApi({
         prompt: prompt.trim() || undefined,
         category: charCategory,
@@ -148,13 +159,16 @@ export const AnimationStudioPage: React.FC = () => {
         num_frames: 6,
         fps,
         engine: engineMode,
+        seed: runSeed,
       });
 
       if (res.frames && res.frames.length > 0) {
         setFrames(res.frames);
         setCurrentFrameIndex(0);
         setEngineUsed(res.engine_used || engineMode);
-        setIdentityConfidence(res.identity_confidence ?? 0.95);
+        setIdentityConfidence(
+          typeof res.identity_confidence === 'number' ? res.identity_confidence : null
+        );
         setElapsedMs(res.elapsed_ms ?? 0);
         setIsLooping(res.is_looping ?? true);
       }
@@ -177,6 +191,7 @@ export const AnimationStudioPage: React.FC = () => {
         animation_category: animCategory,
         category: charCategory,
         engine: engineMode,
+        seed,
       });
 
       if (res.frame) {
@@ -416,6 +431,30 @@ export const AnimationStudioPage: React.FC = () => {
                 <option value="procedural_baseline">Procedural Kinematic Baseline</option>
               </select>
             </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">Seed:</span>
+              <input
+                type="number"
+                value={seed}
+                onChange={(e) => {
+                  setSeed(Number(e.target.value) || 0);
+                  setSeedPinned(true);
+                }}
+                title="Same prompt and seed rebuild the same animation; a new seed makes a new variation"
+                className="w-20 bg-dark-950 border border-dark-750 text-slate-200 text-xs rounded-md px-2.5 py-1 font-mono text-right focus:outline-none focus:border-purple-500"
+              />
+              <button
+                onClick={() => {
+                  setSeed(Math.floor(Math.random() * 999999));
+                  setSeedPinned(false);
+                }}
+                title="New variation"
+                className="px-2 py-1 bg-dark-850 hover:bg-dark-800 text-slate-300 rounded-md border border-dark-700"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -562,7 +601,7 @@ export const AnimationStudioPage: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-400">Identity Confidence</span>
                   <span className="text-emerald-400 font-mono font-bold">
-                    {(identityConfidence * 100).toFixed(1)}%
+                    {identityConfidence === null ? '—' : `${(identityConfidence * 100).toFixed(1)}%`}
                   </span>
                 </div>
                 <div className="flex justify-between">

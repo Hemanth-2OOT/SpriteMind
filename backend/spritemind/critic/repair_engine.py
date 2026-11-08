@@ -16,6 +16,7 @@ from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction, ActionType
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 class RepairAction:
@@ -55,8 +56,8 @@ NEURAL_DEFECT_THRESHOLD = 0.72
 class AutonomousRepairEngine:
     """Closed-loop visual critic and self-correction engine."""
 
-    def __init__(self, checkpoints_dir: str = "models/checkpoints"):
-        self.checkpoints_dir = Path(checkpoints_dir)
+    def __init__(self, checkpoints_dir: str = DEFAULT_CHECKPOINTS):
+        self.checkpoints_dir = resolve_checkpoints_dir(checkpoints_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.neural_critic: Optional[NeuralVisualCritic] = None
         self.visual_understanding = VisualUnderstandingPipeline()

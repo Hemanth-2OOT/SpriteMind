@@ -59,8 +59,8 @@ export const App: React.FC = () => {
         {activeTab === 'generate' && (
           <GeneratePage modelsInfo={modelsInfo} selectedEngine={selectedEngine} />
         )}
-        {activeTab === 'animation' && <AnimationStudioPage />}
-        {activeTab === 'action_sets' && <ActionSetPage />}
+        {activeTab === 'animation' && <AnimationStudioPage selectedEngine={selectedEngine} />}
+        {activeTab === 'action_sets' && <ActionSetPage selectedEngine={selectedEngine} />}
         {activeTab === 'composition' && <AssetStudioPage />}
         {activeTab === 'dataset' && <DatasetStudioPage />}
         {activeTab === 'model_lab' && (

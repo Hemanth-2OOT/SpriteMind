@@ -23,6 +23,8 @@ class ProceduralBaseline:
         seed: int = 42,
         colour: Optional[str] = None,
         element: Optional[str] = None,
+        weapon: Optional[str] = None,
+        accessory: Optional[str] = None,
     ) -> PixelScriptProgram:
         return CharacterGenerator.generate_character(
             category=category,
@@ -34,6 +36,8 @@ class ProceduralBaseline:
             frame_idx=0,
             total_frames=1,
             seed=seed,
+            weapon=weapon,
+            accessory=accessory,
             colour=colour,
             element=element,
         )

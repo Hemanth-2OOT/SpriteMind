@@ -12,6 +12,7 @@ from spritemind.server.schemas import InspectRequest
 import json
 
 from spritemind.server.runtime import repair_engine
+from spritemind.paths import resolve_data_dir
 router = APIRouter()
 
 @router.post("/api/critic/inspect")
@@ -85,7 +86,7 @@ def get_critic_metrics() -> Dict[str, Any]:
         "parameter_count": 368044,
         "classes": DEFECT_CLASSES,
     }
-    metrics_path = Path("data/critic_metrics.json")
+    metrics_path = resolve_data_dir() / "critic_metrics.json"
     if metrics_path.exists():
         try:
             with open(metrics_path, "r", encoding="utf-8") as f:
@@ -93,7 +94,7 @@ def get_critic_metrics() -> Dict[str, Any]:
         except Exception:
             pass
 
-    eval_path = Path("data/benchmarks/critic_eval_results.json")
+    eval_path = resolve_data_dir() / "benchmarks/critic_eval_results.json"
     if eval_path.exists():
         try:
             with open(eval_path, "r", encoding="utf-8") as f:

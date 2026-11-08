@@ -24,6 +24,7 @@ from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.assets.faithfulness import COLOUR_TARGETS, colour_faithfulness
 from spritemind.assets.faithfulness import _matches as _colour_matches
 from spritemind.utils.palettes import PALETTES
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 # Rerank terms. The reference values are what an "average" candidate scores, so a
@@ -47,12 +48,12 @@ COVERAGE_RERANK_TARGET = 0.22
 class SpriteMindPipeline:
     """End-to-end generation, inference, criticism, and rendering pipeline."""
 
-    def __init__(self, checkpoints_dir: str = "models/checkpoints"):
+    def __init__(self, checkpoints_dir: str = DEFAULT_CHECKPOINTS):
         # Small tensors lose badly to thread-pool overhead on many-core boxes.
         torch.set_num_threads(int(os.environ.get("SPRITEMIND_THREADS", "2")))
         self.tokenizer = ActionTokenizer()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.checkpoints_dir = Path(checkpoints_dir)
+        self.checkpoints_dir = resolve_checkpoints_dir(checkpoints_dir)
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
         self.active_checkpoint_name: Optional[str] = None
         self.trained_model: Optional[SVANModel] = None
@@ -174,6 +175,8 @@ class SpriteMindPipeline:
             "palette": palette,
             "colour": conditioning.get("colour"),
             "element": conditioning.get("element"),
+            "weapon": conditioning.get("weapon"),
+            "accessory": conditioning.get("accessory"),
         }
 
     def generate(
@@ -301,6 +304,8 @@ class SpriteMindPipeline:
         final_dim = parsed.get("dimension", width)
         final_colour = parsed.get("colour")
         final_element = parsed.get("element")
+        final_weapon = parsed.get("weapon")
+        final_accessory = parsed.get("accessory")
 
         frames_data: List[Dict[str, Any]] = []
         candidate_source = "procedural_baseline"
@@ -335,6 +340,10 @@ class SpriteMindPipeline:
                 fps=8,
                 engine_mode=actual_engine,
                 seed=seed,
+                colour=final_colour,
+                element=final_element,
+                weapon=final_weapon,
+                accessory=final_accessory,
             )
             frames_data = anim_result["frames"]
             actual_engine = anim_result["engine_used"]
@@ -354,6 +363,8 @@ class SpriteMindPipeline:
                     seed=seed,
                     colour=final_colour,
                     element=final_element,
+                    weapon=final_weapon,
+                    accessory=final_accessory,
                 )
             else:
                 model = self.trained_model if actual_engine == "trained_model" else SVANModel(self.tokenizer.vocab_size).to(self.device)

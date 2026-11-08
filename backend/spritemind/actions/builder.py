@@ -11,6 +11,7 @@ import numpy as np
 from spritemind.actions.effects import build_effects
 from spritemind.actions.planner import ActionSetPlanner
 from spritemind.actions.catalog import ActionPlan, ActionSpec
+from spritemind.dataset.conditioning import parse_conditioning
 from spritemind.dataset.generator import CharacterGenerator
 from spritemind.ml.temporal import TemporalAnimator
 from spritemind.pixelscript.serializer import PixelScriptSerializer
@@ -62,6 +63,13 @@ class ActionSetBuilder:
         include_gif: bool = True,
         facing: str = "right",
     ) -> Dict[str, Any]:
+        # The prompt's colour and element words must reach the body, not only
+        # the attack effects: "crimson mage" and "green mage" were identical.
+        conditioning = parse_conditioning(plan.prompt or "")
+        colour = conditioning.get("colour")
+        element = conditioning.get("element") or (
+            None if plan.element in (None, "none") else plan.element
+        )
         base_program = CharacterGenerator.generate_character(
             category=plan.category,
             style=plan.style,
@@ -73,6 +81,8 @@ class ActionSetBuilder:
             proportion=plan.proportion,
             accessory=plan.accessory,
             weapon=None if plan.weapon == "none" else plan.weapon,
+            colour=colour,
+            element=element,
         )
         base_script = PixelScriptSerializer.serialize_program(base_program)
         # Mirror only after animation: the animator is direction-agnostic, so
@@ -99,6 +109,8 @@ class ActionSetBuilder:
             "status": "success",
             "prompt": plan.prompt,
             "plan": plan.to_dict(),
+            "colour": colour,
+            "element": element,
             "base_script": shown_base_script,
             "facing": "left" if facing == "left" else "right",
             "num_actions": len(results),

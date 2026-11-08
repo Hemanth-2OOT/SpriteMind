@@ -219,7 +219,7 @@ class AssetComposer:
             "num_frames": len(composed_frames),
             "fps": fps,
             "frames": composed_frames,
-            "identity_confidence": char_anim.get("identity_confidence", 0.95),
+            "identity_confidence": char_anim.get("identity_confidence"),
         }
 
     @classmethod

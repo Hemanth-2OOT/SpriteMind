@@ -32,6 +32,27 @@ const PROMPT_PRESETS = [
   { label: 'Slime', prompt: 'A 32x32 bouncy acidic lime slime with glossy highlights.' },
 ];
 
+const randomSeed = () => Math.floor(Math.random() * 999999);
+
+const CATEGORY_KEYWORDS: Array<[RegExp, string]> = [
+  [/\b(zombie|undead|ghoul|walker)\b/, 'zombie'],
+  [/\b(skeleton|bone|lich)\b/, 'skeleton'],
+  [/\b(goblin)\b/, 'goblin'],
+  [/\b(slime|blob|ooze)\b/, 'slime'],
+  [/\b(robot|android|cyborg|mech|droid)\b/, 'robot'],
+  [/\b(mage|wizard|sorcer|warlock|witch|arcanist)\b/, 'wizard'],
+  [/\b(rogue|thief|assassin|archer|ranger|ninja)\b/, 'rogue'],
+  [/\b(knight|paladin|guard|warrior|soldier)\b/, 'knight'],
+];
+
+function inferCategory(prompt: string): string | null {
+  const text = prompt.toLowerCase();
+  for (const [pattern, category] of CATEGORY_KEYWORDS) {
+    if (pattern.test(text)) return category;
+  }
+  return null;
+}
+
 export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   onGenerate,
   onRefine,
@@ -43,13 +64,16 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('Blurry pixels, inconsistent outlines, excessive colors, disconnected limbs');
   const [category, setCategory] = useState('zombie');
+  // Prompt keywords pick the archetype until the user chooses one explicitly.
+  const [categoryPinned, setCategoryPinned] = useState(false);
   const [resolution, setResolution] = useState<number>(32);
   const [style, setStyle] = useState('classic_16bit');
   const [perspective, setPerspective] = useState('front');
   const [pose, setPose] = useState('idle');
   const [palette, setPalette] = useState('pico8');
   const [numFrames, setNumFrames] = useState<number>(1);
-  const [seed, setSeed] = useState<number>(42);
+  const [seed, setSeed] = useState<number>(randomSeed);
+  const [seedPinned, setSeedPinned] = useState(false);
   const [maxActions, setMaxActions] = useState<number>(64);
   const [bestOf, setBestOf] = useState<number>(4);
   const [temperature, setTemperature] = useState<number>(0.9);
@@ -69,10 +93,12 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const applyRun = (run: any) => {
     setPrompt(run.prompt || '');
     setCategory(run.category || 'knight');
+    setCategoryPinned(true);
     setStyle(run.style || 'classic_16bit');
     setPose(run.pose || 'idle');
     setPalette(run.palette || 'pico8');
-    setSeed(run.seed ?? 42);
+    setSeed(run.seed ?? randomSeed());
+    setSeedPinned(true);
     setNumFrames(run.num_frames || 1);
     setBestOf(run.best_of || 4);
     setTemperature(run.temperature ?? 0.9);
@@ -80,7 +106,7 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   };
 
   const reseedRun = (run: any) => {
-    const nextSeed = Math.floor(Math.random() * 999999);
+    const nextSeed = randomSeed();
     applyRun({ ...run, seed: nextSeed });
     onGenerate({
       prompt: run.prompt || '',
@@ -119,15 +145,19 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   };
 
   const handleRollDice = () => {
-    setSeed(Math.floor(Math.random() * 999999));
+    setSeed(randomSeed());
+    setSeedPinned(false);
   };
 
   const handleApplyPreset = (presetPrompt: string, presetCat: string) => {
     setPrompt(presetPrompt);
     setCategory(presetCat.toLowerCase());
+    setCategoryPinned(true);
   };
 
   const triggerGenerate = () => {
+    const runSeed = seedPinned ? seed : randomSeed();
+    if (!seedPinned) setSeed(runSeed);
     onGenerate({
       prompt,
       negative_prompt: negativePrompt,
@@ -139,7 +169,7 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
       height: resolution,
       num_frames: numFrames,
       engine: selectedEngine,
-      seed,
+      seed: runSeed,
       max_actions: maxActions,
       best_of: bestOf,
       temperature,
@@ -159,7 +189,11 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
             </h2>
           </div>
           <span className="text-[10px] text-purple-400 font-mono bg-purple-950/50 px-2 py-0.5 rounded border border-purple-800/40">
-            SVAN 1.0
+            {selectedEngine === 'trained_model'
+              ? 'SVAN'
+              : selectedEngine === 'untrained_model'
+              ? 'UNTRAINED'
+              : 'PROCEDURAL'}
           </span>
         </div>
 
@@ -171,7 +205,14 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
           </div>
           <textarea
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setPrompt(next);
+              if (!categoryPinned) {
+                const detected = inferCategory(next);
+                if (detected) setCategory(detected);
+              }
+            }}
             rows={3}
             className="w-full bg-dark-950 border border-dark-750 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
             placeholder="Describe character details, clothing, weapons, colors..."
@@ -208,7 +249,10 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
             <label className="text-xs font-medium text-slate-300">Category</label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setCategoryPinned(true);
+              }}
               className="w-full bg-dark-950 border border-dark-750 rounded-md p-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
             >
               <option value="knight">Knight</option>
@@ -316,7 +360,10 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
               <input
                 type="number"
                 value={seed}
-                onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  setSeed(parseInt(e.target.value) || 0);
+                  setSeedPinned(true);
+                }}
                 className="w-24 bg-dark-950 border border-dark-750 rounded px-2 py-0.5 text-xs text-slate-200 font-mono text-right"
               />
               <button

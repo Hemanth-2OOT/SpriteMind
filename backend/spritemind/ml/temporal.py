@@ -31,6 +31,7 @@ from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.coherence import build_frame_script
 from spritemind.renderer.engine import PixelScriptEngine
+from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
 
 PARTS = [
@@ -236,7 +237,7 @@ class TemporalAnimator:
     @classmethod
     def get_or_load_model(cls, checkpoint_name: str = "temporal_svan_best.pt", device: str = "cpu") -> Tuple[TemporalSVAN, bool]:
         """Loads trained checkpoint or returns initialized model."""
-        ckpt_path = Path("models/checkpoints") / checkpoint_name
+        ckpt_path = resolve_checkpoints_dir() / checkpoint_name
         if cls._cached_model is not None and cls._cached_checkpoint == checkpoint_name:
             return cls._cached_model, True
         has_trained = False
@@ -252,7 +253,7 @@ class TemporalAnimator:
                 has_trained = True
                 cls._cached_model = model
                 cls._cached_checkpoint = checkpoint_name
-                recorded = describe_checkpoint(Path("models/checkpoints"), checkpoint_name)
+                recorded = describe_checkpoint(resolve_checkpoints_dir(), checkpoint_name)
                 trained_rows = int(state.get("animation_embed.weight", torch.empty(0)).shape[0]) if state else 0
                 cls.last_load_status = {
                     "checkpoint": checkpoint_name,
@@ -291,6 +292,10 @@ class TemporalAnimator:
         fps: int = 8,
         engine_mode: str = "trained_model",  # "trained_model" | "untrained_model" | "procedural_baseline"
         seed: int = 42,
+        colour: Optional[str] = None,
+        element: Optional[str] = None,
+        weapon: Optional[str] = None,
+        accessory: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Generates an end-to-end animation with explicit engine attribution."""
         start_time = time.perf_counter()
@@ -315,6 +320,10 @@ class TemporalAnimator:
                 pose="idle",
                 palette_name=palette_name,
                 seed=seed,
+                colour=colour,
+                element=element,
+                weapon=weapon,
+                accessory=accessory,
             )
             base_script = PixelScriptSerializer.serialize_program(base_prog)
             base_res = PixelScriptEngine.execute(base_script, width=width, height=height, palette_name=palette_name)
