@@ -69,6 +69,40 @@ absolute-offset script keep working untouched.
   offsets. Tests pin that both modes differ, and that `flat` still shows the
   original drift.
 
+### 2b. Joint constraint (body parts stay joined)
+
+Socketing fixes the weapon, but the body itself could still come apart: the
+motion tables author absolute per-part translations, so a swinging leg or a
+bouncing slime could leave a 2–5 px transparent gap at the hip or shoulder —
+the "missing pixels between transitions" that shows up as a disconnected limb.
+
+`RigGeometry.resolve()` now runs a joint pass before socketing:
+
+* each body part keeps the offset vector it was *drawn* with (`grip − socket`
+  from the base pose), rotated by the parent's authored rotation;
+* only drift beyond `JOINT_STRAY_SLACK` (0.25 px) is removed, so a limb can
+  still swing a little on its own, and a rigid parent translation moves the
+  child by exactly the same amount (`torso +4 px` → every part `+4 px`, not
+  `+3 px` diagonally);
+* the child's own rotation is never modified, so poses and swings survive.
+
+Measured with the same audit (max gap between a part and its parent, wizard +
+staff + cape, seed 3, 6 frames):
+
+| animation | before (flat) | after (socketed + joints) |
+|---|---|---|
+| run | 4.0 px (`arm_left`→torso) | **1.0 px** |
+| attack / melee_attack | 2.0 px (`arm_left`) | **1.0 px** |
+| cast | 2.0 px (`leg_left`) | **1.0 px** |
+| special_ability | 3.0 px (`leg_left`) | **1.0 px** |
+| slime_bouncing | 5.0 px (`leg_left`) | **1.0 px** |
+| hurt / hit_reaction | 4.0 px (`weapon`→arm) | **1.0 px** |
+| dash | 3.0 px (`weapon`→arm) | **1.0 px** |
+| idle / walk | 1.0 px | 1.0 px |
+
+1.0 px is adjacency: the parts touch but do not overlap. Every animation in the
+audit now reports `max_joint_gap = 1.0`.
+
 ### Why weapon rotation is *not* inherited
 
 `ATTACHMENTS["weapon"]["inherit_rotation"]` defaults to `False`, deliberately.
@@ -98,6 +132,8 @@ pixel of `arm_right`):
 | dash | 3.0 / 1.833 | **0.0 / 0.0** |
 | melee_attack | 1.0 / 0.333 | 1.0 / 0.167 |
 | hit_reaction | 4.0 / 2.667 | **0.0 / 0.0** |
+| special_ability | 1.0 / 1.0 | **0.0 / 0.0** |
+| slime_bouncing | 1.0 / 1.0 | **0.0 / 0.0** |
 
 A remaining `max` of 1.0 is one pixel of adjacency: the staff is *held*, so its
 pixels touch the hand rather than coincide with it. `dash` and `hit_reaction`
@@ -126,17 +162,24 @@ offsets) — the staff no longer passes through the wizard's head.
 
 ![before/after](assets/animation_rig_before_after.png)
 
+![joint contact](assets/animation_joint_contact_before_after.png)
+
+*Body-part contact for `run`, `dash` and `slime_bouncing`: `flat` transforms on
+top (limbs detached by 3–5 px), socketed rig + joint constraint below.*
+
 *Six frames of `dash`, `hurt` and `attack` for the same wizard + staff + cape,
 rendered with `rig_mode="flat"` (before) and `rig_mode="socketed"` (after).*
 
-`backend/tests/test_animation_rig.py` (52 cases): canonical vs aliased vs
+`backend/tests/test_animation_rig.py` (62 cases): canonical vs aliased vs
 unknown names, case/separator normalisation, the historical empty-name default,
 alias reporting in output, rejection of unsupported names, `attack`/`hurt` no
 longer byte-identical to `walk`, weapon-arm motion differing between walk and
 melee, `mask_min_distance` / `weapon_hand_distance` unit behaviour, weapon within
 1 px of the hand for idle/walk/run/attack/hurt/cast/dash, `flat` mode still
 showing the old drift (regression guard), single-island silhouettes, rig
-determinism, body parts untouched, translation and rotation following, cape
+determinism, a drifting limb being pulled back, a rigid translation being
+preserved exactly, rotations surviving the joint pass, rendered limbs staying
+within 1 px of their parent across eight animations, cape
 following the torso without spinning, a geometry with no attachable parts being
 a no-op, and the API resolving aliases / returning 400 for an unknown name.
 
@@ -145,7 +188,7 @@ motion quality (does the swing *read* well?) was not judged by a human in this
 milestone — the numbers show the staff stays in the hand, not that the animation
 is beautiful.
 
-Full backend suite: 384 passed. `ruff check` clean. Frontend `tsc --noEmit` and
+Full backend suite: 399 passed. `ruff check` clean. Frontend `tsc --noEmit` and
 `npm run build` clean.
 
 ## 6. What this does not fix

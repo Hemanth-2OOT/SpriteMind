@@ -1,4 +1,4 @@
-"""Animation audit: weapon-to-hand distance, frame identity and silhouette.
+"""Animation audit: weapon-to-hand distance, limb joints, frame identity, silhouette.
 
 Reproduces the Milestone A measurements (see docs/ANIMATION_RIG.md):
 
@@ -31,6 +31,8 @@ ANIMATIONS = [
     "dash",
     "melee_attack",
     "hit_reaction",
+    "special_ability",
+    "slime_bouncing",
 ]
 
 
@@ -38,6 +40,22 @@ def _min_distance(a, b):
     if not a or not b:
         return None
     return round(min(math.hypot(ax - bx, ay - by) for ax, ay in a for bx, by in b), 3)
+
+
+def _max_joint_gap(parts):
+    """Largest gap between a body part and the part it is attached to."""
+    worst = None
+    worst_pair = ""
+    for name, part in parts.items():
+        parent = part.parent
+        if not parent or parent == "none" or parent not in parts:
+            continue
+        gap = _min_distance(part.pixels, parts[parent].pixels)
+        if gap is None:
+            continue
+        if worst is None or gap > worst:
+            worst, worst_pair = gap, f"{name}->{parent}"
+    return worst, worst_pair
 
 
 def audit(frames=6, mode="socketed", seed=3):
@@ -84,6 +102,7 @@ def audit(frames=6, mode="socketed", seed=3):
                     "weapon_hand_distance": _min_distance(
                         weapon.pixels if weapon else set(), hand.pixels if hand else set()
                     ),
+                    "max_joint_gap": _max_joint_gap(res.canvas.parts),
                     "islands": connected_component_count(alpha_mask(comp)),
                     "opaque_pixels": int(np.count_nonzero(comp[:, :, 3] > 0)),
                 }
@@ -92,12 +111,20 @@ def audit(frames=6, mode="socketed", seed=3):
         signatures[anim] = sigs
 
         dists = [r["weapon_hand_distance"] for r in rows if r["weapon_hand_distance"] is not None]
+        joint_gaps = [r["max_joint_gap"][0] for r in rows if r["max_joint_gap"][0] is not None]
+        worst_joint = max(
+            (r["max_joint_gap"] for r in rows if r["max_joint_gap"][0] is not None),
+            key=lambda item: item[0],
+            default=None,
+        )
         report["animations"][anim] = {
             "requested_animation": out.get("requested_animation"),
             "reported_animation_category": out["animation_category"],
             "animation_aliased": out.get("animation_aliased"),
             "max_weapon_hand_distance": max(dists) if dists else None,
             "mean_weapon_hand_distance": round(sum(dists) / len(dists), 3) if dists else None,
+            "max_joint_gap": max(joint_gaps) if joint_gaps else None,
+            "worst_joint": worst_joint[1] if worst_joint else None,
             "frames": rows,
         }
 
@@ -126,8 +153,9 @@ def main():
     print(f"rig_mode={report['rig_mode']} identical_to_walk={report['identical_to_walk_frames']}")
     for anim, row in report["animations"].items():
         print(
-            f"{anim:14s} resolved={row['reported_animation_category']:14s} "
-            f"max_d={row['max_weapon_hand_distance']} mean_d={row['mean_weapon_hand_distance']}"
+            f"{anim:16s} resolved={row['reported_animation_category']:16s} "
+            f"max_d={row['max_weapon_hand_distance']} mean_d={row['mean_weapon_hand_distance']} "
+            f"max_joint_gap={row['max_joint_gap']} ({row['worst_joint']})"
         )
 
 

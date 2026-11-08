@@ -171,19 +171,31 @@ def test_rig_is_deterministic():
     assert first == second
 
 
-def test_rig_leaves_body_parts_untouched():
-    offsets = {"arm_right": (3, -2, 25), "weapon": (1, 1, 5), "head": (0, -1, 5)}
+def test_rig_pulls_a_drifting_limb_back_to_its_parent():
     geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
-    resolved = geometry.resolve(offsets)
-    assert resolved["head"] == offsets["head"]
-    assert resolved.get("torso", (0, 0, 0)) == (0, 0, 0)
-    assert resolved["weapon"] != offsets["weapon"]
+    resolved = geometry.resolve({"arm_right": (4, 0, 0), "weapon": (1, 1, 5)})
+    assert abs(resolved["arm_right"][0]) <= 1, "a 4 px detach must be mostly removed"
+    assert resolved["weapon"] != (1, 1, 5), "the weapon still follows the hand"
+
+
+def test_rig_keeps_the_authored_rotation_of_body_parts():
+    geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
+    resolved = geometry.resolve({"arm_right": (0, 0, 25)})
+    assert resolved["arm_right"][2] == 25
+
+
+def test_a_rigid_body_translation_is_not_altered():
+    geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
+    body = {"torso": (4, 0, 0), "arm_right": (4, 0, 0), "weapon": (0, 0, 0)}
+    resolved = geometry.resolve(body)
+    for part in ("torso", "arm_right", "weapon", "head", "leg_left"):
+        assert resolved[part][:2] == (4, 0), f"{part} must move with the body"
 
 
 def test_weapon_follows_the_parent_translation():
     geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
-    base = geometry.resolve({"arm_right": (0, 0, 0), "weapon": (0, 0, 0)})
-    moved = geometry.resolve({"arm_right": (4, 0, 0), "weapon": (0, 0, 0)})
+    base = geometry.resolve({"torso": (0, 0, 0), "arm_right": (0, 0, 0), "weapon": (0, 0, 0)})
+    moved = geometry.resolve({"torso": (4, 0, 0), "arm_right": (4, 0, 0), "weapon": (0, 0, 0)})
     assert moved["weapon"][0] - base["weapon"][0] == 4
     assert moved["weapon"][1] == base["weapon"][1]
 
@@ -212,6 +224,18 @@ def test_geometry_without_weapon_is_a_no_op():
     offsets = {"torso": (1, 1, 5)}
     assert geometry.sockets == {}
     assert geometry.resolve(offsets) == offsets
+
+
+@pytest.mark.parametrize(
+    "anim", ["idle", "walk", "run", "cast", "dash", "melee_attack", "special_ability", "slime_bouncing"]
+)
+def test_rendered_limbs_stay_in_contact_with_their_parent(anim):
+    geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
+    for result in _frame_images(anim, frames=6):
+        for child, (_, _, parent) in geometry.joints.items():
+            gap = mask_min_distance(_mask(result, child), _mask(result, parent))
+            assert gap is not None
+            assert gap <= 1.0, f"{anim}: {child} detached from {parent} by {gap} px"
 
 
 # --- API surface ---------------------------------------------------------------

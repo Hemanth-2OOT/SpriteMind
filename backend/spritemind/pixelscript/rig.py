@@ -9,6 +9,12 @@ the grammar, the renderer and every existing absolute-transform script stay
 untouched. Only parts listed in ``ATTACHMENTS`` are recomposed; body parts keep
 their authored motion.
 
+Every other part that declares a parent (``PART arm_left torso ...``) is kept
+touching that parent: if the authored motion would pull the two apart by more
+than ``JOINT_MAX_GAP`` pixels, the child is translated back just enough to stay
+attached. This is the limb joint constraint — pixel art has no visible joints, so
+a limb that drifts off the torso reads as a detached sprite.
+
 Resolution per attachment::
 
     hand'   = R(rot_parent) * (hand - anchor_parent) + anchor_parent + delta_parent
@@ -35,6 +41,11 @@ ATTACHMENTS: Dict[str, Dict[str, object]] = {
     "weapon": {"parent": "arm_right", "inherit_rotation": False},
     "accessory": {"parent": "torso", "inherit_rotation": False},
 }
+
+# A body part may drift this many pixels beyond the gap it was drawn with before
+# the joint constraint pulls it back. Restoring the drawn gap (usually 1 px, i.e.
+# adjacent pixels) is what keeps a limb looking attached.
+JOINT_STRAY_SLACK = 0.25
 
 
 def part_parent_map(geometry: Optional["RigGeometry"] = None) -> Dict[str, str]:
@@ -81,6 +92,10 @@ class RigGeometry:
     anchors: Dict[str, Tuple[int, int]]
     # child -> (grip point, parent contact point, parent name)
     sockets: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], str]]
+    # body-part joints: child -> (contact on child, contact on parent, parent name)
+    joints: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], str]]
+    # child -> parent, for hierarchy-ordered joint resolution
+    hierarchy: Dict[str, str]
 
     @classmethod
     def from_script(
@@ -91,6 +106,14 @@ class RigGeometry:
         anchors: Dict[str, Tuple[int, int]] = {}
         for name, part in parts.items():
             anchors[name] = _anchor(part.pixels, part.anchor_x, part.anchor_y)
+
+        joints: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], str]] = {}
+        hierarchy: Dict[str, str] = {}
+        for name, part in parts.items():
+            parent = part.parent
+            if not parent or parent == "none" or parent not in parts:
+                continue
+            hierarchy[name] = parent
 
         sockets: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], str]] = {}
         for child, cfg in ATTACHMENTS.items():
@@ -106,11 +129,70 @@ class RigGeometry:
             pair = _closest_pair(parts[child].pixels, parts[parent].pixels)
             if pair is not None:
                 sockets[child] = (pair[0], pair[1], parent)
-        return cls(anchors=anchors, sockets=sockets)
+
+        for child, parent in hierarchy.items():
+            if child in ATTACHMENTS:
+                continue
+            pair = _closest_pair(parts[child].pixels, parts[parent].pixels)
+            if pair is not None:
+                joints[child] = (pair[0], pair[1], parent)
+        return cls(anchors=anchors, sockets=sockets, joints=joints, hierarchy=hierarchy)
+
+    def _depth(self, part: str) -> int:
+        depth = 0
+        seen = set()
+        while part in self.hierarchy and part not in seen:
+            seen.add(part)
+            part = self.hierarchy[part]
+            depth += 1
+        return depth
+
+    def _snap_joints(self, out: Dict[str, Offset]) -> None:
+        """Pull a body part back when it drifts off its parent.
+
+        The child keeps the offset vector it was drawn with; only drift beyond
+        ``JOINT_STRAY_SLACK`` is removed, so a rigid parent translation still
+        moves the limb by exactly the same amount.
+        """
+        for child in sorted(self.joints, key=self._depth):
+            grip, socket, parent = self.joints[child]
+            anchor_c = self.anchors.get(child, (0, 0))
+            anchor_p = self.anchors.get(parent, (0, 0))
+            pdx, pdy, prot = out.get(parent, (0, 0, 0))
+            cdx, cdy, crot = out.get(child, (0, 0, 0))
+
+            sx, sy = _rotate(socket[0] - anchor_p[0], socket[1] - anchor_p[1], prot)
+            parent_x = sx + anchor_p[0] + pdx
+            parent_y = sy + anchor_p[1] + pdy
+
+            rx, ry = _rotate(grip[0] - socket[0], grip[1] - socket[1], prot)
+            target_x = parent_x + rx
+            target_y = parent_y + ry
+
+            gx, gy = _rotate(grip[0] - anchor_c[0], grip[1] - anchor_c[1], crot)
+            child_x = gx + anchor_c[0] + cdx
+            child_y = gy + anchor_c[1] + cdy
+
+            ex = target_x - child_x
+            ey = target_y - child_y
+            err = math.hypot(ex, ey)
+            if err <= JOINT_STRAY_SLACK or err == 0:
+                continue
+            keep = JOINT_STRAY_SLACK / err
+            out[child] = (
+                int(round(cdx + ex * (1.0 - keep))),
+                int(round(cdy + ey * (1.0 - keep))),
+                crot,
+            )
 
     def resolve(self, offsets: Dict[str, Offset]) -> Dict[str, Offset]:
-        """Returns offsets with attachment parts placed on their parent."""
+        """Returns offsets with joints kept in contact, then attachments socketed.
+
+        Joints are resolved first: a weapon is socketed to where the arm ended up,
+        so the body has to be settled before the equipment follows it.
+        """
         out = dict(offsets)
+        self._snap_joints(out)
         for child, cfg in ATTACHMENTS.items():
             if child not in self.sockets:
                 continue
@@ -147,4 +229,10 @@ def compose_socketed_offsets(
     return geo.resolve(offsets)
 
 
-__all__ = ["ATTACHMENTS", "RigGeometry", "compose_socketed_offsets", "part_parent_map"]
+__all__ = [
+    "ATTACHMENTS",
+    "JOINT_STRAY_SLACK",
+    "RigGeometry",
+    "compose_socketed_offsets",
+    "part_parent_map",
+]
