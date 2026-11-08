@@ -115,3 +115,14 @@ def colour_faithfulness(prompt: str, rgba: np.ndarray) -> Optional[Dict[str, Any
         "per_colour": per_share,
         "missing": [name for name, share in per_share.items() if share < MATCH_SHARE_FOR_PRESENCE],
     }
+
+
+def selection_hit(faith: Optional[Dict[str, Any]]) -> Optional[int]:
+    """1/0 when a colour was requested and present, ``None`` when none was.
+
+    Callers must drop ``None`` from hit-rate averages: scoring a prompt that
+    asked for no colour as a miss silently halves every rate on mixed suites.
+    """
+    if not faith:
+        return None
+    return int(float(faith.get("matched_share") or 0.0) >= MATCH_SHARE_FOR_PRESENCE)

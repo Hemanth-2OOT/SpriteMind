@@ -47,3 +47,12 @@ def test_transparent_pixels_are_excluded():
     image[:4, :, 3] = 255
     report = colour_faithfulness("a blue knight", image)
     assert report["score"] == 100.0
+
+
+def test_selection_hit_is_none_when_no_colour_was_requested():
+    from spritemind.assets.faithfulness import selection_hit
+
+    assert selection_hit(None) is None
+    assert selection_hit({}) is None
+    assert selection_hit({"matched_share": 0.0}) == 0
+    assert selection_hit({"matched_share": 0.5}) == 1

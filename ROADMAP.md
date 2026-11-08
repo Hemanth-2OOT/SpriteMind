@@ -184,10 +184,20 @@ Full evidence in `docs/RETRAIN_V4.md`; production checkpoint and corpus untouche
 ### R12 coverage-aware reranking (2026-11-05)
 
 - [x] **Isolated experiment** — `matched_share` used as an explicit ranking signal behind `COVERAGE_RERANK_WEIGHT` (default `0.0`, so the shipped ranking is byte-identical). Weights tuned on `data/splits/validation_v1.json` (24 coloured prompts, disjoint from the frozen split) and evaluated once on `heldout_v1` at seed `20261105`.
-- [x] **Measured result** — held-out coverage 23.73 → 24.41 (neural) and 24.54 → 25.19 (production) at `steer 0`; 26.18 → 26.62 / 26.30 → 26.66 at `steer 3`. All gains sit inside one standard error (σ ≈ 3.0 pp) and are ~4× smaller than `colour_steer` alone (+2.45 pp).
+- [x] **Measured result** (corrected metrics, coloured prompts only — see R13 §0) — held-out coverage 47.46 → 48.81 (neural) and 49.08 → 50.39 (production) at `steer 0`; 52.36 → 53.23 / 52.60 → 53.31 at `steer 3`. All gains sit well inside one standard error (SE ≈ 2.4 pp).
 - [x] **Checks** — silhouette IoU within 0.002 of baseline, palette adherence 100% in all arms, connected components / interior holes / symmetry unchanged, determinism 0/15 mismatches, critic clean share 0.75–0.775 (gate is 90%).
 - [x] **Not promoted** — no API/UI exposure, weight stays `0.0`, nothing merged. Evidence: `data/benchmarks/coverage_rerank_{tuning,tuning_steer3,heldout}.json`, `docs/COVERAGE_RERANK.md`.
-- [ ] **Where to look next** — `selection_hit` is 0.50 in every arm: half of the coloured held-out prompts have no matching pixels in any candidate pool. More diverse sampling, not a better score, is what changes that.
+- [x] **Correction** — the first pass reported `selection_hit = 0.50`; that counted the 40 held-out prompts naming no colour as misses. With uncoloured prompts excluded, `selection_hit` is **1.000** in every arm. Ranking was therefore never pool-limited.
+
+### R13 candidate-pool diversity (2026-11-05)
+
+- [x] **Experiment** — `scripts/benchmark_candidate_diversity.py` compares `best_of_4/8/16`, temperature-mixed pools (T = 0.7–1.3), and four 4-pools at equal compute, over frozen `heldout_v1` (80 prompts, 40 coloured), seed `20261105`, measuring coverage, IoU, palette, defects, critic, candidate diversity, latency and peak RSS.
+- [x] **Reachability is saturated** — `selection_hit` 1.000 at every pool size, and over the 48-candidate union. The model produces the requested hue within the first four candidates; pool growth buys nothing here.
+- [x] **Pool size is a weak lever** — `best_of_16` vs `best_of_4`: +0.91 pp coverage (SE 0.63) at −0.02 IoU. Latency flat (single batched decode), peak RSS 342 MB.
+- [x] **Temperature mixing is a real lever** — `temp_mixed_16` +7.35 pp over `best_of_4` (SE 2.27, 30 prompts up / 7 down) and +6.44 pp over an equal-size uniform pool, but −0.025 IoU and clean share 0.762 → 0.675.
+- [x] **Equal compute favours concentration** — 16 samples on one decision (49.69%) beat 16 samples across four decisions (47.40%), and a single 16-batch is 1.87× faster than four 4-batches.
+- [x] **Not promoted** — no retraining, no checkpoint change, no API/UI exposure, no production change; critic gate (90%) still fails. Evidence: `data/benchmarks/candidate_diversity_r13.json`, `docs/CANDIDATE_DIVERSITY.md`.
+- [ ] **Where to look next** — a temperature-mixed sampler guarded against the clean-rate loss (R14 candidate), and critic/repair coverage, which remains the binding constraint at 0.675–0.775 clean. Do **not** raise production `best_of`.
 
 ## P5 — Product surface
 

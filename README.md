@@ -145,6 +145,7 @@ python scripts/update_readme_metrics.py --check   # fail if it is stale
 - **Palette-conditioned retrain (R6/R7/R9 + held-out R10):** [`docs/RETRAIN_V4.md`](docs/RETRAIN_V4.md)
 - **Neural colour recovery (R11 — diagnosis, experiments, gate):** [`docs/COLOUR_RECOVERY.md`](docs/COLOUR_RECOVERY.md)
 - **Coverage-aware reranking (R12 — tuning protocol, held-out result):** [`docs/COVERAGE_RERANK.md`](docs/COVERAGE_RERANK.md)
+- **Candidate-pool diversity (R13 — pool size vs temperature, corrected selection metric):** [`docs/CANDIDATE_DIVERSITY.md`](docs/CANDIDATE_DIVERSITY.md)
 - **Prompt conditioning in the corpus (colour/element tags, palette mapping, probe):** [`docs/PROMPT_CONDITIONING.md`](docs/PROMPT_CONDITIONING.md)
 - **Action Sets (prompt → animation package):** [`docs/ACTION_SETS.md`](docs/ACTION_SETS.md)
 - **PixelScript Grammar (v2 primitives: SHADE / OUTLINE):** [`docs/PIXELSCRIPT_GRAMMAR.md`](docs/PIXELSCRIPT_GRAMMAR.md)
