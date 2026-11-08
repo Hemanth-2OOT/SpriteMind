@@ -21,7 +21,8 @@ from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.renderer.export import array_to_base64
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
-from spritemind.assets.faithfulness import colour_faithfulness
+from spritemind.assets.faithfulness import COLOUR_TARGETS, colour_faithfulness
+from spritemind.assets.faithfulness import _matches as _colour_matches
 from spritemind.utils.palettes import PALETTES
 
 
@@ -185,6 +186,7 @@ class SpriteMindPipeline:
         temperature: float = 0.9,
         top_k: int = 0,
         use_critic: bool = True,
+        colour_steer: float = 0.0,
     ) -> Dict[str, Any]:
         """Generates a sprite, replaying a previous identical request from cache."""
         key = (
@@ -203,6 +205,7 @@ class SpriteMindPipeline:
             round(float(temperature), 3),
             int(top_k),
             bool(use_critic),
+            round(float(colour_steer), 3),
         )
         if self._result_cache_size <= 0:
             result = self._generate_uncached(
@@ -219,6 +222,7 @@ class SpriteMindPipeline:
                 max_actions=max_actions,
                 best_of=best_of,
                 use_critic=use_critic,
+                colour_steer=colour_steer,
             )
             result["cache_hit"] = False
             return result
@@ -276,6 +280,7 @@ class SpriteMindPipeline:
         top_k: int = 0,
         procedural_guard: bool = True,
         use_critic: bool = True,
+        colour_steer: float = 0.0,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
         start_time = time.perf_counter()
@@ -364,6 +369,7 @@ class SpriteMindPipeline:
                     colour=final_colour,
                     element=final_element,
                     use_critic=use_critic,
+                    colour_steer=colour_steer,
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -426,6 +432,7 @@ class SpriteMindPipeline:
         element: Optional[str] = None,
         use_critic: bool = True,
         use_colour: bool = True,
+        colour_steer: float = 0.0,
     ) -> Tuple[PixelScriptProgram, str]:
         """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
 
@@ -442,13 +449,13 @@ class SpriteMindPipeline:
         candidates = (
             self._sample_batch(
                 model, category, style, pose, max_actions, seed, temperature, n, top_k,
-                prompt_text, colour, element, palette=palette,
+                prompt_text, colour, element, palette=palette, colour_steer=colour_steer,
             )
             if n > 1
             else [
                 self._sample_tokens(
                     model, category, style, pose, max_actions, seed, temperature, top_k,
-                    prompt_text, colour, element, palette=palette,
+                    prompt_text, colour, element, palette=palette, colour_steer=colour_steer,
                 )
             ]
         )
@@ -497,6 +504,21 @@ class SpriteMindPipeline:
         if guard_score > best_score:
             return guard_program, "procedural_guard"
         return best_program, "neural"
+
+    def _colour_steer_ids(self, palette: str, colour: Optional[str]) -> List[int]:
+        """Token ids of palette entries that match a requested colour name."""
+        if not colour:
+            return []
+        target = COLOUR_TARGETS.get(str(colour).lower())
+        entries = PALETTES.get(palette)
+        if target is None or not entries:
+            return []
+        ids = []
+        for index, rgba in enumerate(entries):
+            token = self.tokenizer.token_to_id.get(f"COL_{index}")
+            if token is not None and index and _colour_matches(*rgba[:3], target):
+                ids.append(token)
+        return ids
 
     def _render_candidate(
         self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32
@@ -648,6 +670,7 @@ class SpriteMindPipeline:
         colour: Optional[str] = None,
         element: Optional[str] = None,
         palette: str = "pico8",
+        colour_steer: float = 0.0,
     ) -> List[int]:
         """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
@@ -673,6 +696,7 @@ class SpriteMindPipeline:
             use_cache = hasattr(transformer, "forward_step")
             cache = transformer.new_cache(max_len=max_tokens + 1) if use_cache else None
 
+            steer_ids = self._colour_steer_ids(palette, colour) if colour_steer > 0.0 else []
             for step in range(max_tokens):
                 if use_cache:
                     token_tensor = torch.tensor([[curr_tokens[-1]]], dtype=torch.long, device=self.device)
@@ -689,6 +713,8 @@ class SpriteMindPipeline:
                     masked = torch.full_like(next_token_logits, float("-inf"))
                     masked[legal] = 0.0
                     next_token_logits = next_token_logits + masked
+                if steer_ids:
+                    next_token_logits[steer_ids] += colour_steer
 
                 # Sample next token
                 probs = torch.softmax(next_token_logits / max(1e-5, temperature), dim=-1)
@@ -721,6 +747,7 @@ class SpriteMindPipeline:
         colour: Optional[str] = None,
         element: Optional[str] = None,
         palette: str = "pico8",
+        colour_steer: float = 0.0,
     ) -> List[List[int]]:
         """Samples several candidate programs in one batched decode pass.
 
@@ -756,6 +783,7 @@ class SpriteMindPipeline:
             finished = [False] * num_candidates
             states = [self.tokenizer.grammar_start_state() for _ in range(num_candidates)]
 
+            steer_ids = self._colour_steer_ids(palette, colour) if colour_steer > 0.0 else []
             for step in range(max_tokens):
                 if all(finished):
                     break
@@ -774,7 +802,10 @@ class SpriteMindPipeline:
                         row = torch.full((vocab_size,), float("-inf"), device=self.device)
                         row[torch.tensor(legal, device=self.device)] = 0.0
                         mask[i] = row
-                probs = torch.softmax((logits + mask) / max(1e-5, temperature), dim=-1)
+                adjusted = logits + mask
+                if steer_ids:
+                    adjusted[:, steer_ids] += colour_steer
+                probs = torch.softmax(adjusted / max(1e-5, temperature), dim=-1)
                 if top_k > 0:
                     cutoff = torch.topk(probs, min(top_k, probs.shape[-1]), dim=-1).values[:, -1:]
                     probs = torch.where(probs < cutoff, torch.zeros_like(probs), probs)

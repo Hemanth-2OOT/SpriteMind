@@ -84,6 +84,28 @@
       "parameter_count": 2361304,
       "sha256": "5e67c690a0620a4e851107a9ce3c089f53a437ab52c127dae3d892da84405e2d"
     },
+    "svan_v5_colour.ep1.pt": {
+      "best_val_loss": 0.3386,
+      "bytes": 9531032,
+      "epoch": 5,
+      "file": "svan_v5_colour.ep1.pt",
+      "model_config": {
+        "d_model": 128,
+        "dim_feedforward": 512,
+        "dropout": 0.05,
+        "max_seq_len": 448,
+        "nhead": 4,
+        "num_colours": 29,
+        "num_elements": 9,
+        "num_layers": 6,
+        "palette_conditioning": true,
+        "prompt_max_len": 64,
+        "prompt_text": false,
+        "vocab_size": 404
+      },
+      "parameter_count": 2361304,
+      "sha256": "c8469bf14b5a5e80ca3f920ebf3a76c39348405a58700d03dd6909b07e9a4442"
+    },
     "temporal_svan_best.pt": {
       "bytes": 1725309,
       "file": "temporal_svan_best.pt",

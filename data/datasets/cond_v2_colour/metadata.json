@@ -1,0 +1,90 @@
+{
+  "name": "cond_v2_colour",
+  "builder": "scripts/build_conditioned_dataset.py",
+  "builder_commit": "e7bc2b1cd1e14ec19822f12fe04ea9bd0049af20",
+  "seed": 20261108,
+  "total_samples": 15000,
+  "splits": {
+    "train": 10988,
+    "val": 1473,
+    "heldout": 2539
+  },
+  "palette_distribution": {
+    "pico8": 3035,
+    "gameboy": 2971,
+    "dawnbringer16": 2988,
+    "cyberpunk": 3005,
+    "endesga32": 3001
+  },
+  "colour_distribution": {
+    "white": 554,
+    "green": 1208,
+    "azure": 537,
+    "grey": 549,
+    "gray": 548,
+    "orange": 580,
+    "yellow": 1258,
+    "amber": 520,
+    "golden": 554,
+    "lime": 949,
+    "teal": 544,
+    "red": 554,
+    "turquoise": 541,
+    "gold": 512,
+    "scarlet": 427,
+    "emerald": 1175,
+    "cyan": 536,
+    "crimson": 540,
+    "indigo": 122,
+    "brown": 138,
+    "pink": 497,
+    "silver": 507,
+    "tan": 563,
+    "black": 151,
+    "blue": 574,
+    "magenta": 126,
+    "purple": 121,
+    "violet": 115
+  },
+  "element_distribution": {
+    "none": 7607,
+    "toxic": 886,
+    "fire": 939,
+    "flame": 936,
+    "lightning": 971,
+    "thunder": 919,
+    "frost": 917,
+    "ice": 928,
+    "poison": 897
+  },
+  "category_distribution": {
+    "knight": 1500,
+    "zombie": 1500,
+    "rogue": 1500,
+    "wizard": 1500,
+    "robot": 1500,
+    "slime": 1500,
+    "skeleton": 1500,
+    "goblin": 1500,
+    "animal": 1500,
+    "fantasy_creature": 1500
+  },
+  "labelling_rules": {
+    "palette": "cycled uniformly over the palettes with at least one renderable colour, then sampled randomly",
+    "colour": "uniform over renderable_colours(palette), assigned to 100% of records",
+    "element": "uniform over ['fire', 'flame', 'frost', 'ice', 'lightning', 'poison', 'thunder', 'toxic'], assigned to 50% of records",
+    "program": "CharacterGenerator.generate_character(..., palette_name=palette) so colour indices are palette-correct",
+    "split": "held-out spec combinations -> 'heldout'; otherwise identity-hash 88/12 train/val"
+  },
+  "heldout": {
+    "spec": "data/splits/heldout_v1.json",
+    "spec_digest": "581bd3fa4c1253723cd8e7169d45847cb209d0a09ea99b9b65cecd830086a06b",
+    "records": {
+      "triple": 1783,
+      "category_element": 756
+    },
+    "triples": 30,
+    "category_element_pairs": 10
+  },
+  "leakage_prevention": "held-out combinations excluded from train/val + identity hash partition"
+}

@@ -49,6 +49,7 @@ def _neural_only(
     best_of: int,
     use_critic: bool = True,
     use_colour: bool = True,
+    colour_steer: float = 0.0,
 ):
     """SVAN candidates with no procedural guard, so the network is measured alone."""
     model = pipeline.trained_model
@@ -65,6 +66,9 @@ def _neural_only(
         top_k=0,
         procedural_guard=False,
         prompt_text=item.get("prompt", ""),
+        colour=item.get("colour"),
+        element=item.get("element"),
+        colour_steer=colour_steer,
         use_critic=use_critic,
         use_colour=use_colour,
     )

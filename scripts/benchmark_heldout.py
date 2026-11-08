@@ -59,6 +59,8 @@ def _prompt_item(category, style, pose, colour=None, element=None):
         "style": style,
         "pose": pose,
         "palette": PALETTE,
+        "colour": colour,
+        "element": element,
     }
 
 
@@ -97,14 +99,20 @@ def build_grids(spec, per_key_prompts=2):
     return {"heldout": heldout, "in_distribution": in_dist}
 
 
-def run_arm(pipeline, items, arm, seed, best_of=4):
+def run_arm(pipeline, items, arm, seed, best_of=4, colour_steer=0.0):
     rows, failures, sources = [], 0, Counter()
     for index, item in enumerate(items):
         palette = item.get("palette", PALETTE)
         try:
             if arm == "neural_only":
                 prog, source = _neural_only(
-                    pipeline, item, seed + index, best_of, use_critic=True, use_colour=True
+                    pipeline,
+                    item,
+                    seed + index,
+                    best_of,
+                    use_critic=True,
+                    use_colour=True,
+                    colour_steer=colour_steer,
                 )
                 from spritemind.renderer.engine import PixelScriptEngine
 
@@ -157,6 +165,7 @@ def main() -> int:
     parser.add_argument("--spec", default="data/splits/heldout_v1.json")
     parser.add_argument("--seed", type=int, default=20261105)
     parser.add_argument("--best-of", type=int, default=4)
+    parser.add_argument("--colour-steer", type=float, default=0.0)
     parser.add_argument("--out", default="data/benchmarks/heldout_v1_baseline.json")
     args = parser.parse_args()
 
@@ -175,10 +184,13 @@ def main() -> int:
     results = {}
     for regime, items in grids.items():
         for arm in ("neural_only", "production"):
-            results[f"{regime}/{arm}"] = run_arm(pipeline, items, arm, args.seed, args.best_of)
+            results[f"{regime}/{arm}"] = run_arm(
+                pipeline, items, arm, args.seed, args.best_of, colour_steer=args.colour_steer
+            )
             print(f"[{regime}/{arm}] {results[f'{regime}/{arm}']['summary']}", flush=True)
 
     payload = {
+        "colour_steer": args.colour_steer,
         "benchmark": "heldout_generalization",
         "checkpoint": args.checkpoint,
         "label": label,

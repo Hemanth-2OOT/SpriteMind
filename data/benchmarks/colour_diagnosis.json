@@ -1,0 +1,127 @@
+{
+  "benchmark": "colour_diagnosis",
+  "seed": 20261105,
+  "prompts": 40,
+  "results": [
+    {
+      "checkpoint": "svan_checkpoint_best.pt",
+      "arms": {
+        "neural_uncond": {
+          "n": 40,
+          "faith_mean": 12.2,
+          "selection_hit_rate": 0.775,
+          "faith_when_selected": 15.75,
+          "modal_is_requested_rate": 0.1,
+          "modal_share_mean": 0.497,
+          "requested_coverage_mean": 0.069,
+          "distinct_colours_mean": 6.72,
+          "colours_used_mean": 7.22
+        },
+        "neural_cond": {
+          "n": 40,
+          "faith_mean": 48.38,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 48.38,
+          "modal_is_requested_rate": 0.3,
+          "modal_share_mean": 0.5,
+          "requested_coverage_mean": 0.221,
+          "distinct_colours_mean": 5.85,
+          "colours_used_mean": 6.28
+        },
+        "neural_steer_1.5": {
+          "n": 40,
+          "faith_mean": 48.18,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 48.18,
+          "modal_is_requested_rate": 0.275,
+          "modal_share_mean": 0.496,
+          "requested_coverage_mean": 0.221,
+          "distinct_colours_mean": 5.67,
+          "colours_used_mean": 6.12
+        },
+        "neural_steer_3.0": {
+          "n": 40,
+          "faith_mean": 49.65,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 49.65,
+          "modal_is_requested_rate": 0.325,
+          "modal_share_mean": 0.495,
+          "requested_coverage_mean": 0.229,
+          "distinct_colours_mean": 5.75,
+          "colours_used_mean": 6.17
+        },
+        "guard": {
+          "n": 40,
+          "faith_mean": 45.27,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 45.27,
+          "modal_is_requested_rate": 0.25,
+          "modal_share_mean": 0.497,
+          "requested_coverage_mean": 0.211,
+          "distinct_colours_mean": 6.2,
+          "colours_used_mean": 6.5
+        }
+      }
+    },
+    {
+      "checkpoint": "svan_v4_palette_ep2.pt",
+      "arms": {
+        "neural_uncond": {
+          "n": 40,
+          "faith_mean": 11.95,
+          "selection_hit_rate": 0.675,
+          "faith_when_selected": 17.7,
+          "modal_is_requested_rate": 0.1,
+          "modal_share_mean": 0.512,
+          "requested_coverage_mean": 0.061,
+          "distinct_colours_mean": 6.08,
+          "colours_used_mean": 6.53
+        },
+        "neural_cond": {
+          "n": 40,
+          "faith_mean": 46.27,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 46.27,
+          "modal_is_requested_rate": 0.225,
+          "modal_share_mean": 0.501,
+          "requested_coverage_mean": 0.201,
+          "distinct_colours_mean": 5.83,
+          "colours_used_mean": 6.38
+        },
+        "neural_steer_1.5": {
+          "n": 40,
+          "faith_mean": 48.56,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 48.56,
+          "modal_is_requested_rate": 0.25,
+          "modal_share_mean": 0.501,
+          "requested_coverage_mean": 0.231,
+          "distinct_colours_mean": 5.85,
+          "colours_used_mean": 6.3
+        },
+        "neural_steer_3.0": {
+          "n": 40,
+          "faith_mean": 50.29,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 50.29,
+          "modal_is_requested_rate": 0.275,
+          "modal_share_mean": 0.507,
+          "requested_coverage_mean": 0.237,
+          "distinct_colours_mean": 5.53,
+          "colours_used_mean": 6.05
+        },
+        "guard": {
+          "n": 40,
+          "faith_mean": 45.27,
+          "selection_hit_rate": 1.0,
+          "faith_when_selected": 45.27,
+          "modal_is_requested_rate": 0.25,
+          "modal_share_mean": 0.497,
+          "requested_coverage_mean": 0.211,
+          "distinct_colours_mean": 6.2,
+          "colours_used_mean": 6.5
+        }
+      }
+    }
+  ]
+}

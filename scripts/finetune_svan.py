@@ -70,6 +70,12 @@ def parse_args():
         help="train the palette embedding on real palette labels (requires a corpus that records them)",
     )
     parser.add_argument(
+        "--colour-loss-weight",
+        type=float,
+        default=1.0,
+        help="multiplier on the cross-entropy of COL_* tokens (1.0 = plain objective)",
+    )
+    parser.add_argument(
         "--prompt-text",
         action="store_true",
         help="train the character-level prompt encoder as a fourth memory token",
@@ -150,6 +156,7 @@ def main():
         batch_size=args.batch_size,
         threads=args.threads,
         prompt_text=args.prompt_text,
+        colour_token_weight=args.colour_loss_weight,
         max_samples=args.max_samples or None,
     )
 
