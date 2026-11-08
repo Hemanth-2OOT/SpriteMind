@@ -19,6 +19,13 @@ interface GeneratePageProps {
   selectedEngine: string;
 }
 
+// A rendered frame replaces the caller's copy wholesale, so the script that
+// produced it travels with the request rather than being read back from the
+// render response.
+function frameWithScript(frame: FrameData, script: string): FrameData {
+  return { ...frame, script_text: script };
+}
+
 export const GeneratePage: React.FC<GeneratePageProps> = ({
   modelsInfo,
   selectedEngine,
@@ -122,7 +129,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       });
 
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, res.repaired_script);
       setFrames(updated);
       setCriticReport(res.final_critic);
       setRepairHistory(res.history || []);
@@ -142,7 +149,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         height: currentFrame.height,
       });
       const updated = [...frames];
-      updated[currentFrameIndex] = restored;
+      updated[currentFrameIndex] = frameWithScript(restored, beforeScriptText);
       setFrames(updated);
       setBeforeImageBase64(null);
       setBeforeScriptText(null);
@@ -186,6 +193,10 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
 
   const handleApplyCriticFix = async (fixCmd: string) => {
     if (!currentFrame) return;
+    if (!currentFrame.script_text) {
+      alert('This frame has no script attached, so it cannot be patched. Regenerate the sprite first.');
+      return;
+    }
     setIsLoading(true);
     try {
       if (!beforeImageBase64) {
@@ -208,7 +219,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       });
 
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, res.repaired_script);
       setFrames(updated);
       setCriticReport(res.final_critic);
     } catch (e: any) {
@@ -227,7 +238,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         height: currentFrame.height,
       });
       const updated = [...frames];
-      updated[currentFrameIndex] = rendered;
+      updated[currentFrameIndex] = frameWithScript(rendered, newScript);
       setFrames(updated);
     } catch (e: any) {
       alert(`Script Render Error: ${e.message}`);

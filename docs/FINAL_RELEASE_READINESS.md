@@ -88,7 +88,7 @@ the branch it describes and `main` is untouched. Say the word if it should inste
 
 ## 5. Test results
 
-- `pytest backend/tests` — **318 tests, all passing**, coverage **73.82 %** (floor 71 %;
+- `pytest backend/tests` — **325 tests, all passing**, coverage **74.26 %** (floor 71 %;
   7542 statements, 2214 branches). No test was removed, skipped or weakened at any point.
 - The suite is also green in the CI layout, i.e. with the gitignored `records.jsonl` corpora
   moved away so only the tracked `samples/` trees load (this is the case that caught the

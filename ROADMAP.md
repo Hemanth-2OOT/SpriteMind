@@ -31,7 +31,7 @@ nothing merged):
 | Metric | Value |
 | --- | --- |
 | `main` | `e64daeb` (#26) — untouched by the R4–R13 stack |
-| Tests | **318 passing**, coverage **73.82%** (floor 71%), ruff clean, frontend build clean |
+| Tests | **325 passing**, coverage **74.26%** (floor 71%), ruff clean, frontend build clean |
 | CI | backend and frontend jobs green on `80f5aab` |
 | Production checkpoint | `svan_checkpoint_best.pt`, unchanged (sha256 recorded in `docs/FINAL_RELEASE_READINESS.md`) |
 | Open objective | "neural quality ≥ procedural quality" — critic clean rate still 0.675–0.775 against a 90% gate, so nothing is promoted |

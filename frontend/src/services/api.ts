@@ -39,6 +39,44 @@ async function apiFetch(input: string, init: RequestInit = {}): Promise<globalTh
   return fetch(input, { ...init, headers });
 }
 
+type ValidationIssue = {
+  loc?: (string | number)[];
+  msg?: string;
+  type?: string;
+};
+
+// FastAPI sends `detail` as a string for HTTPException but as an array of
+// issue objects for request validation, so String(detail) used to surface
+// "[object Object]" in the UI.
+function describeDetail(detail: unknown): string | null {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const parts = (detail as ValidationIssue[])
+      .map((issue) => {
+        const field = (issue?.loc ?? []).filter((part) => part !== 'body').join('.');
+        if (!issue?.msg) return field;
+        return field ? `${field}: ${issue.msg}` : issue.msg;
+      })
+      .filter(Boolean);
+    return parts.length ? parts.join('; ') : null;
+  }
+  if (detail && typeof detail === 'object' && 'msg' in (detail as ValidationIssue)) {
+    return (detail as ValidationIssue).msg ?? null;
+  }
+  return null;
+}
+
+async function errorMessage(res: globalThis.Response, fallback: string): Promise<string> {
+  let detail: unknown;
+  try {
+    const body = await res.json();
+    detail = body?.detail ?? body?.error ?? body?.message;
+  } catch {
+    detail = null;
+  }
+  return describeDetail(detail) ?? `${fallback} (HTTP ${res.status})`;
+}
+
 export async function fetchHealth(): Promise<SystemHealth> {
   const res = await apiFetch(`${BASE_URL}/api/health`);
   return res.json();
@@ -70,8 +108,7 @@ export async function generateSprite(params: GenerateParams): Promise<Generation
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Generation failed');
+    throw new Error(await errorMessage(res, 'Generation failed'));
   }
   return res.json();
 }
@@ -94,8 +131,7 @@ export async function renderScript(params: RenderParams): Promise<FrameData> {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Render failed');
+    throw new Error(await errorMessage(res, 'Render failed'));
   }
   return res.json();
 }
@@ -123,8 +159,7 @@ export async function exportActionSheet(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Sprite sheet export failed');
+    throw new Error(await errorMessage(res, 'Sprite sheet export failed'));
   }
   return res.json();
 }
@@ -253,8 +288,7 @@ export async function inspectSpriteApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Inspect failed');
+    throw new Error(await errorMessage(res, 'Inspect failed'));
   }
   return res.json();
 }
@@ -275,8 +309,7 @@ export async function repairSpriteApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Repair failed');
+    throw new Error(await errorMessage(res, 'Repair failed'));
   }
   return res.json();
 }
@@ -306,8 +339,7 @@ export async function generateAnimationApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Animation generation failed');
+    throw new Error(await errorMessage(res, 'Animation generation failed'));
   }
   return res.json();
 }
@@ -328,8 +360,7 @@ export async function regenerateFrameApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Frame regeneration failed');
+    throw new Error(await errorMessage(res, 'Frame regeneration failed'));
   }
   return res.json();
 }
@@ -355,8 +386,7 @@ export async function planActionSetApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Action planning failed');
+    throw new Error(await errorMessage(res, 'Action planning failed'));
   }
   return res.json();
 }
@@ -381,8 +411,7 @@ export async function generateActionSetApi(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || 'Action set generation failed');
+    throw new Error(await errorMessage(res, 'Action set generation failed'));
   }
   return res.json();
 }

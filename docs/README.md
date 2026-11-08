@@ -44,5 +44,5 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - `scripts/finetune_svan.py --prompt-text` — trains the optional prompt text encoder (`ml/prompt_encoder.py`) as a fourth memory token; `docs/PROMPT_FAITHFULNESS.md` explains why the shipped checkpoint leaves it off.
 - `scripts/golden_images.py` — the perceptual-hash regression set (`--update-goldens` to accept a deliberate change).
 - `GET /api/metrics` — p50/p95 latency ring buffer, also shown in the Model Lab.
-- `pytest` — the 318-test suite also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
+- `pytest` — the 325-test suite also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
 - `npm run typecheck` — TypeScript over `frontend/src`; `npm run build` runs it first, so the frontend CI job typechecks too.

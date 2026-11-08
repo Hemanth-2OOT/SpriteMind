@@ -120,7 +120,12 @@ def render(req: RenderRequest) -> Dict[str, Any]:
             height=req.height,
             palette_name=req.palette,
         )
-        return res.to_dict(include_passes=True, scale=req.scale)
+        frame = res.to_dict(include_passes=True, scale=req.scale)
+        # The frame replaces the caller's copy in the UI, so it has to carry the
+        # script that produced it; without it the next critic/repair call has
+        # nothing to patch.
+        frame["script_text"] = req.script_text
+        return frame
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

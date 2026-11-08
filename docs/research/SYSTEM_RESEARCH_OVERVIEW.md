@@ -27,7 +27,7 @@ sub-pixel sockets. Everything runs CPU-first, deterministically, and offline.
 The contribution is not "another pixel generator". It is that the artefact is **inspectable
 and auditable at every stage**: the model's output is a readable program, the render is
 reproducible from a seed, the defect report names pixels, the animation is a trajectory over
-named parts, and the whole pipeline is covered by a 318-test suite, a perceptual-hash golden
+named parts, and the whole pipeline is covered by a 325-test suite, a perceptual-hash golden
 set, and a generation quality gate that fails CI on regression.
 
 ---
@@ -516,7 +516,7 @@ frontend CI job instead of silently rendering `undefined`.
 
 ## 15. Engineering practice
 
-### 15.1 Test strategy (318 tests, 73.8% coverage, floor 71%)
+### 15.1 Test strategy (325 tests, 74.3% coverage, floor 71%)
 
 | Layer | Representative tests |
 | --- | --- |
