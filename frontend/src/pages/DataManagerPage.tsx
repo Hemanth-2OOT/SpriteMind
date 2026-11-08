@@ -165,7 +165,7 @@ export const DataManagerPage: React.FC = () => {
         throw new Error(err.detail || 'Cleanup execution failed');
       }
       const data = await res.json();
-      setStatusMsg(`Cleaned up ${data.removed_count} files (${data.freed_kb} KB freed).`);
+      setStatusMsg(`Cleaned up ${data.deleted_count ?? 0} files (${data.freed_kb ?? 0} KB freed).`);
       setCleanupScan(null);
       loadDashboard();
     } catch (e: any) {

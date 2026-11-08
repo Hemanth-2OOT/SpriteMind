@@ -46,6 +46,12 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
   const [viewingBefore, setViewingBefore] = useState(false);
   const [repairHistory, setRepairHistory] = useState<any[]>([]);
   const [inferenceTimeMs, setInferenceTimeMs] = useState(0);
+  // Critic inspect/repair must run under the same category and palette the
+  // sprite was generated with, otherwise repairs shift the colours.
+  const [genContext, setGenContext] = useState<{ category: string; palette: string }>({
+    category: 'zombie',
+    palette: 'pico8',
+  });
 
   // Initial auto-generation on first mount if empty
   React.useEffect(() => {
@@ -72,6 +78,7 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       setCurrentFrameIndex(0);
       setCriticReport(res.critic);
       setInferenceTimeMs(res.inference_time_ms);
+      setGenContext({ category: res.category, palette: res.palette });
       setBeforeImageBase64(null);
       setBeforeScriptText(null);
       setViewingBefore(false);
@@ -90,8 +97,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
     try {
       const report = await inspectSpriteApi({
         script_text: currentFrame.script_text,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -116,8 +123,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
         script_text: currentFrame.script_text,
         auto_refine: true,
         max_iterations: 3,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -159,8 +166,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
 
       const rep = await inspectSpriteApi({
         script_text: beforeScriptText,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });
@@ -206,8 +213,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
       const res = await repairSpriteApi({
         script_text: currentFrame.script_text,
         action_patch: fixCmd,
-        category: 'knight',
-        palette_name: 'pico8',
+        category: genContext.category,
+        palette_name: genContext.palette,
         width: currentFrame.width,
         height: currentFrame.height,
       });

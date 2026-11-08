@@ -19,6 +19,9 @@ import {
   History,
   RotateCcw,
   Check,
+  Code2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { FrameData, VisualCriticReport, ModelsInfo } from '../types';
 
@@ -56,6 +59,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
   const [activeTab, setActiveTab] = useState<'properties' | 'layers' | 'pixelscript' | 'critic' | 'model'>('critic');
   const [scriptEditContent, setScriptEditContent] = useState<string>('');
   const [isRerendering, setIsRerendering] = useState(false);
+  const [showCode, setShowCode] = useState(true);
 
   // Sync edited script when currentFrame changes
   React.useEffect(() => {
@@ -73,6 +77,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
     }
   };
 
+  const spriteCode = currentFrame?.script_text || '';
+  const codeLines = spriteCode ? spriteCode.split('\n') : [];
   const criticDefects = criticReport?.detected_defects || [];
   const qualityScore = criticReport?.quality_score ?? 95;
 
@@ -509,6 +515,66 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                 </span>
               </div>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Sprite code: the PixelScript that produces the frame on the canvas */}
+      <div className="border-t border-dark-750 bg-dark-950/80 shrink-0">
+        <button
+          onClick={() => setShowCode((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 text-[11px] text-slate-300 hover:text-slate-100 transition-colors"
+        >
+          <span className="flex items-center gap-1.5">
+            <Code2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-medium">Sprite Code</span>
+            <span className="text-slate-500 font-mono">
+              {codeLines.length > 0 ? `${codeLines.length} lines` : 'no script'}
+            </span>
+          </span>
+          <span className="flex items-center gap-2">
+            {codeLines.length > 0 && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(spriteCode);
+                }}
+                className="text-slate-500 hover:text-purple-300 flex items-center gap-1"
+              >
+                <Copy className="w-3 h-3" />
+                Copy
+              </span>
+            )}
+            {showCode ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </span>
+        </button>
+
+        {showCode && (
+          <div className="px-3 pb-2">
+            {codeLines.length === 0 ? (
+              <p className="text-[11px] text-slate-500 italic py-1">
+                Generate a sprite to see its PixelScript.
+              </p>
+            ) : (
+              <>
+                <pre className="max-h-56 overflow-auto custom-scrollbar bg-black/40 border border-dark-750 rounded-md p-2 font-mono text-[10.5px] leading-snug text-cyan-300 whitespace-pre">
+{codeLines.map((line, i) => (
+  <div key={i} className="flex gap-2">
+    <span className="text-slate-600 select-none w-5 text-right shrink-0">{i + 1}</span>
+    <span className={line.startsWith('#') ? 'text-slate-500' : undefined}>{line || ' '}</span>
+  </div>
+))}
+                </pre>
+                <button
+                  onClick={() => setActiveTab('pixelscript')}
+                  className="mt-1.5 w-full py-1.5 bg-dark-850 hover:bg-dark-800 border border-dark-700 text-slate-200 rounded-md text-[11px] transition-colors"
+                >
+                  Edit in Script tab
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
