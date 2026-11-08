@@ -147,7 +147,7 @@ class AssetComposer:
         rendered = PixelScriptEngine.execute(
             design_script, width=DESIGN_SIZE, height=DESIGN_SIZE, palette_name=palette_name
         )
-        r_dict = rendered.to_dict(scale=scale)
+        r_dict = rendered.to_dict(scale=scale, shade=True)
 
         return {
             "status": "success",
@@ -227,7 +227,7 @@ class AssetComposer:
                 design_script = comp_res["script_text"]
                 frame_render = PixelScriptEngine.execute(
                     design_script, width=DESIGN_SIZE, height=DESIGN_SIZE, palette_name=palette_name
-                ).to_dict(scale=scale)
+                ).to_dict(scale=scale, shade=True)
                 sockets = {k: (v[0] * scale, v[1] * scale) for k, v in (comp_res.get("sockets") or {}).items()}
                 hitboxes = {
                     k: [b[0] * scale, b[1] * scale, b[2] * scale, b[3] * scale]

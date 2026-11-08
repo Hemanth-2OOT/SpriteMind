@@ -25,6 +25,7 @@ from PIL import Image
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.scaling import scale_script
+from spritemind.renderer.lighting import apply_lighting
 from spritemind.assets.faithfulness import COLOUR_TARGETS, colour_faithfulness
 from spritemind.assets.faithfulness import _matches as _colour_matches
 from spritemind.utils.palettes import PALETTES
@@ -201,6 +202,7 @@ class SpriteMindPipeline:
         top_k: int = 0,
         use_critic: bool = True,
         colour_steer: float = 0.0,
+        shade: bool = True,
     ) -> Dict[str, Any]:
         """Generates a sprite, replaying a previous identical request from cache."""
         key = (
@@ -220,6 +222,7 @@ class SpriteMindPipeline:
             int(top_k),
             bool(use_critic),
             round(float(colour_steer), 3),
+            bool(shade),
         )
         if self._result_cache_size <= 0:
             result = self._generate_uncached(
@@ -237,6 +240,7 @@ class SpriteMindPipeline:
                 best_of=best_of,
                 use_critic=use_critic,
                 colour_steer=colour_steer,
+                shade=shade,
             )
             result["cache_hit"] = False
             return result
@@ -268,6 +272,7 @@ class SpriteMindPipeline:
             temperature=temperature,
             top_k=top_k,
             use_critic=use_critic,
+            shade=shade,
         )
         result["cache_hit"] = False
         self._result_cache[key] = copy.deepcopy(result)
@@ -295,6 +300,7 @@ class SpriteMindPipeline:
         procedural_guard: bool = True,
         use_critic: bool = True,
         colour_steer: float = 0.0,
+        shade: bool = True,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
         start_time = time.perf_counter()
@@ -402,7 +408,7 @@ class SpriteMindPipeline:
 
         total_time_ms = (time.perf_counter() - start_time) * 1000.0
 
-        frames_data = [self._upscale_frame(f, final_dim, width, height) for f in frames_data]
+        frames_data = [self._upscale_frame(f, final_dim, width, height, shade=shade) for f in frames_data]
         out_scale = max(1, min(int(width), int(height)) // max(1, int(final_dim)))
 
         # Visual Critic analysis on primary frame
@@ -554,28 +560,39 @@ class SpriteMindPipeline:
             return None
 
     @staticmethod
-    def _upscale_frame(frame: Dict[str, Any], design_dim: int, width: int, height: int) -> Dict[str, Any]:
-        """Enlarges a design-space frame by repeating pixels.
+    def _upscale_frame(
+        frame: Dict[str, Any], design_dim: int, width: int, height: int, shade: bool = True
+    ) -> Dict[str, Any]:
+        """Lightens the rim, then enlarges a design-space frame by repeating pixels.
 
         Programs are authored at 32 px, so an enlarged frame is the same art at a
         larger canvas. Redrawing a scaled script instead would thin the one-pixel
         strokes and open seams between parts.
         """
         scale = max(1, min(int(width), int(height)) // max(1, int(design_dim)))
-        if scale <= 1:
+        if scale <= 1 and not shade:
             return frame
 
-        def enlarge(data_uri: str) -> str:
+        def load(data_uri: str) -> Image.Image:
             payload = data_uri.split(",", 1)[-1]
-            image = Image.open(io.BytesIO(base64.b64decode(payload))).convert("RGBA")
-            image = image.resize((image.width * scale, image.height * scale), Image.NEAREST)
+            return Image.open(io.BytesIO(base64.b64decode(payload))).convert("RGBA")
+
+        def dump(image: Image.Image) -> str:
             buffer = io.BytesIO()
             image.save(buffer, format="PNG")
             return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
 
+        def enlarge(data_uri: str, light: bool) -> str:
+            image = load(data_uri)
+            if light:
+                image = Image.fromarray(apply_lighting(np.array(image), None), mode="RGBA")
+            if scale > 1:
+                image = image.resize((image.width * scale, image.height * scale), Image.NEAREST)
+            return dump(image)
+
         out = dict(frame)
-        out["image_base64"] = enlarge(frame["image_base64"])
-        out["passes"] = {k: enlarge(v) for k, v in (frame.get("passes") or {}).items()}
+        out["image_base64"] = enlarge(frame["image_base64"], shade)
+        out["passes"] = {k: enlarge(v, False) for k, v in (frame.get("passes") or {}).items()}
         out["width"], out["height"] = int(width), int(height)
         if frame.get("script_text"):
             out["script_text"] = scale_script(frame["script_text"], scale)

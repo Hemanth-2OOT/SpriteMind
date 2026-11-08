@@ -57,6 +57,7 @@ def render(category: str, prompt: str, pipeline: SpriteMindPipeline | None = Non
         pose=POSE,
         palette_name=PALETTE,
         engine_mode="procedural_baseline",
+        shade=False,
         seed=SEED,
     )
     return decode_png(result["frames"][0]["image_base64"])
