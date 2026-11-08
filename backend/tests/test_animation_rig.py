@@ -230,12 +230,15 @@ def test_geometry_without_weapon_is_a_no_op():
     "anim", ["idle", "walk", "run", "cast", "dash", "melee_attack", "special_ability", "slime_bouncing"]
 )
 def test_rendered_limbs_stay_in_contact_with_their_parent(anim):
+    # A bent knee or elbow meets its parent corner-to-corner, i.e. diagonally at
+    # 1.41 px. Anything beyond that is a visible hole, not a joint.
+    diagonal = 2 ** 0.5 + 1e-6
     geometry = RigGeometry.from_script(_sample_script(), 32, 32, "pico8")
     for result in _frame_images(anim, frames=6):
         for child, (_, _, parent) in geometry.joints.items():
             gap = mask_min_distance(_mask(result, child), _mask(result, parent))
             assert gap is not None
-            assert gap <= 1.0, f"{anim}: {child} detached from {parent} by {gap} px"
+            assert gap <= diagonal, f"{anim}: {child} detached from {parent} by {gap} px"
 
 
 # --- API surface ---------------------------------------------------------------

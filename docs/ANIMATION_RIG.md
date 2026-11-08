@@ -191,10 +191,48 @@ is beautiful.
 Full backend suite: 399 passed. `ruff check` clean. Frontend `tsc --noEmit` and
 `npm run build` clean.
 
-## 6. What this does not fix
+## 6. Two-segment limbs and the stepped joint bend
 
-The rig corrects *attachment*, not *motion quality*. The walk cycle still has no
-knee/elbow articulation beyond the authored two-segment swings, and `cast` is
-unchanged (its hand barely moves, so there was nothing to correct). Interpolated
-in-betweens and two-bone IK remain future work in
-`docs/SPRITEMIND_IMPROVEMENT_ROADMAP.md`.
+Arms and legs are now generated as two segments each (`arm_*` + `forearm_*`,
+`leg_*` + `shin_*`), so an elbow and a knee exist as real parts with their own
+socket. The equipment follows the hand: `weapon` is declared under
+`forearm_left`/`forearm_right` (previously the upper arm), which is what makes a
+staff stay in the hand rather than near the shoulder.
+
+`rig.apply_limb_flex` then gives the lower segment the whole transform of its
+upper segment — a segment must *follow* its parent even when it does not bend,
+or the limb breaks apart as soon as the pose rotates. On a slow swing it also
+adds a one- or two-pixel sideways lag, which is how low-resolution pixel art
+shows a bent joint. The lag is skipped above `MAX_FLEX_SWING = 18°`: at a fast
+swing a stepped joint shatters the silhouette instead of reading as a bend.
+`coherence.build_frame_script` keeps the bent pose only when it adds no island
+and changes at most `BEND_PIXEL_BUDGET = 6` pixels versus the attached pose.
+
+Measured over 4 characters × 7 animations × 6 frames (seed 3, `pico8`):
+
+| Check | Result |
+| --- | --- |
+| Frames that are a single connected island | 168 / 168 |
+| Island regressions versus the previous commit | 0 |
+| Weapon-to-hand gap (median / max) | 1 px / 2 px |
+| Pixels changed versus the previous commit, `idle` | 0 |
+| Pixels changed, `melee_attack` / `dash` / `walk` | ≤ 20 per frame |
+| Pixels changed, `run` (fastest swing) | up to ~72 per frame |
+
+The run-cycle figure is the honest limit of this approach: the lower leg follows
+the upper leg rigidly, but the renderer rotates each part about its own anchor,
+so it cannot carry a true two-bone solution. A real knee angle needs the
+transform of a child to be composed through its parent's rotation — see
+`docs/OPEN_SOURCE_MOTION_RESEARCH.md`.
+
+Before/after contact sheet:
+`docs/assets/animation_limb_articulation_before_after.png` (top: previous
+commit, bottom: this change; rows are knight/walk, knight/run,
+knight/melee_attack, wizard/cast).
+
+## 7. What this does not fix
+
+The rig corrects attachment and adds a stepped joint bend; it does not add true
+knee/elbow rotation, interpolated in-betweens or two-bone IK. `cast` is
+unchanged apart from the limb seam (its hand barely moves). Subjective motion
+quality was not judged by a human in this milestone.

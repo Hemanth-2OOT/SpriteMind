@@ -26,7 +26,7 @@ in the rest pose, i.e. the actual point of contact the character was drawn with.
 """
 import math
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 from spritemind.renderer.engine import PixelScriptEngine
 
@@ -38,8 +38,23 @@ Offset = Tuple[int, int, int]
 # so adding the arm's rotation on top would double it (95 deg). Cloth must not
 # rotate with the torso at all.
 ATTACHMENTS: Dict[str, Dict[str, object]] = {
-    "weapon": {"parent": "arm_right", "inherit_rotation": False},
+    "weapon": {"parent": "forearm_right", "inherit_rotation": False},
     "accessory": {"parent": "torso", "inherit_rotation": False},
+}
+
+# Second limb segments (elbow / knee) and how they follow the first segment:
+# (parent, pixels of lag per degree of swing, maximum lag). A stiff one-piece
+# limb reads as a swinging stick. Stepping the lower segment sideways as the
+# upper one swings is how low-resolution pixel art shows a bent elbow or knee:
+# rotating a 2-3 px wide segment instead shatters it into diagonal holes.
+# Swings past this are fast enough that a stepped joint shatters the silhouette
+# instead of reading as a bend; those frames stay on the rigid pose.
+MAX_FLEX_SWING = 18
+LIMB_CHAINS: Dict[str, Tuple[str, float, int]] = {
+    "forearm_left": ("arm_left", 0.06, 1),
+    "forearm_right": ("arm_right", 0.06, 1),
+    "shin_left": ("leg_left", 0.06, 2),
+    "shin_right": ("leg_right", 0.06, 2),
 }
 
 # A body part may drift this many pixels beyond the gap it was drawn with before
@@ -83,6 +98,27 @@ def _closest_pair(a, b) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
                 best_d = d
                 best = ((ax, ay), (bx, by))
     return best
+
+
+def apply_limb_flex(offsets: Dict[str, Offset]) -> Dict[str, Offset]:
+    """Makes the second segment follow the first, then bends the joint.
+
+    A segment with no authored motion of its own inherits the whole transform of
+    its upper segment, so the limb stays a limb however hard it swings. On a slow
+    swing the lower segment also lags a pixel or two, which is what reads as a
+    bent elbow or knee. An explicit pose always wins.
+    """
+    out = dict(offsets)
+    for child, (parent, per_degree, max_px) in LIMB_CHAINS.items():
+        pdx, pdy, prot = out.get(parent, (0, 0, 0))
+        if out.get(child, (0, 0, 0)) != (0, 0, 0):
+            continue
+        lag = 0
+        if prot and abs(prot) <= MAX_FLEX_SWING:
+            lag = max(-max_px, min(max_px, int(round(-per_degree * prot))))
+        if (pdx, pdy, prot) != (0, 0, 0):
+            out[child] = (pdx + lag, pdy, prot)
+    return out
 
 
 @dataclass
@@ -147,14 +183,18 @@ class RigGeometry:
             depth += 1
         return depth
 
-    def _snap_joints(self, out: Dict[str, Offset]) -> None:
+    def _snap_joints(self, out: Dict[str, Offset], slack: float = JOINT_STRAY_SLACK,
+                     only: Optional[Set[str]] = None) -> None:
         """Pull a body part back when it drifts off its parent.
 
         The child keeps the offset vector it was drawn with; only drift beyond
-        ``JOINT_STRAY_SLACK`` is removed, so a rigid parent translation still
-        moves the limb by exactly the same amount.
+        ``slack`` is removed, so a rigid parent translation still moves the limb
+        by exactly the same amount. ``slack=0`` pins the contact exactly, which
+        is what a bent elbow or knee needs.
         """
         for child in sorted(self.joints, key=self._depth):
+            if only is not None and child not in only:
+                continue
             grip, socket, parent = self.joints[child]
             anchor_c = self.anchors.get(child, (0, 0))
             anchor_p = self.anchors.get(parent, (0, 0))
@@ -176,14 +216,36 @@ class RigGeometry:
             ex = target_x - child_x
             ey = target_y - child_y
             err = math.hypot(ex, ey)
-            if err <= JOINT_STRAY_SLACK or err == 0:
+            if err <= slack or err == 0:
                 continue
-            keep = JOINT_STRAY_SLACK / err
+            keep = slack / err
             out[child] = (
                 int(round(cdx + ex * (1.0 - keep))),
                 int(round(cdy + ey * (1.0 - keep))),
                 crot,
             )
+
+    def _apply_limb_flex(self, out: Dict[str, Offset]) -> None:
+        for child, (_parent, _ratio, _max) in LIMB_CHAINS.items():
+            if child not in self.joints:
+                continue
+            bent = apply_limb_flex({child: out.get(child, (0, 0, 0)),
+                                    LIMB_CHAINS[child][0]: out.get(LIMB_CHAINS[child][0], (0, 0, 0))})
+            if child in bent:
+                out[child] = bent[child]
+
+    def snap_limb_chains(
+        self, offsets: Dict[str, Offset], only: Optional[Set[str]] = None
+    ) -> Dict[str, Offset]:
+        """Pins every elbow/knee exactly onto its parent, keeping the rotation.
+
+        The frame stabilizer works part by part and can leave a bent segment a
+        couple of pixels proud of its upper segment. Re-pinning them afterwards
+        is cheap and is what keeps the joint closed in the rendered frame.
+        """
+        out = dict(offsets)
+        self._snap_joints(out, slack=0.0, only=set(LIMB_CHAINS) if only is None else only)
+        return out
 
     def resolve(self, offsets: Dict[str, Offset]) -> Dict[str, Offset]:
         """Returns offsets with joints kept in contact, then attachments socketed.
@@ -192,6 +254,7 @@ class RigGeometry:
         so the body has to be settled before the equipment follows it.
         """
         out = dict(offsets)
+        self._apply_limb_flex(out)
         self._snap_joints(out)
         for child, cfg in ATTACHMENTS.items():
             if child not in self.sockets:
@@ -232,6 +295,8 @@ def compose_socketed_offsets(
 __all__ = [
     "ATTACHMENTS",
     "JOINT_STRAY_SLACK",
+    "LIMB_CHAINS",
+    "apply_limb_flex",
     "RigGeometry",
     "compose_socketed_offsets",
     "part_parent_map",
