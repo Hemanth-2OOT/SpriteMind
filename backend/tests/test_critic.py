@@ -153,3 +153,35 @@ def test_eyes_far_from_head_are_still_reported():
     assert {"stray_pixel", "disconnected_part"} & {
         d["type"] for d in report["detected_defects"]
     }
+
+
+def test_two_segment_limb_is_measured_against_its_own_parent():
+    # A shin sits four rows below the torso by design; it hangs off the leg.
+    script = """LAYER 0 base 1.00
+PART torso none 16 14
+RECT 13 14 6 8 10 1
+PART leg_left torso 13 22
+RECT 13 22 2 3 2 1
+PART shin_left leg_left 13 25
+RECT 13 25 2 4 2 1
+PART leg_right torso 17 22
+RECT 17 22 2 3 2 1
+PART shin_right leg_right 17 25
+RECT 17 25 2 4 2 1"""
+    report = _analyze(script)
+
+    assert [d for d in report["detected_defects"] if d["type"] == "disconnected_part"] == []
+
+
+def test_a_shin_gap_to_its_own_leg_is_still_reported():
+    script = """LAYER 0 base 1.00
+PART torso none 16 14
+RECT 13 14 6 8 10 1
+PART leg_left torso 13 22
+RECT 13 22 2 3 2 1
+PART shin_left leg_left 13 25
+RECT 13 29 2 2 2 1"""
+    report = _analyze(script)
+
+    descriptions = [d.get("description", "") for d in report["detected_defects"]]
+    assert any("shin_left" in d and "leg_left" in d for d in descriptions)
