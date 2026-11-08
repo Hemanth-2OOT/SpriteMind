@@ -88,7 +88,7 @@ the branch it describes and `main` is untouched. Say the word if it should inste
 
 ## 5. Test results
 
-- `pytest backend/tests` — **314 tests, all passing**, coverage **73.4 %** (floor 71 %;
+- `pytest backend/tests` — **318 tests, all passing**, coverage **73.4 %** (floor 71 %;
   73.37 % and 73.44 % on two consecutive runs, 7548 statements, 2214 branches). Suite unchanged from the R13 commit: no test was removed,
   skipped or weakened.
 - `ruff check backend scripts` — clean.
