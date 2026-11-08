@@ -50,8 +50,8 @@ def test_api_generate_endpoint():
         style="classic_16bit",
         pose="idle",
         palette="pico8",
-        width=32,
-        height=32,
+        width=64,
+        height=64,
         num_frames=2,
         engine="procedural_baseline",
     )
@@ -65,9 +65,9 @@ def test_api_generate_endpoint():
 
 def test_api_render_endpoint():
     req = RenderRequest(
-        script_text="RECT 4 4 8 8 1 1\nPIXEL 6 6 2",
-        width=16,
-        height=16,
+        script_text="RECT 8 8 16 16 1 1\nPIXEL 12 12 2",
+        width=64,
+        height=64,
         palette="pico8",
     )
     data = render(req)

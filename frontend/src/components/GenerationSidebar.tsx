@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { GenerationResult } from '../types';
+import { SPRITE_SIZE } from '../config/sprite';
 import { fetchHistory, deleteHistoryRun, clearHistory } from '../services/api';
 
 interface GenerationSidebarProps {
@@ -66,7 +67,6 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
   const [category, setCategory] = useState('zombie');
   // Prompt keywords pick the archetype until the user chooses one explicitly.
   const [categoryPinned, setCategoryPinned] = useState(false);
-  const [resolution, setResolution] = useState<number>(64);
   const [style, setStyle] = useState('classic_16bit');
   const [perspective, setPerspective] = useState('front');
   const [pose, setPose] = useState('idle');
@@ -114,8 +114,8 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
       style: run.style || 'classic_16bit',
       pose: run.pose || 'idle',
       palette: run.palette || 'pico8',
-      width: resolution,
-      height: resolution,
+      width: SPRITE_SIZE,
+      height: SPRITE_SIZE,
       num_frames: run.num_frames || 1,
       engine: selectedEngine,
       seed: nextSeed,
@@ -165,8 +165,8 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
       style,
       pose,
       palette,
-      width: resolution,
-      height: resolution,
+      width: SPRITE_SIZE,
+      height: SPRITE_SIZE,
       num_frames: numFrames,
       engine: selectedEngine,
       seed: runSeed,
@@ -268,18 +268,9 @@ export const GenerationSidebar: React.FC<GenerationSidebarProps> = ({
 
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-300">Resolution</label>
-            <div className="grid grid-cols-3 gap-1 bg-dark-950 p-1 rounded-md border border-dark-750">
-              {[16, 32, 64].map((res) => (
-                <button
-                  key={res}
-                  onClick={() => setResolution(res)}
-                  className={`py-1 text-[10px] font-mono rounded transition-colors ${
-                    resolution === res ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {res}
-                </button>
-              ))}
+            <div className="flex items-center justify-between rounded-md border border-dark-750 bg-dark-950 px-2 py-1.5 font-mono text-[10px] text-slate-300">
+              <span>{SPRITE_SIZE} × {SPRITE_SIZE} px</span>
+              <span className="text-slate-600">fixed</span>
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ from spritemind.pixelscript.transform import mirror_script
 from spritemind.renderer.engine import PixelScriptEngine
 from spritemind.renderer.export import array_to_base64, export_gif
 from spritemind.renderer.lighting import apply_lighting
+from spritemind.renderer.polish import polish
 from spritemind.pixelscript.scaling import DESIGN_SIZE, scale_script
 
 
@@ -171,8 +172,8 @@ class ActionSetBuilder:
                 if fx:
                     script = f"{script}\n{fx}"
             result = PixelScriptEngine.execute(script, width=design_w, height=design_h, palette_name=plan.palette)
-            data = result.to_dict(include_passes=True, scale=scale, shade=True)
-            lit = apply_lighting(result.composite_array, result.canvas.palette)
+            data = result.to_dict(include_passes=True, scale=scale, shade=True, clean=True)
+            lit = polish(apply_lighting(result.composite_array, result.canvas.palette), result.canvas.palette)
             if facing == "left":
                 # Mirroring the pixels is exact; mirroring the script and redrawing
                 # every frame is not, because one-pixel strokes do not survive it.

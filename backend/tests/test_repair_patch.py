@@ -46,8 +46,10 @@ def test_patch_is_inside_the_program_not_appended_after_it():
 
 def test_patch_changes_rendered_pixels():
     script = _generated_script()
-    patched = engine.apply_patch_to_script(script, "RECT 20 9 1 4 0 1")
     before = PixelScriptEngine.execute(script, palette_name="pico8").composite_array
+    rows, cols = np.nonzero(before[..., 3])
+    patch = f"RECT {int(cols.mean())} {int(rows.mean())} 2 2 0 1"
+    patched = engine.apply_patch_to_script(script, patch)
     after = PixelScriptEngine.execute(patched, palette_name="pico8").composite_array
     assert np.any(before != after)
 

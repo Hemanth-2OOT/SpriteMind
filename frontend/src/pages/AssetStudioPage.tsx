@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
+import { SPRITE_SIZE } from '../config/sprite';
 
 interface AssetRecord {
   asset_id: string;
@@ -376,8 +377,8 @@ export const AssetStudioPage: React.FC = () => {
                 <div
                   className="relative shadow-2xl rounded"
                   style={{
-                    width: 32 * 10,
-                    height: 32 * 10,
+                    width: SPRITE_SIZE * 10,
+                    height: SPRITE_SIZE * 10,
                     backgroundImage: `
                       linear-gradient(45deg, #151824 25%, transparent 25%),
                       linear-gradient(-45deg, #151824 25%, transparent 25%),

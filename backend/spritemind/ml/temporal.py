@@ -444,7 +444,7 @@ class TemporalAnimator:
                 f_res = PixelScriptEngine.execute(
                     frame_script, width=frame_w, height=frame_h, palette_name=palette_name
                 )
-                f_dict = f_res.to_dict(include_passes=True, scale=res_scale)
+                f_dict = f_res.to_dict(include_passes=True, scale=res_scale, clean=True)
                 f_dict["width"], f_dict["height"] = width, height
                 f_dict["script_text"] = scale_script(frame_script, res_scale)
                 f_dict["frame_index"] = f_idx
@@ -471,7 +471,7 @@ class TemporalAnimator:
                 f_res = PixelScriptEngine.execute(
                     frame_script, width=frame_w, height=frame_h, palette_name=palette_name
                 )
-                f_dict = f_res.to_dict(include_passes=True, scale=res_scale)
+                f_dict = f_res.to_dict(include_passes=True, scale=res_scale, clean=True)
                 f_dict["width"], f_dict["height"] = width, height
                 f_dict["script_text"] = scale_script(frame_script, res_scale)
                 f_dict["frame_index"] = f_idx

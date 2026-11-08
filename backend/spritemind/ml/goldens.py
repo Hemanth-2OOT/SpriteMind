@@ -59,6 +59,10 @@ def render(category: str, prompt: str, pipeline: SpriteMindPipeline | None = Non
         engine_mode="procedural_baseline",
         shade=False,
         seed=SEED,
+        # The frozen references were recorded at the 32 px design size; the
+        # product canvas is 64 px, so the size stays explicit here.
+        width=32,
+        height=32,
     )
     return decode_png(result["frames"][0]["image_base64"])
 

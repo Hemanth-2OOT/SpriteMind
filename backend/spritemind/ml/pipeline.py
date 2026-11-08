@@ -26,6 +26,7 @@ from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.scaling import scale_script
 from spritemind.renderer.lighting import apply_lighting
+from spritemind.renderer.polish import polish
 from spritemind.assets.faithfulness import COLOUR_TARGETS, colour_faithfulness
 from spritemind.assets.faithfulness import _matches as _colour_matches
 from spritemind.utils.palettes import PALETTES
@@ -153,13 +154,9 @@ class SpriteMindPipeline:
         elif "dark" in prompt_lower or "fantasy" in prompt_lower:
             detected_style = "dark_fantasy"
 
-        # Dimensions
-        dim = 32
-        match_dim = re.search(r"(\d+)\s*x\s*(\d+)", prompt_lower)
-        if match_dim:
-            dim = int(match_dim.group(1))
-            if dim not in (16, 32, 64):
-                dim = 32
+        # Dimensions: the renderer only produces 64 px sprites, so a size
+        # mentioned in the prompt is acknowledged but never changes the canvas.
+        dim = 64
 
         # Palette
         palette = "pico8"
@@ -191,8 +188,8 @@ class SpriteMindPipeline:
         style: Optional[str] = None,
         pose: Optional[str] = None,
         palette_name: Optional[str] = None,
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
         num_frames: int = 1,
         engine_mode: str = "procedural_baseline",  # "trained_model" | "untrained_model" | "procedural_baseline"
         seed: int = 42,
@@ -288,8 +285,8 @@ class SpriteMindPipeline:
         style: Optional[str] = None,
         pose: Optional[str] = None,
         palette_name: Optional[str] = None,
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
         num_frames: int = 1,
         engine_mode: str = "procedural_baseline",  # "trained_model" | "untrained_model" | "procedural_baseline"
         seed: int = 42,
@@ -311,7 +308,7 @@ class SpriteMindPipeline:
         final_style = style or parsed.get("style", "classic_16bit")
         final_pose = pose or parsed.get("pose", "idle")
         final_palette = palette_name or parsed.get("palette", "pico8")
-        final_dim = parsed.get("dimension", width)
+        final_dim = width
         final_colour = parsed.get("colour")
         final_element = parsed.get("element")
         final_weapon = parsed.get("weapon")
@@ -452,8 +449,8 @@ class SpriteMindPipeline:
         palette: str,
         max_actions: int,
         seed: int,
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
         best_of: int = 1,
         temperature: float = 0.9,
         top_k: int = 0,
@@ -585,7 +582,7 @@ class SpriteMindPipeline:
         def enlarge(data_uri: str, light: bool) -> str:
             image = load(data_uri)
             if light:
-                image = Image.fromarray(apply_lighting(np.array(image), None), mode="RGBA")
+                image = Image.fromarray(polish(apply_lighting(np.array(image), None)), mode="RGBA")
             if scale > 1:
                 image = image.resize((image.width * scale, image.height * scale), Image.NEAREST)
             return dump(image)
@@ -599,7 +596,7 @@ class SpriteMindPipeline:
         out["pixel_count"] = int(frame.get("pixel_count", 0)) * scale * scale
         return out
 
-    def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32) -> float:
+    def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 64, height: int = 64) -> float:
         """Structural-only score. Kept for callers that do not want the colour/critic terms."""
         res = self._render_candidate(prog, palette, width, height)
         if res is None:
@@ -610,8 +607,8 @@ class SpriteMindPipeline:
         self,
         prog: PixelScriptProgram,
         palette: str,
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
         category: str = "knight",
         colour: Optional[str] = None,
         prompt_text: str = "",
@@ -637,8 +634,8 @@ class SpriteMindPipeline:
         self,
         prog: PixelScriptProgram,
         palette: str,
-        width: int = 32,
-        height: int = 32,
+        width: int = 64,
+        height: int = 64,
         category: str = "knight",
         colour: Optional[str] = None,
         prompt_text: str = "",

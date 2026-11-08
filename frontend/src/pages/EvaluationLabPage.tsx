@@ -279,7 +279,7 @@ export const EvaluationLabPage: React.FC = () => {
                                 style={{ imageRendering: 'pixelated' }}
                               />
                             ) : (
-                              <div className="text-[10px] text-slate-600">32×32 RGBA</div>
+                              <div className="text-[10px] text-slate-600">64×64 RGBA</div>
                             )}
                           </div>
 
@@ -305,7 +305,7 @@ export const EvaluationLabPage: React.FC = () => {
                                 style={{ imageRendering: 'pixelated' }}
                               />
                             ) : (
-                              <div className="text-[10px] text-slate-600">32×32 RGBA</div>
+                              <div className="text-[10px] text-slate-600">64×64 RGBA</div>
                             )}
                           </div>
 
@@ -335,7 +335,7 @@ export const EvaluationLabPage: React.FC = () => {
                                 style={{ imageRendering: 'pixelated' }}
                               />
                             ) : (
-                              <div className="text-[10px] text-purple-300/50">32×32 RGBA</div>
+                              <div className="text-[10px] text-purple-300/50">64×64 RGBA</div>
                             )}
                           </div>
 

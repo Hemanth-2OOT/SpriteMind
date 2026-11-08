@@ -6,6 +6,7 @@ from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.validator import PixelScriptValidator, ValidationReport
 from spritemind.renderer.canvas import PixelCanvas
 from spritemind.renderer.lighting import apply_lighting
+from spritemind.renderer.polish import polish
 from spritemind.renderer.passes import RenderPasses
 from spritemind.renderer.export import array_to_base64
 
@@ -27,10 +28,18 @@ class RenderResult:
     def composite_array(self) -> np.ndarray:
         return self.canvas.composite()
 
-    def to_dict(self, include_passes: bool = True, scale: int = 1, shade: bool = False) -> Dict[str, Any]:
+    def to_dict(
+        self,
+        include_passes: bool = True,
+        scale: int = 1,
+        shade: bool = False,
+        clean: bool = False,
+    ) -> Dict[str, Any]:
         comp = self.composite_array
         if shade:
             comp = apply_lighting(comp, self.canvas.palette)
+        if clean:
+            comp = polish(comp, self.canvas.palette)
         out = {
             "width": self.canvas.width,
             "height": self.canvas.height,

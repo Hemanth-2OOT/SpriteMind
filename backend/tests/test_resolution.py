@@ -113,3 +113,23 @@ def test_the_animation_api_delivers_a_64_canvas():
         image = Image.open(io.BytesIO(base64.b64decode(data))).convert("RGBA")
         alpha = np.array(image)[..., 3] > 0
         assert _islands(alpha) == 1
+
+
+def test_requests_below_64_are_rejected():
+    import pytest
+
+    for schema in (
+        GenerateRequest, ActionSetRequest, AnimationGenerateRequest, RenderRequest,
+        CompositionRequest, CompositionAnimationRequest,
+    ):
+        for size in (16, 32):
+            with pytest.raises(Exception):
+                schema(width=size, height=size)
+            assert schema.model_fields["width"].default == 64
+
+
+def test_a_size_in_the_prompt_does_not_change_the_canvas():
+    from spritemind.ml.pipeline import SpriteMindPipeline
+
+    parsed = SpriteMindPipeline.parse_prompt(SpriteMindPipeline, "a 32x32 knight in a 16x16 room")
+    assert parsed["dimension"] == 64
