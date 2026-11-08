@@ -69,7 +69,7 @@ Every local branch head was compared with `git ls-remote --heads origin`; all ma
 | `lemon/r10-retrain-v4` | `e7bc2b1` | same | #28 | `lemon/audit-r4r5r6` | open |
 | `lemon/r11-colour-recovery` | `f794dd4` | same | #29 | `lemon/r10-retrain-v4` | open |
 | `lemon/r12-coverage-rerank` | `3668a81` | same | #30 | `lemon/r11-colour-recovery` | open |
-| `lemon/r13-candidate-diversity` | `a35c0b1` (+ this commit, `2d4c4fa`) | same | #31 | `lemon/r12-coverage-rerank` | open |
+| `lemon/r13-candidate-diversity` | `a35c0b1` + release-readiness doc commits | same | #31 | `lemon/r12-coverage-rerank` | open |
 | `lemon/category-report-card` | `be509a0` | same | — | — | no PR |
 | `lemon/element-aura` | `6b89075` | same | — | — | no PR, not an ancestor of `main` |
 | `lemon/onion-skin-export` | `6f827c0` | same | — | — | no PR (merged as #16 on `main`) |
@@ -81,7 +81,7 @@ was rewritten. Remote-tracking was repaired locally: `remote.origin.fetch` had b
 `main` only, which made every other branch look un-pushed; it was widened to
 `+refs/heads/*:refs/remotes/origin/*` (local git config only, no repository content change).
 
-**Branch destination for this commit:** the only branch that is both the tip of the open PR stack
+**Branch destination for these commits:** the only branch that is both the tip of the open PR stack
 and free of other in-flight work is `lemon/r13-candidate-diversity` (PR #31). The maintenance
 commit was therefore appended there rather than to `main`, so the release paperwork travels with
 the branch it describes and `main` is untouched. Say the word if it should instead go to `main`.
