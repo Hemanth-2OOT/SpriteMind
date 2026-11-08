@@ -10,8 +10,8 @@ class GenerateRequest(BaseModel):
     style: Optional[str] = "classic_16bit"
     pose: Optional[str] = "idle"
     palette: Optional[str] = "pico8"
-    width: int = Field(default=32, ge=16, le=64)
-    height: int = Field(default=32, ge=16, le=64)
+    width: int = Field(default=64, ge=16, le=64)
+    height: int = Field(default=64, ge=16, le=64)
     num_frames: int = Field(default=1, ge=1, le=16)
     engine: str = Field(default="procedural_baseline")  # procedural_baseline | trained_model | untrained_model
     seed: int = 42
@@ -26,8 +26,8 @@ class ActionSetRequest(BaseModel):
     category: Optional[str] = None
     style: Optional[str] = None
     palette: Optional[str] = None
-    width: int = Field(default=32, ge=16, le=64)
-    height: int = Field(default=32, ge=16, le=64)
+    width: int = Field(default=64, ge=16, le=64)
+    height: int = Field(default=64, ge=16, le=64)
     engine: str = Field(default="procedural_baseline")
     seed: int = 42
     actions: Optional[List[str]] = None
@@ -39,23 +39,23 @@ class ActionSetRequest(BaseModel):
 class RefineRequest(BaseModel):
     script_text: str
     suggested_fix: Optional[str] = None
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
     palette: str = "pico8"
 
 
 class RenderRequest(BaseModel):
     script_text: str
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
     palette: str = "pico8"
     scale: int = 1
 
 
 class ExportRequest(BaseModel):
     frames_scripts: List[str]
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
     palette: str = "pico8"
     format: str = "png"  # "png" | "spritesheet" | "gif" | "json" | "onion"
     scale: int = 1
@@ -66,8 +66,8 @@ class ExportRequest(BaseModel):
 
 class ActionSheetRequest(BaseModel):
     actions: Dict[str, List[str]]
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
     palette: str = "pico8"
     scale: int = 1
     padding: int = 1
@@ -108,8 +108,8 @@ class InspectRequest(BaseModel):
     category: str = "knight"
     palette: str = "pico8"
     palette_name: Optional[str] = None
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
 
 
 class CriticRepairRequest(BaseModel):
@@ -120,8 +120,8 @@ class CriticRepairRequest(BaseModel):
     category: str = "knight"
     palette: str = "pico8"
     palette_name: Optional[str] = None
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
 
 
 class AnimationGenerateRequest(BaseModel):
@@ -131,8 +131,8 @@ class AnimationGenerateRequest(BaseModel):
     style: Optional[str] = "classic_16bit"
     animation_category: str = "walk"
     palette: Optional[str] = "pico8"
-    width: int = Field(default=32, ge=16, le=64)
-    height: int = Field(default=32, ge=16, le=64)
+    width: int = Field(default=64, ge=16, le=64)
+    height: int = Field(default=64, ge=16, le=64)
     num_frames: int = Field(default=6, ge=2, le=16)
     fps: int = Field(default=8, ge=1, le=30)
     engine: str = Field(default="trained_model")  # trained_model | untrained_model | procedural_baseline
@@ -159,8 +159,8 @@ class CompositionRequest(BaseModel):
     fx_id: Optional[str] = None
     engine: str = Field(default="trained_model")  # trained_model | untrained_model | procedural_baseline | hybrid
     palette: str = "pico8"
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
 
 
 class CompositionAnimationRequest(BaseModel):
@@ -175,8 +175,8 @@ class CompositionAnimationRequest(BaseModel):
     fx_id: Optional[str] = None
     engine: str = Field(default="trained_model")
     palette: str = "pico8"
-    width: int = 32
-    height: int = 32
+    width: int = 64
+    height: int = 64
 
 
 class AssetPackExportRequest(BaseModel):

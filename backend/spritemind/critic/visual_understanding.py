@@ -304,6 +304,16 @@ class VisualUnderstandingPipeline:
                         tb_cmp = head.bounding_box
                     else:
                         tb_cmp = tb
+                    # A distal segment is attached to its own parent (a shin to a
+                    # leg, a forearm to an arm), not to the torso; measuring it
+                    # against the torso reported every two-segment limb as floating.
+                    ref_name = "torso"
+                    declared = getattr(part, "parent", None)
+                    if pname not in HEAD_MOUNTED_PARTS and declared and declared != "torso":
+                        ref_part = parts_dict.get(declared)
+                        if ref_part is not None and ref_part.bounding_box:
+                            tb_cmp = ref_part.bounding_box
+                            ref_name = declared
                     dx = max(0, tb_cmp["min_x"] - pb["max_x"], pb["min_x"] - tb_cmp["max_x"])
                     dy = max(0, tb_cmp["min_y"] - pb["max_y"], pb["min_y"] - tb_cmp["max_y"])
                     gap = max(dx, dy)
@@ -330,7 +340,7 @@ class VisualUnderstandingPipeline:
                             "severity": "critical" if gap > 5 else "moderate",
                             "confidence": 0.94,
                             "anchor": "head" if pname in HEAD_MOUNTED_PARTS else "torso",
-                            "description": f"Anatomical part '{pname}' is disconnected from {'head' if pname in HEAD_MOUNTED_PARTS else 'torso'} by a {gap}px spatial gap",
+                            "description": f"Anatomical part '{pname}' is disconnected from {'head' if pname in HEAD_MOUNTED_PARTS else ref_name} by a {gap}px spatial gap",
                             "bbox": pb,
                             "affected_pixels": [],
                             "suggested_fix": f"TRANSFORM {pname} {shift_x} {shift_y} 0",

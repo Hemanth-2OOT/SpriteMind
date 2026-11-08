@@ -24,6 +24,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { FrameData, VisualCriticReport, ModelsInfo } from '../types';
+import { SPRITE_SIZE } from '../config/sprite';
 
 interface PropertiesSidebarProps {
   currentFrame: FrameData | null;
@@ -150,7 +151,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Dimensions</span>
                 <span className="text-slate-200 font-mono font-semibold">
-                  {currentFrame?.width || 32} × {currentFrame?.height || 32} px
+                  {currentFrame?.width || SPRITE_SIZE} × {currentFrame?.height || SPRITE_SIZE} px
                 </span>
               </div>
               <div className="flex items-center justify-between">

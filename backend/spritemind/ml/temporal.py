@@ -24,12 +24,16 @@ from spritemind.dataset.temporal_dataset import (
     CYCLIC_ANIMATIONS,
     TemporalDatasetGenerator,
 )
+from spritemind.animations import resolve_animation_name
+from spritemind.pixelscript.rig import RigGeometry
 logger = logging.getLogger(__name__)
 
 from spritemind.pixelscript.ast import PixelAction, ActionType, PixelScriptProgram
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.coherence import build_frame_script
+from spritemind.pixelscript.scaling import DESIGN_SIZE, scale_script
+from spritemind.pixelscript.rig import resolution_scale
 from spritemind.renderer.engine import PixelScriptEngine
 from spritemind.paths import DEFAULT_CHECKPOINTS, resolve_checkpoints_dir
 
@@ -296,11 +300,17 @@ class TemporalAnimator:
         element: Optional[str] = None,
         weapon: Optional[str] = None,
         accessory: Optional[str] = None,
+        rig_mode: str = "socketed",  # "socketed" | "flat"
     ) -> Dict[str, Any]:
-        """Generates an end-to-end animation with explicit engine attribution."""
+        """Generates an end-to-end animation with explicit engine attribution.
+
+        ``rig_mode="socketed"`` resolves equipment against the actual transformed
+        hand/torso position (see ``pixelscript/rig.py``); ``"flat"`` reproduces the
+        historical absolute-offset behaviour.
+        """
         start_time = time.perf_counter()
-        if anim_category not in ANIMATION_CATEGORIES:
-            anim_category = "walk"
+        requested_animation = anim_category
+        anim_category, animation_aliased = resolve_animation_name(anim_category)
         if category not in CATEGORIES:
             category = "knight"
 
@@ -327,6 +337,17 @@ class TemporalAnimator:
             )
             base_script = PixelScriptSerializer.serialize_program(base_prog)
             base_res = PixelScriptEngine.execute(base_script, width=width, height=height, palette_name=palette_name)
+
+        res_scale = resolution_scale(width, height)
+        # Pose the rig where it was authored, then redraw at the requested size:
+        # re-resolving the motion at 64 px moves every joint by its own rounded
+        # amount and can tear a limb off the body.
+        frame_w, frame_h = (DESIGN_SIZE, DESIGN_SIZE) if res_scale > 1 else (width, height)
+        rig_geometry = None
+        if rig_mode == "socketed":
+            rig_geometry = RigGeometry.from_script(
+                base_script, width=frame_w, height=frame_h, palette_name=palette_name
+            )
 
         # 2. Compute motion trajectory per frame
         frames_out: List[Dict[str, Any]] = []
@@ -407,12 +428,17 @@ class TemporalAnimator:
                     if dx != 0 or dy != 0 or rot != 0:
                         frame_offsets[part_name] = (dx, dy, rot)
 
+                if rig_geometry is not None:
+                    frame_offsets = rig_geometry.resolve(frame_offsets)
                 frame_script = build_frame_script(
-                    base_script, frame_offsets, width=width, height=height, palette_name=palette_name
+                    base_script, frame_offsets, width=frame_w, height=frame_h, palette_name=palette_name
                 )
-                f_res = PixelScriptEngine.execute(frame_script, width=width, height=height, palette_name=palette_name)
-                f_dict = f_res.to_dict(include_passes=True)
-                f_dict["script_text"] = frame_script
+                f_res = PixelScriptEngine.execute(
+                    frame_script, width=frame_w, height=frame_h, palette_name=palette_name
+                )
+                f_dict = f_res.to_dict(include_passes=True, scale=res_scale)
+                f_dict["width"], f_dict["height"] = width, height
+                f_dict["script_text"] = scale_script(frame_script, res_scale)
                 f_dict["frame_index"] = f_idx
                 f_dict["phase"] = round(phase_vals[f_idx], 3)
                 frames_out.append(f_dict)
@@ -424,12 +450,17 @@ class TemporalAnimator:
             for f_idx in range(num_frames):
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
                 offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
+                if rig_geometry is not None:
+                    offsets = rig_geometry.resolve(offsets)
                 frame_script = build_frame_script(
-                    base_script, offsets, width=width, height=height, palette_name=palette_name
+                    base_script, offsets, width=frame_w, height=frame_h, palette_name=palette_name
                 )
-                f_res = PixelScriptEngine.execute(frame_script, width=width, height=height, palette_name=palette_name)
-                f_dict = f_res.to_dict(include_passes=True)
-                f_dict["script_text"] = frame_script
+                f_res = PixelScriptEngine.execute(
+                    frame_script, width=frame_w, height=frame_h, palette_name=palette_name
+                )
+                f_dict = f_res.to_dict(include_passes=True, scale=res_scale)
+                f_dict["width"], f_dict["height"] = width, height
+                f_dict["script_text"] = scale_script(frame_script, res_scale)
                 f_dict["frame_index"] = f_idx
                 f_dict["phase"] = round(phase, 3)
                 frames_out.append(f_dict)
@@ -441,6 +472,9 @@ class TemporalAnimator:
             "engine_used": actual_engine,
             "category": category,
             "animation_category": anim_category,
+            "requested_animation": requested_animation,
+            "animation_aliased": animation_aliased,
+            "rig_mode": rig_mode,
             "num_frames": len(frames_out),
             "fps": fps,
             "is_looping": is_looping,

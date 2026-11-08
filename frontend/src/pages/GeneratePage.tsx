@@ -13,6 +13,7 @@ import {
   inspectSpriteApi,
   repairSpriteApi,
 } from '../services/api';
+import { SPRITE_SIZE } from '../config/sprite';
 
 interface GeneratePageProps {
   modelsInfo: ModelsInfo | null;
@@ -262,8 +263,8 @@ export const GeneratePage: React.FC<GeneratePageProps> = ({
     try {
       const res = await exportAsset({
         frames_scripts: frames.map((f) => f.script_text),
-        width: currentFrame?.width || 32,
-        height: currentFrame?.height || 32,
+        width: currentFrame?.width || SPRITE_SIZE,
+        height: currentFrame?.height || SPRITE_SIZE,
         palette: 'pico8',
         format,
         scale: 4,

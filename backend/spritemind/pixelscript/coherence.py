@@ -7,11 +7,13 @@ This module takes the proposed per-part offsets for one frame and returns the
 closest set that keeps every part attached to its parent and intact.
 """
 import math
+from functools import lru_cache
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from spritemind.pixelscript.ast import ActionType, PixelAction
 from spritemind.pixelscript.parser import PixelScriptParser
 from spritemind.pixelscript.serializer import PixelScriptSerializer
+from spritemind.pixelscript.rig import resolution_scale
 from spritemind.renderer.engine import PixelScriptEngine
 
 Offset = Tuple[int, int, int]
@@ -57,7 +59,7 @@ def _rasterize(
     return pixels, parents
 
 
-def _distance(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]) -> int:
+def _distance(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]], limit: int = MAX_ATTACH_DISTANCE) -> int:
     """Smallest Manhattan gap between two pixel sets (0 or 1 means touching)."""
     if not a or not b:
         return 10**6
@@ -68,7 +70,7 @@ def _distance(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]) -> int:
                 d = abs(ay - by) + abs(ax - bx)
                 if d < best:
                     best = d
-                    if best <= MAX_ATTACH_DISTANCE:
+                    if best <= limit:
                         return best
         return best
     # Cheap path for big parts: compare bounding boxes.
@@ -179,11 +181,13 @@ def _resolve(
         # four floating specks that still passed a loose component budget.
         return _components(own) <= base_components.get(name, 1)
 
+    attach_limit = MAX_ATTACH_DISTANCE * resolution_scale(width, height)
+
     def attached(name: str, pixels: Dict[str, Set[Tuple[int, int]]]) -> bool:
         parent = parents.get(name)
         if parent is None or parent not in pixels:
             return True
-        return _distance(pixels.get(name, set()), pixels[parent]) <= MAX_ATTACH_DISTANCE
+        return _distance(pixels.get(name, set()), pixels[parent], attach_limit) <= attach_limit
 
     for _ in range(2):
         changed = False
@@ -232,6 +236,9 @@ def stabilize_offsets(
     if not any(any(v) for v in offsets.values()):
         return dict(offsets)
 
+    from spritemind.pixelscript.rig import apply_limb_flex
+
+    offsets = apply_limb_flex(offsets, resolution_scale(width, height))
     base_pixels, parents = _rasterize(base_script, {}, width, height, palette_name)
     base_islands, _ = _frame_stats(base_script, {}, width, height, palette_name)
     best: Optional[Dict[str, Offset]] = None
@@ -255,6 +262,114 @@ def stabilize_offsets(
 
 
 
+@lru_cache(maxsize=8)
+def _geometry_for(base_script: str, width: int, height: int, palette_name: str):
+    from spritemind.pixelscript.rig import RigGeometry
+
+    return RigGeometry.from_script(base_script, width, height, palette_name)
+
+
+def _snap_limb_chains(
+    base_script: str,
+    offsets: Dict[str, Offset],
+    width: int = 32,
+    height: int = 32,
+    palette_name: str = "pico8",
+) -> Dict[str, Offset]:
+    """Closes elbows and knees after the per-part stabilizer has run."""
+    if not offsets:
+        return dict(offsets)
+    return _geometry_for(base_script, width, height, palette_name).snap_limb_chains(offsets)
+
+
+MAX_JOINT_GAP = 2 ** 0.5 + 1e-6
+# A bent joint may move a handful of pixels; it may not restyle the whole frame.
+BEND_PIXEL_BUDGET = 6
+
+
+def _closest_offset(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]):
+    """Vector from the nearest pixel of ``a`` to the nearest pixel of ``b``."""
+    if not a or not b:
+        return None
+    best = None
+    best_d = float("inf")
+    for ax, ay in a:
+        for bx, by in b:
+            d = (ax - bx) ** 2 + (ay - by) ** 2
+            if d < best_d:
+                best_d = d
+                best = (bx - ax, by - ay)
+    return best, best_d ** 0.5
+
+
+def _closest_contact(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]):
+    """Nearest pixel pair under 8-connected adjacency, which is what joins pixels."""
+    if not a or not b:
+        return None
+    best = None
+    best_d = float("inf")
+    for ax, ay in a:
+        for bx, by in b:
+            d = max(abs(ax - bx), abs(ay - by))
+            if d < best_d:
+                best_d = d
+                best = (bx - ax, by - ay)
+    return best, best_d
+
+
+def _close_joint_gaps(
+    base_script: str,
+    offsets: Dict[str, Offset],
+    width: int = 32,
+    height: int = 32,
+    palette_name: str = "pico8",
+) -> Dict[str, Offset]:
+    """Pulls a bent elbow or knee until the rendered pixels actually touch.
+
+    Rotating a two-pixel-wide forearm drags its contact row off the parent grid,
+    so a purely geometric pin can still leave a one-pixel hole. Measuring the
+    rendered masks and nudging the child is the only reliable check.
+    """
+    out = dict(offsets)
+    for _ in range(6):
+        result = PixelScriptEngine.execute(
+            _script_with_offsets(base_script, out), width=width, height=height, palette_name=palette_name
+        )
+        parts = result.canvas.parts
+        # Any part that floats off its declared parent gets pulled back, not just
+        # elbows and knees: a 64 px canvas doubles every offset, so an attached
+        # limb can drift a seam away from the body it belongs to.
+        chains = {name for name, part in parts.items() if part.parent and part.parent in parts}
+        moved = False
+        nudge: Dict[str, Tuple[int, int]] = {}
+        for child in chains:
+            if child not in parts:
+                continue
+            parent = parts[child].parent
+            if not parent or parent not in parts:
+                continue
+            nearest = _closest_contact(parts[child].pixels, parts[parent].pixels)
+            if nearest is None:
+                continue
+            delta, gap = nearest
+            if gap <= 1:
+                continue
+            dx, dy, rot = out.get(child, (0, 0, 0))
+            out[child] = (dx + delta[0], dy + delta[1], rot)
+            nudge[child] = delta
+            moved = True
+        # A prop or lower segment is transformed in absolute canvas space, so it
+        # has to follow the part it hangs from or the nudge tears it off again.
+        for child, part in parts.items():
+            if child in nudge or part.parent not in nudge:
+                continue
+            dx, dy, rot = out.get(child, (0, 0, 0))
+            out[child] = (dx + nudge[part.parent][0], dy + nudge[part.parent][1], rot)
+        if not moved:
+            break
+    return out
+
+
 def build_frame_script(
     base_script: str,
     offsets: Dict[str, Offset],
@@ -262,6 +377,30 @@ def build_frame_script(
     height: int = 32,
     palette_name: str = "pico8",
 ) -> str:
-    """Stabilize the offsets for one frame and return the frame script."""
-    stable = stabilize_offsets(base_script, offsets, width=width, height=height, palette_name=palette_name)
-    return _script_with_offsets(base_script, stable)
+    """Stabilize the offsets for one frame and return the frame script.
+
+    A second segment must follow its upper segment even when it does not bend,
+    otherwise the limb breaks apart as soon as the pose rotates. The elbow and
+    knee lag is laid over that attached pose and kept only when it costs no
+    silhouette integrity, so a bent joint never tears a held-together frame.
+    """
+    from spritemind.pixelscript.rig import apply_limb_flex
+
+    plain = stabilize_offsets(base_script, offsets, width=width, height=height, palette_name=palette_name)
+    zero = _snap_limb_chains(base_script, plain, width, height, palette_name)
+    lagged = apply_limb_flex(zero, resolution_scale(width, height))
+    if lagged == zero:
+        return _script_with_offsets(base_script, zero)
+    bent = _close_joint_gaps(
+        base_script,
+        _snap_limb_chains(base_script, lagged, width, height, palette_name),
+        width,
+        height,
+        palette_name,
+    )
+    zero_islands, zero_count = _frame_stats(base_script, zero, width, height, palette_name)
+    bent_islands, bent_count = _frame_stats(base_script, bent, width, height, palette_name)
+    budget = BEND_PIXEL_BUDGET * resolution_scale(width, height) ** 2
+    if bent_islands > zero_islands or abs(bent_count - zero_count) > budget:
+        return _script_with_offsets(base_script, zero)
+    return _script_with_offsets(base_script, bent)

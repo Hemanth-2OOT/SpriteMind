@@ -21,9 +21,110 @@ PROPORTIONS = ["standard", "stocky", "slender", "chibi"]
 WEAPONS = ["sword", "staff", "axe", "dagger", "shield", "bow", "none"]
 ACCESSORIES = ["helmet", "cape", "horns", "wings", "backpack", "pauldrons", "none"]
 
+# The anatomy below is authored in a 32 px design space; a larger canvas scales
+# it up by an integer factor so a 64x64 sprite is the same character with twice
+# the pixel budget instead of a small figure on a big empty canvas. The default
+# stays at the design size because the frozen dataset and evaluation pipelines
+# are built on 32 px frames; every user-facing entry point asks for 64.
+DESIGN_SIZE = 32
+
+
+def _scale_program(actions: List[PixelAction], scale: int) -> List[PixelAction]:
+    """Multiplies every drawing coordinate by ``scale``.
+
+    Canvas-wide operations (SHADE, OUTLINE, AURA) already carry the real canvas
+    size, so they are left alone.
+    """
+    if scale == 1:
+        return actions
+
+    def s(value: int) -> int:
+        return int(round(value * scale))
+
+    out: List[PixelAction] = []
+    for action in actions:
+        params = dict(action.params)
+        if action.action_type == ActionType.PIXEL:
+            params.update(x=s(params["x"]), y=s(params["y"]))
+        elif action.action_type in (ActionType.RECT, ActionType.ERASE):
+            params.update(
+                x=s(params["x"]), y=s(params["y"]),
+                w=max(1, s(params.get("w", 1))), h=max(1, s(params.get("h", 1))),
+            )
+        elif action.action_type == ActionType.LINE:
+            params.update(
+                x0=s(params["x0"]), y0=s(params["y0"]),
+                x1=s(params["x1"]), y1=s(params["y1"]),
+            )
+        elif action.action_type == ActionType.PART:
+            params.update(anchor_x=s(params["anchor_x"]), anchor_y=s(params["anchor_y"]))
+        out.append(PixelAction(action.action_type, params))
+    return out
+
+
+def _clip_ops(ops, y_lo: int, y_hi: int):
+    """Restricts drawing ops to the rows ``[y_lo, y_hi)``.
+
+    Used to split a limb drawn as one rectangle into an upper and a lower
+    segment without changing a single output pixel.
+    """
+    clipped = []
+    for kind, params in ops:
+        if kind == ActionType.RECT:
+            top = max(params["y"], y_lo)
+            bottom = min(params["y"] + params["h"], y_hi)
+            if bottom <= top:
+                continue
+            clipped.append((kind, {**params, "y": top, "h": bottom - top}))
+        elif kind == ActionType.PIXEL:
+            if y_lo <= params["y"] < y_hi:
+                clipped.append((kind, dict(params)))
+        elif kind == ActionType.LINE:
+            y0, y1 = params["y0"], params["y1"]
+            if y0 == y1:
+                if y_lo <= y0 < y_hi:
+                    clipped.append((kind, dict(params)))
+                continue
+            top = max(min(y0, y1), y_lo)
+            bottom = min(max(y0, y1) + 1, y_hi)
+            if bottom <= top:
+                continue
+            clipped.append((kind, {**params, "y0": top, "y1": bottom - 1}))
+    return clipped
+
 
 class CharacterGenerator:
     """Generates complete structured PixelScript programs for characters, animals, and fantasy creatures."""
+
+    @classmethod
+    def _emit_two_segment_limb(
+        cls,
+        actions: List[PixelAction],
+        upper_name: str,
+        lower_name: str,
+        parent: str,
+        x: int,
+        y: int,
+        split: int,
+        height: int,
+        ops: List[Tuple[ActionType, Dict[str, Any]]],
+    ):
+        """Emits one limb as an upper and a lower part sharing the same pixel band.
+
+        Splitting the rectangle at ``split`` is pixel-neutral, but it gives the
+        elbow/knee a real pivot: the lower part is anchored on the split row and
+        parented to the upper part, so rig.py can rotate it.
+        """
+        for name, band_top, band_bottom, band_parent in (
+            (upper_name, y, y + split, parent),
+            (lower_name, y + split, y + height, upper_name),
+        ):
+            actions.append(PixelAction(ActionType.PART, {
+                "name": name, "parent": band_parent, "anchor_x": x, "anchor_y": band_top,
+            }))
+            for kind, params in _clip_ops(ops, band_top, band_bottom):
+                actions.append(PixelAction(kind, params))
+            actions.append(PixelAction(ActionType.END, {"target": "PART"}))
 
     @classmethod
     def _finishing_pass(
@@ -169,8 +270,9 @@ class CharacterGenerator:
             c_pants = c_skin
             c_eyes = rng.choice([11, 9, 8])
 
-        cx = width // 2
-        cy = height // 2
+        scale = max(1, min(width, height) // DESIGN_SIZE)
+        cx = DESIGN_SIZE // 2
+        cy = DESIGN_SIZE // 2
 
         # Conditioned colour override: prompt words win over the category default ramp.
         if colour or element:
@@ -277,7 +379,7 @@ class CharacterGenerator:
 
             cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-            return PixelScriptProgram(actions=actions, metadata=meta)
+            return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)
 
         # -------------------------------------------------------------
         # 2. SPECIAL CASE: SLIME (blob)
@@ -305,7 +407,7 @@ class CharacterGenerator:
 
             cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
             actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-            return PixelScriptProgram(actions=actions, metadata=meta)
+            return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)
 
         # -------------------------------------------------------------
         # 3. BIPED HUMAN/CREATURE ANATOMY (Knights, Zombies, Rogues, Wizards, Robots, Skeletons, Goblins, Fantasy Creatures)
@@ -413,45 +515,60 @@ class CharacterGenerator:
             actions.append(PixelAction(ActionType.LINE, {"x0": tx - 1, "y0": ty + 1, "x1": tx - 2, "y1": ty + torso_h + 2, "color": 9}))
             actions.append(PixelAction(ActionType.LINE, {"x0": tx + torso_w, "y0": ty + 1, "x1": tx + torso_w + 1, "y1": ty + torso_h + 2, "color": 9}))
 
-        # Arms
+        # Arms. Each arm is a single pixel band split into an upper arm and a
+        # forearm: identical composite pixels, but the elbow now has a pivot.
+        arm_split = max(1, min(arm_h - 1, arm_h // 2))
         al_x = tx - arm_w
         al_y = ty + 1 + arm_l_dy
-        actions.append(PixelAction(ActionType.PART, {"name": "arm_left", "parent": "torso", "anchor_x": al_x, "anchor_y": al_y}))
-        actions.append(PixelAction(ActionType.RECT, {"x": al_x, "y": al_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": al_x, "y": al_y + arm_h - 1, "color": c_skin}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": al_x, "y": al_y, "color": c_skin_hi}))
-        actions.append(PixelAction(ActionType.LINE, {"x0": al_x, "y0": al_y + arm_h - 2, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 2, "color": 8}))
-        actions.append(PixelAction(ActionType.LINE, {"x0": al_x + arm_w - 1, "y0": al_y + 1, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 1, "color": c_pants}))
-        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
+        left_arm_ops = [
+            (ActionType.RECT, {"x": al_x, "y": al_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}),
+            (ActionType.PIXEL, {"x": al_x, "y": al_y + arm_h - 1, "color": c_skin}),
+            (ActionType.PIXEL, {"x": al_x, "y": al_y, "color": c_skin_hi}),
+            (ActionType.LINE, {"x0": al_x, "y0": al_y + arm_h - 2, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 2, "color": 8}),
+            (ActionType.LINE, {"x0": al_x + arm_w - 1, "y0": al_y + 1, "x1": al_x + arm_w - 1, "y1": al_y + arm_h - 1, "color": c_pants}),
+        ]
+        cls._emit_two_segment_limb(
+            actions, "arm_left", "forearm_left", "torso", al_x, al_y, arm_split, arm_h, left_arm_ops
+        )
 
         ar_x = tx + torso_w
         ar_y = ty + 1 + arm_r_dy
-        actions.append(PixelAction(ActionType.PART, {"name": "arm_right", "parent": "torso", "anchor_x": ar_x, "anchor_y": ar_y}))
-        actions.append(PixelAction(ActionType.RECT, {"x": ar_x, "y": ar_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y + arm_h - 1, "color": c_skin}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y, "color": c_skin_hi}))
-        actions.append(PixelAction(ActionType.LINE, {"x0": ar_x, "y0": ar_y + 1, "x1": ar_x, "y1": ar_y + arm_h - 1, "color": c_pants}))
-        actions.append(PixelAction(ActionType.LINE, {"x0": ar_x, "y0": ar_y + arm_h - 2, "x1": ar_x + arm_w - 1, "y1": ar_y + arm_h - 2, "color": 8}))
-        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
+        right_arm_ops = [
+            (ActionType.RECT, {"x": ar_x, "y": ar_y, "w": arm_w, "h": arm_h, "color": c_cloth, "filled": True}),
+            (ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y + arm_h - 1, "color": c_skin}),
+            (ActionType.PIXEL, {"x": ar_x + arm_w - 1, "y": ar_y, "color": c_skin_hi}),
+            (ActionType.LINE, {"x0": ar_x, "y0": ar_y + 1, "x1": ar_x, "y1": ar_y + arm_h - 1, "color": c_pants}),
+            (ActionType.LINE, {"x0": ar_x, "y0": ar_y + arm_h - 2, "x1": ar_x + arm_w - 1, "y1": ar_y + arm_h - 2, "color": 8}),
+        ]
+        cls._emit_two_segment_limb(
+            actions, "arm_right", "forearm_right", "torso", ar_x, ar_y, arm_split, arm_h, right_arm_ops
+        )
 
-        # Legs
+        # Legs, split the same way so the knee can bend.
+        leg_split = max(1, min(leg_h - 1, leg_h // 2))
         ll_x = tx + leg_l_dx
         ll_y = ty + torso_h
-        actions.append(PixelAction(ActionType.PART, {"name": "leg_left", "parent": "torso", "anchor_x": ll_x, "anchor_y": ll_y}))
-        actions.append(PixelAction(ActionType.RECT, {"x": ll_x, "y": ll_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}))
-        actions.append(PixelAction(ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": ll_x, "y": ll_y + 1, "color": 8}))
-        actions.append(PixelAction(ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
-        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
+        left_leg_ops = [
+            (ActionType.RECT, {"x": ll_x, "y": ll_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}),
+            (ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}),
+            (ActionType.PIXEL, {"x": ll_x, "y": ll_y + 1, "color": 8}),
+            (ActionType.RECT, {"x": ll_x - 1, "y": ll_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}),
+        ]
+        cls._emit_two_segment_limb(
+            actions, "leg_left", "shin_left", "torso", ll_x, ll_y, leg_split, leg_h, left_leg_ops
+        )
 
         lr_x = tx + torso_w - leg_w + leg_r_dx
         lr_y = ty + torso_h
-        actions.append(PixelAction(ActionType.PART, {"name": "leg_right", "parent": "torso", "anchor_x": lr_x, "anchor_y": lr_y}))
-        actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}))
-        actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
-        actions.append(PixelAction(ActionType.PIXEL, {"x": lr_x + leg_w - 1, "y": lr_y + 1, "color": 8}))
-        actions.append(PixelAction(ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}))
-        actions.append(PixelAction(ActionType.END, {"target": "PART"}))
+        right_leg_ops = [
+            (ActionType.RECT, {"x": lr_x, "y": lr_y, "w": leg_w, "h": leg_h, "color": c_pants, "filled": True}),
+            (ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 1, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}),
+            (ActionType.PIXEL, {"x": lr_x + leg_w - 1, "y": lr_y + 1, "color": 8}),
+            (ActionType.RECT, {"x": lr_x, "y": lr_y + leg_h - 2, "w": leg_w + 1, "h": 1, "color": c_outline, "filled": True}),
+        ]
+        cls._emit_two_segment_limb(
+            actions, "leg_right", "shin_right", "torso", lr_x, lr_y, leg_split, leg_h, right_leg_ops
+        )
 
         # Weapon
         if wep != "none":
@@ -461,7 +578,7 @@ class CharacterGenerator:
             offhand = wep == "shield"
             actions.append(PixelAction(ActionType.PART, {
                 "name": "weapon",
-                "parent": "arm_left" if offhand else "arm_right",
+                "parent": "forearm_left" if offhand else "forearm_right",
                 "anchor_x": al_x - 3 if offhand else ar_x + arm_w,
                 "anchor_y": al_y if offhand else ar_y + 2,
             }))
@@ -499,4 +616,4 @@ class CharacterGenerator:
 
         cls._finishing_pass(actions, c_outline, width, height, element, palette_name, seed)
         actions.append(PixelAction(ActionType.END, {"target": "PROGRAM"}))
-        return PixelScriptProgram(actions=actions, metadata=meta)
+        return PixelScriptProgram(actions=_scale_program(actions, scale), metadata=meta)

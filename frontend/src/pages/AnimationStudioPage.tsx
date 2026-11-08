@@ -24,6 +24,7 @@ import {
   Save,
 } from 'lucide-react';
 import { FrameData } from '../types';
+import { SPRITE_SIZE } from '../config/sprite';
 import {
   generateAnimationApi,
   regenerateFrameApi,
@@ -86,6 +87,7 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
 }) => {
   const [frames, setFrames] = useState<FrameData[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const spriteSize = frames[currentFrameIndex]?.width || SPRITE_SIZE;
   const [isPlaying, setIsPlaying] = useState(false);
   const [fps, setFps] = useState(8);
   const [isLooping, setIsLooping] = useState(true);
@@ -154,8 +156,8 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
         category: charCategory,
         animation_category: animCategory,
         palette: 'pico8',
-        width: 32,
-        height: 32,
+        width: spriteSize,
+        height: spriteSize,
         num_frames: 6,
         fps,
         engine: engineMode,
@@ -234,8 +236,8 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
     try {
       const rendered = await renderScript({
         script_text: editedScript,
-        width: 32,
-        height: 32,
+        width: spriteSize,
+        height: spriteSize,
         palette: 'pico8',
       });
       const updated = [...frames];
@@ -254,8 +256,8 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
     try {
       const res = await exportAsset({
         frames_scripts: frames.map((f) => f.script_text),
-        width: 32,
-        height: 32,
+        width: spriteSize,
+        height: spriteSize,
         palette: 'pico8',
         format,
         scale: 4,
@@ -466,8 +468,8 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
             <div
               className="relative shadow-2xl rounded"
               style={{
-                width: 32 * scale,
-                height: 32 * scale,
+                width: spriteSize * scale,
+                height: spriteSize * scale,
                 backgroundImage: `
                   linear-gradient(45deg, #151824 25%, transparent 25%),
                   linear-gradient(-45deg, #151824 25%, transparent 25%),

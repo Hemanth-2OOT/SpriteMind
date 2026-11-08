@@ -1,5 +1,7 @@
 """Generation Pipeline coordinating Neural SVAN and Procedural Engines."""
+import base64
 import copy
+import io
 import os
 import time
 import re
@@ -19,8 +21,10 @@ from spritemind.dataset.conditioning import parse_conditioning, colour_id, eleme
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction, ActionType
 from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.renderer.export import array_to_base64
+from PIL import Image
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
+from spritemind.pixelscript.scaling import scale_script
 from spritemind.assets.faithfulness import COLOUR_TARGETS, colour_faithfulness
 from spritemind.assets.faithfulness import _matches as _colour_matches
 from spritemind.utils.palettes import PALETTES
@@ -398,6 +402,9 @@ class SpriteMindPipeline:
 
         total_time_ms = (time.perf_counter() - start_time) * 1000.0
 
+        frames_data = [self._upscale_frame(f, final_dim, width, height) for f in frames_data]
+        out_scale = max(1, min(int(width), int(height)) // max(1, int(final_dim)))
+
         # Visual Critic analysis on primary frame
         first_frame_res = PixelScriptEngine.execute(prog_frames[0], width=final_dim, height=final_dim, palette_name=final_palette)
         critic_analysis = self._run_critic(
@@ -415,7 +422,7 @@ class SpriteMindPipeline:
             "palette": final_palette,
             "colour": final_colour,
             "element": final_element,
-            "dimensions": {"width": final_dim, "height": final_dim},
+            "dimensions": {"width": final_dim * out_scale, "height": final_dim * out_scale},
             "num_frames": len(frames_data),
             "frames": frames_data,
             "critic": critic_analysis,
@@ -545,6 +552,35 @@ class SpriteMindPipeline:
             return PixelScriptEngine.execute(prog, width=width, height=height, palette_name=palette)
         except Exception:
             return None
+
+    @staticmethod
+    def _upscale_frame(frame: Dict[str, Any], design_dim: int, width: int, height: int) -> Dict[str, Any]:
+        """Enlarges a design-space frame by repeating pixels.
+
+        Programs are authored at 32 px, so an enlarged frame is the same art at a
+        larger canvas. Redrawing a scaled script instead would thin the one-pixel
+        strokes and open seams between parts.
+        """
+        scale = max(1, min(int(width), int(height)) // max(1, int(design_dim)))
+        if scale <= 1:
+            return frame
+
+        def enlarge(data_uri: str) -> str:
+            payload = data_uri.split(",", 1)[-1]
+            image = Image.open(io.BytesIO(base64.b64decode(payload))).convert("RGBA")
+            image = image.resize((image.width * scale, image.height * scale), Image.NEAREST)
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+            return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        out = dict(frame)
+        out["image_base64"] = enlarge(frame["image_base64"])
+        out["passes"] = {k: enlarge(v) for k, v in (frame.get("passes") or {}).items()}
+        out["width"], out["height"] = int(width), int(height)
+        if frame.get("script_text"):
+            out["script_text"] = scale_script(frame["script_text"], scale)
+        out["pixel_count"] = int(frame.get("pixel_count", 0)) * scale * scale
+        return out
 
     def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32) -> float:
         """Structural-only score. Kept for callers that do not want the colour/critic terms."""

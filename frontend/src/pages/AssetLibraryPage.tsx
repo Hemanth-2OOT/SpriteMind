@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AssetRecord } from '../types';
 import { fetchAssets, deleteAsset, exportAsset } from '../services/api';
+import { SPRITE_SIZE } from '../config/sprite';
 
 export const AssetLibraryPage: React.FC = () => {
   const [assets, setAssets] = useState<AssetRecord[]>([]);
@@ -48,8 +49,8 @@ export const AssetLibraryPage: React.FC = () => {
     try {
       const res = await exportAsset({
         frames_scripts: asset.frames.map((f) => f.script_text),
-        width: 32,
-        height: 32,
+        width: SPRITE_SIZE,
+        height: SPRITE_SIZE,
         palette: 'pico8',
         format,
         scale: 4,
@@ -185,7 +186,7 @@ export const AssetLibraryPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-slate-500">Dimensions:</span>
-                  <p className="text-cyan-400">32×32 px</p>
+                  <p className="text-cyan-400">{SPRITE_SIZE}×{SPRITE_SIZE} px</p>
                 </div>
               </div>
 

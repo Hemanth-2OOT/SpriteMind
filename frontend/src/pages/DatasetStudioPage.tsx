@@ -86,7 +86,7 @@ export const DatasetStudioPage: React.FC = () => {
             <div className="bg-dark-900 p-4 rounded-xl border border-dark-750 space-y-1">
               <span className="text-xs text-slate-400 font-medium">Total Samples</span>
               <div className="text-2xl font-bold text-white font-mono">{stats.total_samples}</div>
-              <p className="text-[11px] text-slate-500">32×32 RGBA Action Sequences</p>
+              <p className="text-[11px] text-slate-500">RGBA action sequences (training data)</p>
             </div>
 
             <div className="bg-dark-900 p-4 rounded-xl border border-dark-750 space-y-1">

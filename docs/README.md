@@ -15,6 +15,8 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`PROMPT_CONDITIONING.md`](PROMPT_CONDITIONING.md) — how colour and element tags from the prompt reach the training corpus and the model.
 - [`COLOUR_RECOVERY.md`](COLOUR_RECOVERY.md) — why neural colour faithfulness looked like it regressed, the selection-vs-coverage decomposition, and the steering experiment that recovered it (R11).
 - [`COVERAGE_RERANK.md`](COVERAGE_RERANK.md) — the coverage-aware reranking experiment: validation-tuned, held-out once, measured as a small and not-clearly-significant gain over the shipped ranking (R12).
+- [`ANIMATION_RIG.md`](ANIMATION_RIG.md) — animation-correctness milestone: animation names are resolved explicitly (`attack`/`hurt` no longer render a walk cycle) and equipment is attached to its parent limb through a socket rig and every body part is held in contact with its parent joint; before/after weapon-to-hand and joint-gap measurements. Two-segment limbs, hand-parented equipment and the guarded stepped joint bend are documented in section 6.
+- [`OPEN_SOURCE_MOTION_RESEARCH.md`](OPEN_SOURCE_MOTION_RESEARCH.md) — licence-audited survey of open-source 2D IK and skeletal-animation projects (FABRIK, CCD, DragonBones, Spine), why none of them drops into this renderer, what was adopted instead, and the ranked options for a true knee/elbow solve.
 - [`CANDIDATE_DIVERSITY.md`](CANDIDATE_DIVERSITY.md) — the candidate-pool diversity experiment: selection is already saturated at `best_of=4`, pool size barely moves coverage, temperature mixing does but costs critic cleanliness; includes the correction to R12's `selection_hit` (R13).
 
 ## Audits and release evidence
@@ -23,6 +25,13 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`RERANK_EVALUATION.md`](RERANK_EVALUATION.md) — the reranking ablation behind R4/R5: what the critic contributes, what colour-awareness contributes, and the measured cost of each.
 - [`RETRAIN_V4.md`](RETRAIN_V4.md) — the conditioned retrain (palette, colour, element, anatomical sockets): what was trained, what the gates rejected, and why no checkpoint was promoted.
 - [`../ROADMAP.md`](../ROADMAP.md) — the working backlog: the historical baseline, the current state, and every open objective with its `done when` test.
+
+## Open-source ecosystem research
+
+- [`OPEN_SOURCE_RESEARCH.md`](OPEN_SOURCE_RESEARCH.md) — the survey: sprite/animation tooling, sprite-sheet packers, perceptual metrics and pixel-art models that SpriteMind could learn from or reuse, with licences and maturity.
+- [`TECHNOLOGY_COMPARISON.md`](TECHNOLOGY_COMPARISON.md) — how those projects compare with what SpriteMind already does, category by category.
+- [`INTEGRATION_RECOMMENDATIONS.md`](INTEGRATION_RECOMMENDATIONS.md) — what is worth adopting, what is not, and the dependency cost of each option.
+- [`SPRITEMIND_IMPROVEMENT_ROADMAP.md`](SPRITEMIND_IMPROVEMENT_ROADMAP.md) — the resulting ordered improvement plan.
 
 ## Training and tuning
 
