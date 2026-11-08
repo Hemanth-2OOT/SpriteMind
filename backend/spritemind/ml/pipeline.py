@@ -21,6 +21,21 @@ from spritemind.renderer.engine import PixelScriptEngine, RenderResult
 from spritemind.renderer.export import array_to_base64
 from spritemind.pixelscript.serializer import PixelScriptSerializer
 from spritemind.pixelscript.parser import PixelScriptParser
+from spritemind.assets.faithfulness import colour_faithfulness
+from spritemind.utils.palettes import PALETTES
+
+
+# Rerank terms. The reference values are what an "average" candidate scores, so a
+# candidate that ignores the requested colour or that the critic rejects is pushed
+# down, and one that satisfies both is pushed up.
+COLOUR_RERANK_WEIGHT = 0.5
+COLOUR_RERANK_REFERENCE = 15.0
+CRITIC_RERANK_WEIGHT = 0.3
+CRITIC_RERANK_REFERENCE = 60.0
+# A pixel outside the palette is a hard defect, so a candidate loses this much per
+# leaked share of its opaque area. Measured: without it the colour term let 0.18%
+# of sprites through with off-palette pixels.
+PALETTE_LEAK_PENALTY = 40.0
 
 
 class SpriteMindPipeline:
@@ -169,6 +184,7 @@ class SpriteMindPipeline:
         best_of: int = 4,
         temperature: float = 0.9,
         top_k: int = 0,
+        use_critic: bool = True,
     ) -> Dict[str, Any]:
         """Generates a sprite, replaying a previous identical request from cache."""
         key = (
@@ -186,6 +202,7 @@ class SpriteMindPipeline:
             best_of,
             round(float(temperature), 3),
             int(top_k),
+            bool(use_critic),
         )
         if self._result_cache_size <= 0:
             result = self._generate_uncached(
@@ -201,6 +218,7 @@ class SpriteMindPipeline:
                 seed=seed,
                 max_actions=max_actions,
                 best_of=best_of,
+                use_critic=use_critic,
             )
             result["cache_hit"] = False
             return result
@@ -231,6 +249,7 @@ class SpriteMindPipeline:
             best_of=best_of,
             temperature=temperature,
             top_k=top_k,
+            use_critic=use_critic,
         )
         result["cache_hit"] = False
         self._result_cache[key] = copy.deepcopy(result)
@@ -256,6 +275,7 @@ class SpriteMindPipeline:
         temperature: float = 0.9,
         top_k: int = 0,
         procedural_guard: bool = True,
+        use_critic: bool = True,
     ) -> Dict[str, Any]:
         """Executes generation pipeline with explicit backend attribution."""
         start_time = time.perf_counter()
@@ -343,6 +363,7 @@ class SpriteMindPipeline:
                     prompt_text=prompt,
                     colour=final_colour,
                     element=final_element,
+                    use_critic=use_critic,
                 )
             prog_frames = [prog]
             res = PixelScriptEngine.execute(prog, width=final_dim, height=final_dim, palette_name=final_palette)
@@ -375,6 +396,11 @@ class SpriteMindPipeline:
             "frames": frames_data,
             "critic": critic_analysis,
             "candidate_source": candidate_source,
+            "rerank": {
+                "colour_weight": COLOUR_RERANK_WEIGHT,
+                "critic_weight": CRITIC_RERANK_WEIGHT if use_critic else 0.0,
+                "critic_used": bool(use_critic),
+            },
             "checkpoint_error": self.checkpoint_error,
             "inference_time_ms": round(total_time_ms, 2),
             "seed": seed,
@@ -398,34 +424,50 @@ class SpriteMindPipeline:
         prompt_text: str = "",
         colour: Optional[str] = None,
         element: Optional[str] = None,
+        use_critic: bool = True,
+        use_colour: bool = True,
     ) -> Tuple[PixelScriptProgram, str]:
         """Runs autoregressive token generation with SVAN transformer, optionally best-of-N reranked.
 
         With `procedural_guard` the procedural baseline enters the same rerank as
         one more candidate: it wins only when its score beats every sampled
         program, and the caller reports that through `candidate_source`.
+
+        Candidates are ranked on the rendered pixels: the structural heuristic plus
+        the share of pixels drawn in a colour the prompt asked for plus the visual
+        critic's quality score. `use_critic=False` disables the last term so the
+        critic's contribution can be measured on its own.
         """
         n = max(1, best_of)
         candidates = (
             self._sample_batch(
                 model, category, style, pose, max_actions, seed, temperature, n, top_k,
-                prompt_text, colour, element,
+                prompt_text, colour, element, palette=palette,
             )
             if n > 1
             else [
                 self._sample_tokens(
                     model, category, style, pose, max_actions, seed, temperature, top_k,
-                    prompt_text, colour, element,
+                    prompt_text, colour, element, palette=palette,
                 )
             ]
         )
 
+        rank = self._rerank_score if (n > 1 or procedural_guard) else None
         best_tokens: Optional[List[int]] = None
         best_score = float("-inf")
         for tokens in candidates:
             actions_cand = self.tokenizer.decode_tokens(tokens)
             prog_cand = PixelScriptProgram(actions=actions_cand)
-            score = self._score_candidate(prog_cand, palette, width, height)
+            score = (
+                rank(
+                    prog_cand, palette, width, height,
+                    category=category, colour=colour, prompt_text=prompt_text,
+                    use_critic=use_critic, use_colour=use_colour,
+                )
+                if rank is not None
+                else 0.0
+            )
             if score > best_score:
                 best_score, best_tokens = score, tokens
 
@@ -447,24 +489,95 @@ class SpriteMindPipeline:
             colour=colour,
             element=element,
         )
-        if self._score_candidate(guard_program, palette, width, height) > best_score:
+        guard_score = rank(
+            guard_program, palette, width, height,
+            category=category, colour=colour, prompt_text=prompt_text,
+            use_critic=use_critic, use_colour=use_colour,
+        )
+        if guard_score > best_score:
             return guard_program, "procedural_guard"
         return best_program, "neural"
 
+    def _render_candidate(
+        self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32
+    ) -> Optional[RenderResult]:
+        try:
+            return PixelScriptEngine.execute(prog, width=width, height=height, palette_name=palette)
+        except Exception:
+            return None
+
     def _score_candidate(self, prog: PixelScriptProgram, palette: str, width: int = 32, height: int = 32) -> float:
-        """Heuristic quality score used to rerank sampled candidates before rendering."""
+        """Structural-only score. Kept for callers that do not want the colour/critic terms."""
+        res = self._render_candidate(prog, palette, width, height)
+        if res is None:
+            return -100.0
+        return self._heuristic_score(prog, res, width, height)
+
+    def _rerank_score(
+        self,
+        prog: PixelScriptProgram,
+        palette: str,
+        width: int = 32,
+        height: int = 32,
+        category: str = "knight",
+        colour: Optional[str] = None,
+        prompt_text: str = "",
+        use_critic: bool = True,
+        use_colour: bool = True,
+    ) -> float:
+        """Structural score plus how much of the sprite is in a requested colour plus the critic's verdict.
+
+        Both extra terms are computed from the rendered pixels, so a candidate is
+        never rewarded for naming a colour it did not draw or for a critic score it
+        did not earn.
+        """
+        res = self._render_candidate(prog, palette, width, height)
+        if res is None:
+            return -100.0
+        score = self._heuristic_score(prog, res, width, height)
+
+        leak = self._palette_leak_share(res.composite_array, palette)
+        if leak is not None:
+            score -= PALETTE_LEAK_PENALTY * leak
+
+        requested = (colour or prompt_text) if use_colour else ""
+        if requested:
+            faith = colour_faithfulness(requested, res.composite_array)
+            if faith is not None:
+                score += COLOUR_RERANK_WEIGHT * (float(faith["score"]) - COLOUR_RERANK_REFERENCE)
+
+        if use_critic:
+            report = self._run_critic(res, prog, category=category, palette_name=palette)
+            quality = report.get("quality_score")
+            if isinstance(quality, (int, float)):
+                score += CRITIC_RERANK_WEIGHT * (float(quality) - CRITIC_RERANK_REFERENCE)
+        return score
+
+    def _palette_leak_share(self, rgba: np.ndarray, palette: str) -> Optional[float]:
+        """Share of opaque pixels whose RGB is not in the palette; None for an unknown palette."""
+        colours = PALETTES.get(palette)
+        if colours is None:
+            return None
+        opaque = rgba[:, :, 3] > 0
+        total = int(opaque.sum())
+        if total == 0:
+            return 0.0
+        allowed = {tuple(int(c) for c in rgb[:3]) for rgb in colours}
+        pixels = rgba[opaque][:, :3]
+        inside = sum(1 for pixel in pixels.tolist() if tuple(pixel) in allowed)
+        return (total - inside) / float(total)
+
+    def _heuristic_score(
+        self, prog: PixelScriptProgram, res: RenderResult, width: int = 32, height: int = 32
+    ) -> float:
+        """Structural score over an already-rendered candidate."""
         from spritemind.pixelscript.validator import PixelScriptValidator
 
         if not prog.actions:
             return -100.0
         report = PixelScriptValidator.validate(prog, canvas_width=width, canvas_height=height)
         score = 0.0 if report.is_valid else -20.0
-
-        try:
-            res = PixelScriptEngine.execute(prog, width=width, height=height, palette_name=palette)
-            alpha = res.composite_array[..., 3] > 0
-        except Exception:
-            return -100.0
+        alpha = res.composite_array[..., 3] > 0
 
         coverage = float(alpha.mean())
         if coverage < 0.06:
@@ -488,6 +601,22 @@ class SpriteMindPipeline:
         if not any(a.action_type.value == "END" for a in prog.actions):
             score -= 10.0
         return score
+
+    def _palette_index(self, model: SVANModel, palette: str) -> int:
+        """Index into the palette embedding, or 0 when the checkpoint never saw a palette label.
+
+        The shipped SVAN checkpoints were trained with `palette_idx == 0` for every
+        sample, so rows 1..N are untrained noise. Feeding them would change output
+        without carrying information, so they stay unused until a checkpoint is
+        trained on real palette labels and sets `palette_conditioning_trained`.
+        """
+        if not getattr(model, "palette_conditioning_trained", False):
+            return 0
+        names = list(PALETTES)
+        if palette not in names:
+            return 0
+        limit = model.semantic_encoder.palette_embed.num_embeddings
+        return min(names.index(palette), limit - 1)
 
     def _prompt_tensor(self, model: SVANModel, prompt_text: str) -> Optional[torch.Tensor]:
         """Character ids for the request, or None when the checkpoint has no text encoder."""
@@ -518,13 +647,14 @@ class SpriteMindPipeline:
         prompt_text: str = "",
         colour: Optional[str] = None,
         element: Optional[str] = None,
+        palette: str = "pico8",
     ) -> List[int]:
         """Sampling pass for one candidate program."""
         torch.manual_seed(seed)
         cat_idx = torch.tensor([CATEGORIES.index(category) if category in CATEGORIES else 0], device=self.device)
         style_idx = torch.tensor([STYLES.index(style) if style in STYLES else 0], device=self.device)
         pose_idx = torch.tensor([POSES.index(pose) if pose in POSES else 0], device=self.device)
-        pal_idx = torch.tensor([0], device=self.device)
+        pal_idx = torch.tensor([self._palette_index(model, palette)], device=self.device)
 
         with torch.inference_mode():
             memory = model.memory_tokens(
@@ -590,6 +720,7 @@ class SpriteMindPipeline:
         prompt_text: str = "",
         colour: Optional[str] = None,
         element: Optional[str] = None,
+        palette: str = "pico8",
     ) -> List[List[int]]:
         """Samples several candidate programs in one batched decode pass.
 
@@ -601,7 +732,7 @@ class SpriteMindPipeline:
         cat_idx = torch.tensor([CATEGORIES.index(category) if category in CATEGORIES else 0], device=self.device)
         style_idx = torch.tensor([STYLES.index(style) if style in STYLES else 0], device=self.device)
         pose_idx = torch.tensor([POSES.index(pose) if pose in POSES else 0], device=self.device)
-        pal_idx = torch.tensor([0], device=self.device)
+        pal_idx = torch.tensor([self._palette_index(model, palette)], device=self.device)
 
         transformer = model.action_transformer
         max_tokens = min(transformer.max_seq_len - 1, max_actions * 8)

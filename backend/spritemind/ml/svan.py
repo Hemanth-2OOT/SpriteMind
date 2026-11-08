@@ -352,8 +352,12 @@ class SVANModel(nn.Module):
         prompt_max_len: int = PROMPT_MAX_LEN,
         num_colours: int = NUM_COLOUR_IDS,
         num_elements: int = NUM_ELEMENT_IDS,
+        palette_conditioning: bool = False,
     ):
         super().__init__()
+        # True only for checkpoints whose dataset carried a real palette label per
+        # sample. The older checkpoints used palette_idx == 0 everywhere.
+        self.palette_conditioning_trained = palette_conditioning
         self.d_model = d_model
         self.vocab_size = vocab_size
         self.model_config = {
@@ -368,6 +372,7 @@ class SVANModel(nn.Module):
             "dropout": dropout,
             "prompt_text": prompt_text,
             "prompt_max_len": prompt_max_len,
+            "palette_conditioning": palette_conditioning,
         }
         self.semantic_encoder = SemanticEncoder(
             d_model=d_model, num_colours=num_colours, num_elements=num_elements
@@ -391,6 +396,7 @@ class SVANModel(nn.Module):
         keys = (
             "vocab_size", "d_model", "num_colours", "num_elements", "nhead", "num_layers",
             "dim_feedforward", "max_seq_len", "dropout", "prompt_text", "prompt_max_len",
+            "palette_conditioning",
         )
         return cls(**{k: config[k] for k in keys if k in config})
 
