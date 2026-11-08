@@ -137,6 +137,7 @@ class AnimationGenerateRequest(BaseModel):
     fps: int = Field(default=8, ge=1, le=30)
     engine: str = Field(default="trained_model")  # trained_model | untrained_model | procedural_baseline
     seed: int = 42
+    learned_rig: bool = False
 
 
 class RegenerateFrameRequest(BaseModel):

@@ -70,3 +70,29 @@ def test_the_prompt_changes_the_predicted_motion(head):
 def test_the_fixed_template_has_no_prompt_diversity():
     same = [rig_params.base_offsets("walk", 0.25, "knight") for _ in range(4)]
     assert rig_params.offset_diversity(same) == 0.0
+
+
+def test_offsets_for_matches_predict_and_keeps_every_part():
+    from spritemind.ml.rig_params import get_head, predict
+
+    expected = predict(get_head(), "walk", 0.3, "knight", "a heavy knight")
+    assert rig_params.offsets_for("walk", 0.3, "knight", "a heavy knight") == expected
+
+
+def test_the_learned_flag_changes_the_animation():
+    from spritemind.ml.temporal import TemporalAnimator
+
+    common = dict(
+        base_script_or_prompt="a lanky skeleton warrior",
+        category="skeleton",
+        anim_category="walk",
+        width=64,
+        height=64,
+        num_frames=4,
+        engine_mode="procedural_baseline",
+        seed=5,
+    )
+    plain = TemporalAnimator.generate_animation(**common)
+    learned = TemporalAnimator.generate_animation(learned_rig=True, prompt="a lanky skeleton warrior", **common)
+    assert [f["script_text"] for f in plain["frames"]] != [f["script_text"] for f in learned["frames"]]
+    assert len(learned["frames"]) == 4

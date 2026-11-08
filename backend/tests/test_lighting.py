@@ -58,3 +58,15 @@ def test_render_result_shades_only_when_asked():
     shaded = result.to_dict(shade=True)
     assert plain["image_base64"] != shaded["image_base64"]
     assert plain["pixel_count"] == shaded["pixel_count"]
+
+
+def test_zero_strength_is_the_flat_sprite():
+    comp, palette = _knight()
+    assert np.array_equal(apply_lighting(comp, palette, strength=0.0), comp)
+
+
+def test_strength_changes_the_result():
+    comp, palette = _knight()
+    assert not np.array_equal(
+        apply_lighting(comp, palette, strength=0.5), apply_lighting(comp, palette, strength=1.5)
+    )

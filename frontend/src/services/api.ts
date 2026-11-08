@@ -332,6 +332,7 @@ export async function generateAnimationApi(params: {
   fps?: number;
   engine?: string;
   seed?: number;
+  learned_rig?: boolean;
 }): Promise<any> {
   const res = await apiFetch(`${BASE_URL}/api/animation/generate`, {
     method: 'POST',

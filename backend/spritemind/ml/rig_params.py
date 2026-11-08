@@ -230,6 +230,27 @@ def predict(
     return result
 
 
+_HEAD: Optional[RigParameterHead] = None
+
+
+def get_head(steps: int = 800, samples: int = 4096, seed: int = 0) -> RigParameterHead:
+    """Trains the head once per process; deterministic because the seed is fixed."""
+    global _HEAD
+    if _HEAD is None:
+        model, _ = train(steps=steps, samples=samples, seed=seed)
+        model.eval()
+        _HEAD = model
+    return _HEAD
+
+
+def offsets_for(action: str, phase: float, category: str, prompt: str = "") -> Dict[str, Tuple[int, int, int]]:
+    """Offsets for one frame: learned per-part motion when available, else the analytic prior."""
+    try:
+        return predict(get_head(), action, phase, category, prompt)
+    except Exception:
+        return base_offsets(action, phase, category)
+
+
 def offset_diversity(offsets: Iterable[Dict[str, Tuple[int, int, int]]]) -> float:
     """Mean pairwise L2 distance between offsets; 0 means the prompt changes nothing."""
     items = list(offsets)

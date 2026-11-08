@@ -27,6 +27,8 @@ def generate_animation(req: AnimationGenerateRequest) -> Dict[str, Any]:
             fps=req.fps,
             engine_mode=req.engine,
             seed=req.seed,
+            learned_rig=req.learned_rig,
+            prompt=req.prompt or "",
         )
         return result
     except Exception as e:

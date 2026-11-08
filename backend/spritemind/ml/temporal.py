@@ -17,6 +17,7 @@ from spritemind.dataset.generator import (
     CATEGORIES,
     CharacterGenerator,
 )
+from spritemind.ml import rig_params
 from spritemind.ml.checkpoint_manifest import describe as describe_checkpoint
 
 from spritemind.dataset.temporal_dataset import (
@@ -301,6 +302,8 @@ class TemporalAnimator:
         weapon: Optional[str] = None,
         accessory: Optional[str] = None,
         rig_mode: str = "socketed",  # "socketed" | "flat"
+        learned_rig: bool = False,  # opt-in: prompt-conditioned rig parameters
+        prompt: str = "",
     ) -> Dict[str, Any]:
         """Generates an end-to-end animation with explicit engine attribution.
 
@@ -389,7 +392,12 @@ class TemporalAnimator:
             # Synthesize frames using model-predicted trajectories with kinematic prior calibration
             for f_idx in range(num_frames):
                 phase = phase_vals[f_idx]
-                prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
+                if learned_rig:
+                    prior_offsets = rig_params.offsets_for(anim_category, phase, category, prompt)
+                else:
+                    prior_offsets = TemporalDatasetGenerator.compute_motion_offsets(
+                        anim_category, phase, category=category
+                    )
                 
                 frame_offsets: Dict[str, Tuple[int, int, int]] = {}
 
@@ -449,7 +457,12 @@ class TemporalAnimator:
             ident_conf = 0.90
             for f_idx in range(num_frames):
                 phase = f_idx / float(num_frames) if is_looping else f_idx / float(max(1, num_frames - 1))
-                offsets = TemporalDatasetGenerator.compute_motion_offsets(anim_category, phase, category=category)
+                if learned_rig:
+                    offsets = rig_params.offsets_for(anim_category, phase, category, prompt)
+                else:
+                    offsets = TemporalDatasetGenerator.compute_motion_offsets(
+                        anim_category, phase, category=category
+                    )
                 if rig_geometry is not None:
                     offsets = rig_geometry.resolve(offsets)
                 frame_script = build_frame_script(

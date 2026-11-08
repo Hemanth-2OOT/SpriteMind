@@ -95,6 +95,7 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
   const [animCategory, setAnimCategory] = useState('walk');
   const [charCategory, setCharCategory] = useState('knight');
   const [engineMode, setEngineMode] = useState(selectedEngine);
+  const [learnedRig, setLearnedRig] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [scale, setScale] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -162,6 +163,7 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
         fps,
         engine: engineMode,
         seed: runSeed,
+        learned_rig: learnedRig,
       });
 
       if (res.frames && res.frames.length > 0) {
@@ -432,6 +434,21 @@ export const AnimationStudioPage: React.FC<{ selectedEngine?: string }> = ({
                 <option value="untrained_model">Untrained Neural Baseline</option>
                 <option value="procedural_baseline">Procedural Kinematic Baseline</option>
               </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label
+                className="flex items-center gap-1.5 text-slate-400 cursor-pointer"
+                title="Experimental: prompt-conditioned rig parameters change how each character moves. Same seed, same prompt, same frames."
+              >
+                <input
+                  type="checkbox"
+                  checked={learnedRig}
+                  onChange={(e) => setLearnedRig(e.target.checked)}
+                  className="accent-purple-500"
+                />
+                Prompt-shaped motion
+              </label>
             </div>
 
             <div className="flex items-center gap-2">
