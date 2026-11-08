@@ -62,6 +62,39 @@ class PixelScriptDataset(Dataset):
         ]
         jsonl_path = next((p for p in jsonl_candidates if p and p.exists()), None)
 
+        def _add(record: Dict[str, Any]) -> None:
+            """Encode one record and append every per-sample field together.
+
+            All values are computed before any append, so a malformed record is skipped
+            whole and can never leave the per-sample tensors out of step.
+            """
+            actions = [PixelAction.from_dict(a) for a in record.get("actions", [])]
+            token_ids = self.tokenizer.encode_program(
+                PixelScriptProgram(actions=actions), max_length=self.max_seq_len
+            )
+            c_str = record.get("category", "knight")
+            s_str = record.get("style", "classic_16bit")
+            p_str = record.get("pose", "idle")
+            cat = CATEGORIES.index(c_str) if c_str in CATEGORIES else 0
+            style = STYLES.index(s_str) if s_str in STYLES else 0
+            pose = POSES.index(p_str) if p_str in POSES else 0
+            # Records from legacy corpora carry no palette label; palette_id(None) == 0,
+            # the same neutral row the shipped checkpoints were trained on.
+            pal = palette_id(record.get("palette"))
+            colour = colour_id(record.get("colour"))
+            element = element_id(record.get("element"))
+            prompt = encode_prompt(describe_record(record))
+
+            input_list.append(token_ids[:-1])
+            target_list.append(token_ids[1:])
+            cat_list.append(cat)
+            style_list.append(style)
+            pose_list.append(pose)
+            palette_list.append(pal)
+            colour_list.append(colour)
+            element_list.append(element)
+            prompt_list.append(prompt)
+
         if jsonl_path:
             with open(jsonl_path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -70,26 +103,7 @@ class PixelScriptDataset(Dataset):
                     item = json.loads(line)
                     if split != "all" and item.get("split") != split:
                         continue
-
-                    actions = [PixelAction.from_dict(a) for a in item.get("actions", [])]
-                    prog = PixelScriptProgram(actions=actions)
-                    token_ids = self.tokenizer.encode_program(prog, max_length=self.max_seq_len)
-
-                    input_list.append(token_ids[:-1])
-                    target_list.append(token_ids[1:])
-
-                    c_str = item.get("category", "knight")
-                    s_str = item.get("style", "classic_16bit")
-                    p_str = item.get("pose", "idle")
-
-                    cat_list.append(CATEGORIES.index(c_str) if c_str in CATEGORIES else 0)
-                    style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
-                    pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
-                    palette_list.append(palette_id(item.get("palette")))
-                    colour_list.append(colour_id(item.get("colour")))
-                    element_list.append(element_id(item.get("element")))
-                    prompt_list.append(encode_prompt(describe_record(item)))
-
+                    _add(item)
                     if max_samples and len(input_list) >= max_samples:
                         break
         else:
@@ -100,29 +114,11 @@ class PixelScriptDataset(Dataset):
                     try:
                         with open(p, "r", encoding="utf-8") as f:
                             data = json.load(f)
-                            if split != "all" and data.get("split", "train") != split:
-                                continue
-                            actions = [PixelAction.from_dict(a) for a in data.get("actions", [])]
-                            prog = PixelScriptProgram(actions=actions)
-                            token_ids = self.tokenizer.encode_program(prog, max_length=self.max_seq_len)
-
-                            input_list.append(token_ids[:-1])
-                            target_list.append(token_ids[1:])
-
-                            c_str = data.get("category", "knight")
-                            s_str = data.get("style", "classic_16bit")
-                            p_str = data.get("pose", "idle")
-
-                            cat_list.append(CATEGORIES.index(c_str) if c_str in CATEGORIES else 0)
-                            style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
-                            pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
-                            palette_list.append(palette_id(item.get("palette")))
-                            colour_list.append(colour_id(data.get("colour")))
-                            element_list.append(element_id(data.get("element")))
-                            prompt_list.append(encode_prompt(describe_record(data)))
-
-                            if max_samples and len(input_list) >= max_samples:
-                                break
+                        if split != "all" and data.get("split", "train") != split:
+                            continue
+                        _add(data)
+                        if max_samples and len(input_list) >= max_samples:
+                            break
                     except Exception:
                         pass
 
