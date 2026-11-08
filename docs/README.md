@@ -28,6 +28,7 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`STORAGE_ARCHITECTURE.md`](STORAGE_ARCHITECTURE.md) — database schemas, where datasets, checkpoints and exports live, and the invariants between them.
 - [`DATA_MANAGEMENT.md`](DATA_MANAGEMENT.md) — the data lifecycle: retention, trash and restore, and what is safe to delete.
 - [`GIT_RELEASE_CHECKLIST.md`](GIT_RELEASE_CHECKLIST.md) — what to check before tagging a release or making the repository public.
+- [`FINAL_RELEASE_READINESS.md`](FINAL_RELEASE_READINESS.md) — the recorded state of the last maintenance pass: audit, cleanup, git verification, test and smoke-test results, known limitations, launch steps.
 
 ## Where the numbers come from
 
@@ -36,5 +37,5 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - `scripts/finetune_svan.py --prompt-text` — trains the optional prompt text encoder (`ml/prompt_encoder.py`) as a fourth memory token; `docs/PROMPT_FAITHFULNESS.md` explains why the shipped checkpoint leaves it off.
 - `scripts/golden_images.py` — the perceptual-hash regression set (`--update-goldens` to accept a deliberate change).
 - `GET /api/metrics` — p50/p95 latency ring buffer, also shown in the Model Lab.
-- `pytest` — the 300-test suite now also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
+- `pytest` — the 314-test suite also measures backend coverage (`pytest-cov`, statement + branch) and fails below the 71% floor set in `pyproject.toml`. Use `pytest --no-cov` when you only want to run one file.
 - `npm run typecheck` — TypeScript over `frontend/src`; `npm run build` runs it first, so the frontend CI job typechecks too.
