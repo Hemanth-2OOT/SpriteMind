@@ -15,7 +15,7 @@ from spritemind.ml.prompt_encoder import PROMPT_MAX_LEN, describe_record, encode
 from spritemind.ml.svan import SVANModel
 from spritemind.ml.tokenizer import ActionTokenizer
 from spritemind.dataset.generator import CATEGORIES, STYLES, POSES
-from spritemind.dataset.conditioning import colour_id, element_id
+from spritemind.dataset.conditioning import colour_id, element_id, palette_id
 from spritemind.pixelscript.ast import PixelScriptProgram, PixelAction
 
 
@@ -85,7 +85,7 @@ class PixelScriptDataset(Dataset):
                     cat_list.append(CATEGORIES.index(c_str) if c_str in CATEGORIES else 0)
                     style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                     pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
-                    palette_list.append(0)
+                    palette_list.append(palette_id(item.get("palette")))
                     colour_list.append(colour_id(item.get("colour")))
                     element_list.append(element_id(item.get("element")))
                     prompt_list.append(encode_prompt(describe_record(item)))
@@ -116,7 +116,7 @@ class PixelScriptDataset(Dataset):
                             cat_list.append(CATEGORIES.index(c_str) if c_str in CATEGORIES else 0)
                             style_list.append(STYLES.index(s_str) if s_str in STYLES else 0)
                             pose_list.append(POSES.index(p_str) if p_str in POSES else 0)
-                            palette_list.append(0)
+                            palette_list.append(palette_id(item.get("palette")))
                             colour_list.append(colour_id(data.get("colour")))
                             element_list.append(element_id(data.get("element")))
                             prompt_list.append(encode_prompt(describe_record(data)))
@@ -241,6 +241,7 @@ class ModelTrainer:
         threads: int = 0,
         prompt_text: bool = False,
         max_samples: Optional[int] = None,
+        palette_conditioning: bool = False,
     ) -> Dict[str, Any]:
         if self.is_training:
             return {"status": "error", "message": "Training already in progress"}
@@ -251,7 +252,7 @@ class ModelTrainer:
             target=self._run_training_loop,
             args=(dataset_name, epochs, batch_size, learning_rate, optimizer_name, save_checkpoint_name, resume, resume_from, patience, seed,
                   max_seq_len, d_model, nhead, num_layers, dim_feedforward, dropout, label_smoothing, threads,
-                  prompt_text, max_samples),
+                  prompt_text, max_samples, palette_conditioning),
             daemon=True,
         )
         self._thread.start()
@@ -292,6 +293,7 @@ class ModelTrainer:
         threads: int = 0,
         prompt_text: bool = False,
         max_samples: Optional[int] = None,
+        palette_conditioning: bool = False,
     ):
         start_time = time.time()
         if threads > 0:
@@ -330,6 +332,7 @@ class ModelTrainer:
                 max_seq_len=max_seq_len,
                 dropout=dropout,
                 prompt_text=prompt_text,
+                palette_conditioning=palette_conditioning,
             ).to(self.device)
 
             # Optional resume from previous checkpoint

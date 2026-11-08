@@ -39,6 +39,7 @@ CONFIG = {
     "patience": 1,
     "save_checkpoint_name": "svan_finetuned.pt",
     "resume_from": "svan_checkpoint_best.pt",
+    "palette_conditioning": False,
 }
 
 CHECKPOINTS = ROOT / "models" / "checkpoints"
@@ -64,11 +65,19 @@ def parse_args():
     parser.add_argument("--clean-patience", type=int, default=1)
     parser.add_argument("--max-samples", type=int, default=0, help="cap on records per split")
     parser.add_argument(
+        "--palette-conditioning",
+        action="store_true",
+        help="train the palette embedding on real palette labels (requires a corpus that records them)",
+    )
+    parser.add_argument(
         "--prompt-text",
         action="store_true",
         help="train the character-level prompt encoder as a fourth memory token",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.palette_conditioning:
+        CONFIG["palette_conditioning"] = True
+    return args
 
 
 def _count_lines(path: Path) -> int:

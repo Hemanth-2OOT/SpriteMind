@@ -64,6 +64,15 @@ ELEMENT_IDS: Dict[str, int] = {name: i + 1 for i, name in enumerate(sorted(ELEME
 NUM_COLOUR_IDS = len(COLOUR_IDS) + 1
 NUM_ELEMENT_IDS = len(ELEMENT_IDS) + 1
 
+#: Palette ids follow `PALETTES` order, which is also what the pipeline's
+#: `_palette_index` uses when it feeds a checkpoint's palette embedding.
+PALETTE_IDS: Dict[str, int] = {name: i for i, name in enumerate(PALETTES)}
+NUM_PALETTE_IDS = len(PALETTE_IDS)
+
+
+def palette_id(name: Optional[str]) -> int:
+    return PALETTE_IDS.get(str(name), 0) if name else 0
+
 
 def colour_id(name: Optional[str]) -> int:
     return COLOUR_IDS.get(str(name).lower(), 0) if name else 0
