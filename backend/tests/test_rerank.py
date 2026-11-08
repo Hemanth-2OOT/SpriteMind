@@ -184,3 +184,39 @@ def test_palette_leak_penalises_a_candidate_that_draws_off_palette(pipeline):
     assert pipeline._palette_leak_share(clean_rgba, "pico8") == 0.0
     assert pipeline._palette_leak_share(leaky, "pico8") == 1.0
     assert pipeline._palette_leak_share(leaky, "unknown_palette") is None
+
+
+# --- R12 coverage-aware reranking ---------------------------------------------
+
+def _components(coverage: float, heuristic: float = 30.0):
+    return {"render": None, "heuristic": heuristic, "leak": 0.0,
+            "colour_score": 45.0, "coverage": coverage, "critic": 90.0, "critic_defects": 0}
+
+
+def test_coverage_weight_defaults_to_off_and_leaves_the_score_unchanged(pipeline):
+    assert pipeline.coverage_rerank_weight == 0.0
+    comp = _components(0.10)
+    pipeline.coverage_rerank_weight = 0.0
+    without = pipeline._score_components(comp)
+    pipeline.coverage_rerank_target = 0.50
+    assert pipeline._score_components(comp) == without
+
+
+def test_coverage_weight_credits_a_shortfall_but_not_a_surplus(pipeline):
+    pipeline.coverage_rerank_weight = 100.0
+    pipeline.coverage_rerank_target = 0.30
+    low = pipeline._score_components(_components(0.10))
+    at_target = pipeline._score_components(_components(0.30))
+    above = pipeline._score_components(_components(0.50))
+    assert at_target > low
+    assert above == at_target
+
+
+def test_coverage_weight_prefers_the_higher_coverage_candidate(pipeline):
+    pipeline.coverage_rerank_weight = 100.0
+    pipeline.coverage_rerank_target = 0.50
+    sparse = _components(0.10, heuristic=35.0)
+    dense = _components(0.45, heuristic=30.0)
+    assert pipeline._score_components(dense) > pipeline._score_components(sparse)
+    pipeline.coverage_rerank_weight = 0.0
+    assert pipeline._score_components(dense) < pipeline._score_components(sparse)

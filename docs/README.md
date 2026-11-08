@@ -14,6 +14,7 @@ benchmark numbers. Everything below is the detail behind those numbers.
 - [`ACTION_SETS.md`](ACTION_SETS.md) — turning one prompt into a playable animation package: idle, walk, attack, cast and dash, and how frames stay connected.
 - [`PROMPT_CONDITIONING.md`](PROMPT_CONDITIONING.md) — how colour and element tags from the prompt reach the training corpus and the model.
 - [`COLOUR_RECOVERY.md`](COLOUR_RECOVERY.md) — why neural colour faithfulness looked like it regressed, the selection-vs-coverage decomposition, and the steering experiment that recovered it (R11).
+- [`COVERAGE_RERANK.md`](COVERAGE_RERANK.md) — the coverage-aware reranking experiment: validation-tuned, held-out once, measured as a small and not-clearly-significant gain over the shipped ranking (R12).
 
 ## Training and tuning
 

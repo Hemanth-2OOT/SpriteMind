@@ -181,6 +181,14 @@ Full evidence in `docs/RETRAIN_V4.md`; production checkpoint and corpus untouche
   *Evidence:* `docs/COLOUR_RECOVERY.md`, the `data/benchmarks/` set (`heldout_v1_v3_conditioned`, `heldout_v1_v4_conditioned`, `heldout_v1_v4_steer3`, `heldout_v1_v5_colour`, `colour_diagnosis`, `determinism_steer3`).
 - [ ] **Next colour work** — structured per-part colour plans (grammar v3), coverage-aware reranking, coverage curricula. Ordered by expected value per hour in `docs/COLOUR_RECOVERY.md` §6.
 
+### R12 coverage-aware reranking (2026-11-05)
+
+- [x] **Isolated experiment** — `matched_share` used as an explicit ranking signal behind `COVERAGE_RERANK_WEIGHT` (default `0.0`, so the shipped ranking is byte-identical). Weights tuned on `data/splits/validation_v1.json` (24 coloured prompts, disjoint from the frozen split) and evaluated once on `heldout_v1` at seed `20261105`.
+- [x] **Measured result** — held-out coverage 23.73 → 24.41 (neural) and 24.54 → 25.19 (production) at `steer 0`; 26.18 → 26.62 / 26.30 → 26.66 at `steer 3`. All gains sit inside one standard error (σ ≈ 3.0 pp) and are ~4× smaller than `colour_steer` alone (+2.45 pp).
+- [x] **Checks** — silhouette IoU within 0.002 of baseline, palette adherence 100% in all arms, connected components / interior holes / symmetry unchanged, determinism 0/15 mismatches, critic clean share 0.75–0.775 (gate is 90%).
+- [x] **Not promoted** — no API/UI exposure, weight stays `0.0`, nothing merged. Evidence: `data/benchmarks/coverage_rerank_{tuning,tuning_steer3,heldout}.json`, `docs/COVERAGE_RERANK.md`.
+- [ ] **Where to look next** — `selection_hit` is 0.50 in every arm: half of the coloured held-out prompts have no matching pixels in any candidate pool. More diverse sampling, not a better score, is what changes that.
+
 ## P5 — Product surface
 
 - [ ] **Batch generation / sprite pack export** — `M`
