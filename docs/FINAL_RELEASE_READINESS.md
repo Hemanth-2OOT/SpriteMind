@@ -69,7 +69,7 @@ Every local branch head was compared with `git ls-remote --heads origin`; all ma
 | `lemon/r10-retrain-v4` | `e7bc2b1` | same | #28 | `lemon/audit-r4r5r6` | open |
 | `lemon/r11-colour-recovery` | `f794dd4` | same | #29 | `lemon/r10-retrain-v4` | open |
 | `lemon/r12-coverage-rerank` | `3668a81` | same | #30 | `lemon/r11-colour-recovery` | open |
-| `lemon/r13-candidate-diversity` | `a35c0b1` | same | #31 | `lemon/r12-coverage-rerank` | open |
+| `lemon/r13-candidate-diversity` | `a35c0b1` (+ this commit, `2d4c4fa`) | same | #31 | `lemon/r12-coverage-rerank` | open |
 | `lemon/category-report-card` | `be509a0` | same | — | — | no PR |
 | `lemon/element-aura` | `6b89075` | same | — | — | no PR, not an ancestor of `main` |
 | `lemon/onion-skin-export` | `6f827c0` | same | — | — | no PR (merged as #16 on `main`) |
